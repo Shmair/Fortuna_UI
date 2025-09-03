@@ -9,9 +9,33 @@ export default function UploadStep({ onUpload, isUploading, existingPolicyFile, 
         setFile(e.target.files[0]);
     };
 
+    // Replace direct Supabase upload logic with backend API upload
+    async function uploadPolicyFile(file) {
+        const formData = new FormData();
+        formData.append('file', file);
+
+        const response = await fetch('http://localhost:4000/api/upload', {
+            method: 'POST',
+            body: formData
+        });
+
+        const result = await response.json();
+        if (response.ok) {
+            // result.file_url contains the public URL of the uploaded file
+            return result.file_url;
+        } else {
+            throw new Error(result.error || 'Upload failed');
+        }
+    }
+
     const handleUpload = async () => {
         if (file && onUpload) {
-            await onUpload(file);
+            try {
+                const fileUrl = await uploadPolicyFile(file);
+                await onUpload(fileUrl); // Pass the uploaded file URL to parent
+            } catch (err) {debugger;
+                alert('שגיאה בהעלאת הקובץ: ' + err.message);
+            }
         }
     };
 
