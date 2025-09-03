@@ -40,7 +40,7 @@ export default function ProfilePage() {
                     is_pregnant: currentUser.is_pregnant || false,
                     planning_pregnancy: currentUser.planning_pregnancy || false,
                     is_smoker: currentUser.is_smoker || false,
-                    insurance_provider: currentUser.insurance_provider || ''
+                   // insurance_provider: currentUser.insurance_provider || ''
                 });
             } catch (error) {
                 console.error("Failed to fetch user", error);
@@ -62,17 +62,10 @@ export default function ProfilePage() {
         const { email, ...updatableData } = userData;
         try {
             await updateUserProfile(userData.email, updatableData);
-            toast({
-                title: "הפרופיל עודכן בהצלחה!",
-                description: "הפרטים שלך נשמרו.",
-            });
+            toast.success("הפרופיל עודכן בהצלחה! הפרטים שלך נשמרו.");
         } catch (error) {
             console.error("Failed to update user", error);
-            toast({
-                title: "שגיאה בעדכון הפרופיל",
-                description: "אנא נסה שוב מאוחר יותר.",
-                variant: "destructive",
-            });
+            toast.error("שגיאה בעדכון הפרופיל: אנא נסה שוב מאוחר יותר.");
         }
     };
     

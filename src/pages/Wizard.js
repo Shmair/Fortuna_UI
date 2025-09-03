@@ -5,45 +5,13 @@ import { Button } from '../components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '../components/ui/card';
 import { Progress } from '../components/ui/progress';
 import { ArrowLeft, ArrowRight, PartyPopper, AlertTriangle, Upload, FileText, Loader2, Check, X, HelpCircle, DollarSign, FileCheck } from 'lucide-react';
-import { useToast } from "../components/ui/use-toast";
-import UserProfileForm from '../components/UserProfileForm.js';
+import { toast } from "sonner";
 import { supabase }  from '../utils/supabaseClient';
 import UploadStep from '../components/UploadStep';
+import PersonalDetailsStep from './PersonalDetailsStep';
 
 // Step 0: Personal Details
-const PersonalDetailsStep = ({ userData, setUserData, onNext }) => {
-    // Save user details handler
-    const handleSave = async (e) => {
-        e.preventDefault();
-        if (userData.email) {
-            // You may want to validate more fields here
-            await updateUserProfile(userData.email, userData);
-        }
-    };
-    const requiredFields = ["email", "date_of_birth", "gender", "insurance_provider"];
-    const isValid = true;//requiredFields.every(field => !!userData[field]);
-debugger;
-    const handleNext = (e) => {
-        e.preventDefault();
-        if (isValid) {
-            onNext();
-        }
-    };
-    return (
-    <form id="personal-details-form" className="space-y-4" onSubmit={handleNext}>
-            <h3 className="text-lg font-semibold text-center">בואו נכיר</h3>
-            <p className="text-sm text-gray-500 text-center">הפרטים יעזרו לנו לנתח את הפוליסה בצורה מדויקת יותר.</p>
-            {/* UserProfileForm now includes gender and insurance_provider inputs */}
-            <UserProfileForm userData={userData} setUserData={setUserData} />
-            <Button type="submit" className="w-full" disabled={!isValid}>
-                המשך להעלאת פוליסה <ArrowLeft className="mr-2 h-4 w-4" />
-            </Button>
-            <Button type="button" className="w-full mt-2" variant="outline" onClick={handleSave}>
-                שמור פרטי משתמש
-            </Button>
-        </form>
-    );
-};
+
 
 // Component for a single question
 const QuestionCard = ({ questionText, onAnswer, answer }) => {
@@ -216,7 +184,7 @@ export default function Wizard() {
         email: "",
         date_of_birth: "",
         gender: "",
-        insurance_provider: "",
+        //insurance_provider: "",
         children_ages: [],
         is_pregnant: false,
         planning_pregnancy: false,
@@ -229,7 +197,6 @@ export default function Wizard() {
     const [isLoading, setIsLoading] = useState(true);
     const [isUploading, setIsUploading] = useState(false);
     const [existingPolicyFile, setExistingPolicyFile] = useState(null);
-    const { toast } = useToast();
 
     useEffect(() => {
         const loadUser = async () => {
@@ -254,7 +221,6 @@ export default function Wizard() {
                     is_pregnant: currentUser.is_pregnant || false,
                     planning_pregnancy: currentUser.planning_pregnancy || false,
                     is_smoker: currentUser.is_smoker || false,
-                    insurance_provider: currentUser.insurance_provider || ''
                 });
             } catch (e) { /* User not logged in */ }
             finally { setIsLoading(false); }
@@ -262,12 +228,42 @@ export default function Wizard() {
         loadUser();
     }, []);
 
-    const handlePersonalDetailsNext = async () => {
-        if (user) await updateUserProfile(user.email, userData);
-        setStep(1);
+    const handlePersonalDetailsNext = async () => {debugger;
+        // Save or update user profile in Supabase
+        try {
+            const email = userData.email || user?.email;
+            if (!email) {
+                toast.error("חסר אימייל: אנא הזן כתובת אימייל תקינה.");
+                return;
+            }
+            // Upsert profile
+            const { data, error } = await supabase
+                .from('profiles')
+                .upsert([
+                    {
+                        email,
+                        date_of_birth: userData.date_of_birth,
+                        gender: userData.gender,
+                        children_ages: userData.children_ages,
+                        is_pregnant: userData.is_pregnant,
+                        planning_pregnancy: userData.planning_pregnancy,
+                        is_smoker: userData.is_smoker
+                    }
+                ], { onConflict: ['email'] });
+            if (error) {
+                toast.error("שגיאה בשמירת הפרופיל: " + error.message);
+                return;
+            }
+            window.localStorage.setItem('user_email', email);
+            setUser(data?.[0] || null);
+            toast.success("הפרטים נשמרו בהצלחה. הפרופיל שלך עודכן במערכת.");
+            setStep(1);
+        } catch (e) {
+            toast.error("שגיאה כללית: אירעה שגיאה בשמירת הפרופיל.");
+        }
     };
 
-    const handlePolicyUpload = async (file) => {debugger
+    const handlePolicyUpload = async (file) => {
         setIsUploading(true);
         try {
             // 1. Hash the file content (SHA-256)
@@ -281,9 +277,9 @@ export default function Wizard() {
                 .from('profiles')
                 .select('id, insurance_policy_id')
                 .eq('email', user?.email || '')
-                .single();
+                .maybeSingle();
             if (profileError) {
-                toast({ title: "שגיאת פרופיל", description: profileError.message, variant: "destructive" });
+                toast.error("שגיאת פרופיל: " + profileError.message);
                 setIsUploading(false);
                 return;
             }
@@ -296,7 +292,7 @@ export default function Wizard() {
                     .eq('id', profileData.insurance_policy_id)
                     .single();
                 if (policyError) {
-                    toast({ title: "שגיאת פוליסה", description: policyError.message, variant: "destructive" });
+                    toast.error("שגיאת פוליסה: " + policyError.message);
                     setIsUploading(false);
                     return;
                 }
@@ -306,7 +302,7 @@ export default function Wizard() {
                     setIsUploading(false);
                     return;
                 } else {
-                    toast({ title: "פוליסה קיימת שונה", description: "הפוליסה הקיימת שונה מהקובץ שהועלה. אנא פנה לתמיכה לעדכון.", variant: "destructive" });
+                    toast.error("הפוליסה הקיימת שונה מהקובץ שהועלה. אנא פנה לתמיכה לעדכון.");
                     setIsUploading(false);
                     return;
                 }
@@ -373,7 +369,7 @@ Output Structure: The final JSON output should be a single object containing:
                 ])
                 .select();
             if (insertError || !insertData || !insertData[0]) {
-                toast({ title: "שגיאה בשמירת הפוליסה", description: insertError?.message || 'לא התקבל מזהה פוליסה', variant: "destructive" });
+                toast.error("שגיאה בשמירת הפוליסה: " + (insertError?.message || 'לא התקבל מזהה פוליסה'));
                 setIsUploading(false);
                 return;
             }
@@ -386,7 +382,7 @@ Output Structure: The final JSON output should be a single object containing:
             setStep(1); // Show file name and next btn
             setIsUploading(false);
         } catch (error) {
-            toast({ title: "שגיאה כללית", description: "אירעה שגיאה בעיבוד הפוליסה.", variant: "destructive" });
+            toast.error("שגיאה כללית: אירעה שגיאה בעיבוד הפוליסה.");
             setIsUploading(false);
         }
     };

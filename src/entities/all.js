@@ -8,10 +8,10 @@ export const getUserProfile = async (email) => {
 };
 
 export const updateUserProfile = async (email, profileData) => {
+  // Use upsert to create or update profile by email
   const { data, error } = await supabase
     .from('profiles')
-    .update(profileData)
-    .eq('email', email);
+    .upsert([{ email, ...profileData }], { onConflict: ['email'] });
   return { data, error };
 };
 // Mock DB entities for local development

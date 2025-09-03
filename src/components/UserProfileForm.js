@@ -10,7 +10,22 @@ import { Plus, X } from 'lucide-react';
 
 const insuranceProviders = ["כללית", "מכבי", "מאוחדת", "לאומית", "הראל", "מגדל", "הפניקס", "אחר"];
 
-export default function UserProfileForm({ userData, setUserData }) {
+export default function UserProfileForm({ userData, setUserData, showErrors }) {
+        // Required fields and error helper
+        const REQUIRED_FIELDS = ["email", "date_of_birth", "gender"];
+        function getFieldError(field, value) {
+            if (REQUIRED_FIELDS.includes(field) && !value) {
+                return "שדה חובה";
+            }
+            return null;
+        }
+        const renderError = (field) => {
+            if (!showErrors) return null;
+            const error = getFieldError(field, userData[field]);
+            return error ? (
+                <div className="text-red-500 text-xs mt-1">{error}</div>
+            ) : null;
+        };
     const [newChildAge, setNewChildAge] = useState('');
 
     const addChild = () => {
@@ -42,6 +57,7 @@ export default function UserProfileForm({ userData, setUserData }) {
                     value={userData.email || ''}
                     onChange={e => setUserData({ ...userData, email: e.target.value })}
                 />
+                {renderError("email")}
             </div>
             <div>
                 <Label htmlFor="date_of_birth">תאריך לידה</Label>
@@ -52,8 +68,8 @@ export default function UserProfileForm({ userData, setUserData }) {
                     value={userData.date_of_birth || ''}
                     onChange={(e) => setUserData({ ...userData, date_of_birth: e.target.value })}
                 />
+                {renderError("date_of_birth")}
             </div>
-            
             <div>
                 <Label htmlFor="gender">מגדר</Label>
                 <Select 
@@ -68,9 +84,10 @@ export default function UserProfileForm({ userData, setUserData }) {
                         <SelectItem value="male">גבר</SelectItem>
                     </SelectContent>
                 </Select>
+                {renderError("gender")}
             </div>
 
-            <div>
+            {/* <div>
                 <Label htmlFor="insurance_provider">קופת חולים / חברת ביטוח עיקרית</Label>
                 <Select 
                     id="insurance_provider"
@@ -85,7 +102,7 @@ export default function UserProfileForm({ userData, setUserData }) {
                         ))}
                     </SelectContent>
                 </Select>
-            </div>
+            </div> */}
 
             <div>
                 <Label htmlFor="is_smoker">האם את/ה מעשן/ת?</Label>
