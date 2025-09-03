@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { User, UserSubmission, PotentialRefund } from '../entities/all';
+import { getUserProfile, UserSubmission, PotentialRefund } from '../entities/all';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
 import { Button } from '../components/ui/button';
 import { Badge } from '../components/ui/badge';
@@ -21,7 +21,19 @@ export default function Dashboard() {
     useEffect(() => {
         const fetchData = async () => {
             try {
-                const currentUser = await User.me();
+                // Replace with your app's logic to get the logged-in user's email
+                const email = window.localStorage.getItem('user_email');
+                if (!email) {
+                    setUser(null);
+                    setIsLoading(false);
+                    return;
+                }
+                const { data: currentUser, error } = await getUserProfile(email);
+                if (error || !currentUser) {
+                    setUser(null);
+                    setIsLoading(false);
+                    return;
+                }
                 setUser(currentUser);
 
                 const userSubmissions = await UserSubmission.filter({ user_email: currentUser.email });
@@ -43,7 +55,6 @@ export default function Dashboard() {
                 setIsLoading(false);
             }
         };
-
         fetchData();
     }, []);
 

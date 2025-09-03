@@ -32,9 +32,22 @@ export default function UserProfileForm({ userData, setUserData }) {
     return (
         <div className="space-y-4">
             <div>
-                <Label htmlFor="dob">תאריך לידה</Label>
+                <Label htmlFor="email">אימייל</Label>
+                <Input
+                    id="email"
+                    name="email"
+                    type="email"
+                    autoComplete="email"
+                    required
+                    value={userData.email || ''}
+                    onChange={e => setUserData({ ...userData, email: e.target.value })}
+                />
+            </div>
+            <div>
+                <Label htmlFor="date_of_birth">תאריך לידה</Label>
                 <Input 
-                    id="dob" 
+                    id="date_of_birth" 
+                    name="date_of_birth"
                     type="date" 
                     value={userData.date_of_birth || ''}
                     onChange={(e) => setUserData({ ...userData, date_of_birth: e.target.value })}
@@ -44,6 +57,8 @@ export default function UserProfileForm({ userData, setUserData }) {
             <div>
                 <Label htmlFor="gender">מגדר</Label>
                 <Select 
+                    id="gender"
+                    name="gender"
                     value={userData.gender || ''}
                     onValueChange={(value) => setUserData({ ...userData, gender: value })}
                 >
@@ -56,8 +71,10 @@ export default function UserProfileForm({ userData, setUserData }) {
             </div>
 
             <div>
-                <Label htmlFor="insurance">קופת חולים / חברת ביטוח עיקרית</Label>
+                <Label htmlFor="insurance_provider">קופת חולים / חברת ביטוח עיקרית</Label>
                 <Select 
+                    id="insurance_provider"
+                    name="insurance_provider"
                     value={userData.insurance_provider || ''}
                     onValueChange={(value) => setUserData({ ...userData, insurance_provider: value })}
                 >
@@ -73,6 +90,8 @@ export default function UserProfileForm({ userData, setUserData }) {
             <div>
                 <Label htmlFor="is_smoker">האם את/ה מעשן/ת?</Label>
                 <Select
+                    id="is_smoker"
+                    name="is_smoker"
                     value={userData.is_smoker === true ? 'yes' : (userData.is_smoker === false ? 'no' : '')}
                     onValueChange={(value) => setUserData({ ...userData, is_smoker: value === 'yes' })}
                 >
@@ -85,9 +104,11 @@ export default function UserProfileForm({ userData, setUserData }) {
             </div>
 
             <div>
-                <Label>גילאי הילדים שלך</Label>
+                <Label htmlFor="child_age">גילאי הילדים שלך</Label>
                 <div className="flex gap-2 mt-2">
                     <Input 
+                        id="child_age"
+                        name="child_age"
                         type="number" 
                         min="0" 
                         max="25"

@@ -1,4 +1,21 @@
+export const getUserProfile = async (email) => {
+  const { data, error } = await supabase
+    .from('profiles')
+    .select('*')
+    .eq('email', email)
+    .single();
+  return { data, error };
+};
+
+export const updateUserProfile = async (email, profileData) => {
+  const { data, error } = await supabase
+    .from('profiles')
+    .update(profileData)
+    .eq('email', email);
+  return { data, error };
+};
 // Mock DB entities for local development
+import { supabase } from '../utils/supabaseClient';
 
 export const PotentialRefund = {
   async list() {
@@ -23,35 +40,6 @@ export const PotentialRefund = {
   }
 };
 
-export const User = {
-  async me() {
-    // Return a mock user
-    return {
-      id: 1,
-      full_name: "משתמש לדוגמה",
-      email: "demo@example.com",
-      date_of_birth: "1990-01-01",
-      gender: "female",
-      children_ages: [5, 8],
-      is_pregnant: false,
-      planning_pregnancy: false,
-      is_smoker: false,
-      insurance_provider: "כללית"
-    };
-  },
-  async updateMyUserData(data) {
-    // Simulate update
-    return { success: true, ...data };
-  },
-  async login() {
-    // Simulate login
-    window.alert("התחברת בהצלחה!");
-  },
-  async logout() {
-    // Simulate logout
-    window.alert("התנתקת בהצלחה!");
-  }
-};
 
 export const UserSubmission = {
   async filter({ user_email }) {
@@ -70,4 +58,13 @@ export const UserSubmission = {
     // Mock update
     return { id, status };
   }
+};
+
+export const saveOrUpdateUserProfile = async (profileData) => {
+    // profileData should include: email, full_name, date_of_birth, gender, children_ages, is_pregnant, planning_pregnancy, is_smoker, insurance_policy_id
+    // Try to upsert (insert or update) the profile by email
+    const { data, error } = await supabase
+        .from('profiles')
+        .upsert([profileData], { onConflict: ['email'] });
+    return { data, error };
 };

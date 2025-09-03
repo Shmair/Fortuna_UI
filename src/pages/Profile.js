@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
-import { User } from '../entities/all';
+import { getUserProfile, updateUserProfile } from '../entities/all';
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
 import { Label } from '../components/ui/label';
@@ -18,7 +18,18 @@ export default function ProfilePage() {
     useEffect(() => {
         const fetchUser = async () => {
             try {
-                const currentUser = await User.me();
+                const email = window.localStorage.getItem('user_email');
+                if (!email) {
+                    setUser(null);
+                    setIsLoading(false);
+                    return;
+                }
+                const { data: currentUser, error } = await getUserProfile(email);
+                if (error || !currentUser) {
+                    setUser(null);
+                    setIsLoading(false);
+                    return;
+                }
                 setUser(currentUser);
                 setUserData({
                     full_name: currentUser.full_name || '',
@@ -28,7 +39,7 @@ export default function ProfilePage() {
                     children_ages: currentUser.children_ages || [],
                     is_pregnant: currentUser.is_pregnant || false,
                     planning_pregnancy: currentUser.planning_pregnancy || false,
-                    is_smoker: currentUser.is_smoker || false, // Added is_smoker field
+                    is_smoker: currentUser.is_smoker || false,
                     insurance_provider: currentUser.insurance_provider || ''
                 });
             } catch (error) {
@@ -50,7 +61,7 @@ export default function ProfilePage() {
         // Remove non-updatable fields before sending
         const { email, ...updatableData } = userData;
         try {
-            await User.updateMyUserData(updatableData);
+            await updateUserProfile(userData.email, updatableData);
             toast({
                 title: "הפרופיל עודכן בהצלחה!",
                 description: "הפרטים שלך נשמרו.",
@@ -66,7 +77,7 @@ export default function ProfilePage() {
     };
     
     const handleLogout = async () => {
-        await User.logout();
+        window.localStorage.removeItem('user_email');
         window.location.href = createPageUrl('Home');
     }
 
@@ -82,7 +93,7 @@ export default function ProfilePage() {
                     <CardDescription>עליך להתחבר כדי לראות את הפרופיל שלך.</CardDescription>
                 </CardHeader>
                 <CardContent>
-                     <Button onClick={() => User.login()} className="w-full">התחברות</Button>
+                     <Button onClick={() => window.location.href = createPageUrl('Login')} className="w-full">התחברות</Button>
                 </CardContent>
             </Card>
         );
@@ -100,9 +111,9 @@ export default function ProfilePage() {
                         <Label htmlFor="full_name">שם מלא</Label>
                         <Input id="full_name" value={userData.full_name || ''} onChange={handleInputChange} />
                     </div>
-                     <div>
+                    <div>
                         <Label htmlFor="email">אימייל</Label>
-                        <Input id="email" type="email" value={userData.email || ''} disabled />
+                        <Input id="email" name="email" type="email" value={userData.email || ''} onChange={handleInputChange} required autoComplete="email" />
                     </div>
                     
                     <UserProfileForm userData={userData} setUserData={setUserData} />

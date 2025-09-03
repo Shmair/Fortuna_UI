@@ -3,6 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "dependencies": {
+    "@supabase/supabase-js": "^2.56.1",
     "date-fns": "^3.6.0",
     "framer-motion": "^11.0.0",
     "lucide-react": "latest",

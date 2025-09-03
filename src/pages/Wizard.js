@@ -1,6 +1,5 @@
-
 import React, { useState, useEffect } from 'react';
-import { User, UserSubmission } from '../entities/all';
+import { getUserProfile, updateUserProfile, UserSubmission } from '../entities/all';
 import { UploadFile, InvokeLLM } from '../integrations/Core';
 import { Button } from '../components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '../components/ui/card';
@@ -8,45 +7,41 @@ import { Progress } from '../components/ui/progress';
 import { ArrowLeft, ArrowRight, PartyPopper, AlertTriangle, Upload, FileText, Loader2, Check, X, HelpCircle, DollarSign, FileCheck } from 'lucide-react';
 import { useToast } from "../components/ui/use-toast";
 import UserProfileForm from '../components/UserProfileForm.js';
+import { supabase }  from '../utils/supabaseClient';
+import UploadStep from '../components/UploadStep';
 
 // Step 0: Personal Details
 const PersonalDetailsStep = ({ userData, setUserData, onNext }) => {
-    const isValid = userData.date_of_birth && userData.gender && userData.insurance_provider;
-
+    // Save user details handler
+    const handleSave = async (e) => {
+        e.preventDefault();
+        if (userData.email) {
+            // You may want to validate more fields here
+            await updateUserProfile(userData.email, userData);
+        }
+    };
+    const requiredFields = ["email", "date_of_birth", "gender", "insurance_provider"];
+    const isValid = true;//requiredFields.every(field => !!userData[field]);
+debugger;
+    const handleNext = (e) => {
+        e.preventDefault();
+        if (isValid) {
+            onNext();
+        }
+    };
     return (
-        <div className="space-y-4">
+    <form id="personal-details-form" className="space-y-4" onSubmit={handleNext}>
             <h3 className="text-lg font-semibold text-center">בואו נכיר</h3>
             <p className="text-sm text-gray-500 text-center">הפרטים יעזרו לנו לנתח את הפוליסה בצורה מדויקת יותר.</p>
+            {/* UserProfileForm now includes gender and insurance_provider inputs */}
             <UserProfileForm userData={userData} setUserData={setUserData} />
-            <Button onClick={onNext} className="w-full" disabled={!isValid}>
+            <Button type="submit" className="w-full" disabled={!isValid}>
                 המשך להעלאת פוליסה <ArrowLeft className="mr-2 h-4 w-4" />
             </Button>
-        </div>
-    );
-};
-
-// Step 1: Upload Policy
-const UploadStep = ({ onUpload, isUploading }) => {
-    const fileInputRef = React.useRef(null);
-    const handleFileChange = (event) => {
-        const file = event.target.files[0];
-        if (file) onUpload(file);
-        event.target.value = null;
-    };
-
-    return (
-        <div className="text-center space-y-4">
-            <input type="file" ref={fileInputRef} onChange={handleFileChange} className="hidden" accept=".pdf,.png,.jpg,.jpeg" />
-            <h3 className="text-lg font-semibold">העלאת פוליסת ביטוח</h3>
-            <p className="text-sm text-gray-500">ננתח את כל סעיפי הפוליסה כדי לבנות עבורך שאלון חכם.</p>
-            <Button onClick={() => fileInputRef.current.click()} variant="default" className="w-full max-w-sm" disabled={isUploading}>
-                {isUploading ? (
-                    <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> מנתח את הפוליסה...</>
-                ) : (
-                    <><Upload className="mr-2 h-4 w-4" /> העלאת קובץ (PDF או תמונה)</>
-                )}
+            <Button type="button" className="w-full mt-2" variant="outline" onClick={handleSave}>
+                שמור פרטי משתמש
             </Button>
-        </div>
+        </form>
     );
 };
 
@@ -70,30 +65,51 @@ const QuestionCard = ({ questionText, onAnswer, answer }) => {
 };
 
 // Step 2 & 3: The new dynamic questionnaire
-const SmartQuestionnaireStep = ({ analysis, onFinish }) => {
+const SmartQuestionnaireStep = ({ analysis, onFinish, userData }) => {
     const [answers, setAnswers] = useState({});
+
+    // userData is now received as a prop
+
+    // Filtering logic based on user profile
+    const filteredAnalysis = analysis.filter(item => {
+        switch (item.category) {
+            case "כולנו":
+                return true;
+            case "נשים והריון":
+                return userData.gender === "female" && (userData.is_pregnant || userData.planning_pregnancy);
+            case "ילדים":
+                return Array.isArray(userData.children_ages) && userData.children_ages.length > 0;
+            case "מבוגרים":
+                if (!userData.date_of_birth) return false;
+                const birthYear = new Date(userData.date_of_birth).getFullYear();
+                const age = new Date().getFullYear() - birthYear;
+                return age >= 18;
+            default:
+                return true;
+        }
+    });
 
     const handleAnswer = (questionId, answer) => {
         setAnswers(prev => ({ ...prev, [questionId]: answer }));
     };
 
     // Filter for items that need follow-up
-    const itemsWithFollowUps = analysis.filter(item => answers[item.service_name] === true && item.follow_up_questions.length > 0);
+    const itemsWithFollowUps = filteredAnalysis.filter(item => answers[item.service_name] === true && item.follow_up_questions.length > 0);
 
     // Check if all follow-up questions have been answered
     const allFollowUpsAnswered = itemsWithFollowUps.every(item =>
         item.follow_up_questions.every(fu_question => answers[`${item.service_name}_${fu_question}`] !== undefined)
     );
-    
-    const relevantRefunds = analysis.filter(item => {
+
+    const relevantRefunds = filteredAnalysis.filter(item => {
         // Must have answered 'yes' to initial question
         if(answers[item.service_name] !== true) return false;
-        
+
         // If there are follow ups, all must be 'yes' to be included
         if(item.follow_up_questions.length > 0) {
             return item.follow_up_questions.every(fu_question => answers[`${item.service_name}_${fu_question}`] === true);
         }
-        
+
         // If no follow ups, just a 'yes' on initial is enough
         return true;
     });
@@ -104,7 +120,7 @@ const SmartQuestionnaireStep = ({ analysis, onFinish }) => {
                 <h3 className="text-lg font-semibold text-center mb-2">שאלון חכם</h3>
                 <p className="text-sm text-gray-500 text-center">ענו 'כן' רק אם השירות רלוונטי עבורכם.</p>
                 <div className="space-y-4 mt-4">
-                    {analysis.map(item => (
+                    {filteredAnalysis.map(item => (
                         <QuestionCard
                             key={item.service_name}
                             questionText={item.initial_question}
@@ -138,7 +154,7 @@ const SmartQuestionnaireStep = ({ analysis, onFinish }) => {
                     </div>
                 </div>
             )}
-            
+
             <Button onClick={() => onFinish(relevantRefunds)} className="w-full" disabled={Object.keys(answers).length === 0 || (itemsWithFollowUps.length > 0 && !allFollowUpsAnswered)}>
                 הצג את ההחזרים שלי
                 <ArrowLeft className="mr-2 h-4 w-4" />
@@ -196,19 +212,40 @@ const ResultsStep = ({ results, onRestart }) => {
 export default function Wizard() {
     const [step, setStep] = useState(0);
     const [user, setUser] = useState(null);
-    const [userData, setUserData] = useState({});
+    const [userData, setUserData] = useState({
+        email: "",
+        date_of_birth: "",
+        gender: "",
+        insurance_provider: "",
+        children_ages: [],
+        is_pregnant: false,
+        planning_pregnancy: false,
+        is_smoker: false
+    });
     
     const [fullAnalysis, setFullAnalysis] = useState([]);
     const [results, setResults] = useState([]);
     
     const [isLoading, setIsLoading] = useState(true);
     const [isUploading, setIsUploading] = useState(false);
+    const [existingPolicyFile, setExistingPolicyFile] = useState(null);
     const { toast } = useToast();
 
     useEffect(() => {
         const loadUser = async () => {
             try {
-                const currentUser = await User.me();
+                const email = window.localStorage.getItem('user_email');
+                if (!email) {
+                    setUser(null);
+                    setIsLoading(false);
+                    return;
+                }
+                const { data: currentUser, error } = await getUserProfile(email);
+                if (error || !currentUser) {
+                    setUser(null);
+                    setIsLoading(false);
+                    return;
+                }
                 setUser(currentUser);
                 setUserData({
                     date_of_birth: currentUser.date_of_birth || '',
@@ -219,37 +256,84 @@ export default function Wizard() {
                     is_smoker: currentUser.is_smoker || false,
                     insurance_provider: currentUser.insurance_provider || ''
                 });
-            } catch (e) { /* User not logged in */ } 
+            } catch (e) { /* User not logged in */ }
             finally { setIsLoading(false); }
         };
         loadUser();
     }, []);
 
     const handlePersonalDetailsNext = async () => {
-        if (user) await User.updateMyUserData(userData);
+        if (user) await updateUserProfile(user.email, userData);
         setStep(1);
     };
 
-    const handlePolicyUpload = async (file) => {
+    const handlePolicyUpload = async (file) => {debugger
         setIsUploading(true);
         try {
+            // 1. Hash the file content (SHA-256)
+            const arrayBuffer = await file.arrayBuffer();
+            const hashBuffer = await window.crypto.subtle.digest('SHA-256', arrayBuffer);
+            const hashArray = Array.from(new Uint8Array(hashBuffer));
+            const hashHex = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+
+            // 2. Get user profile from Supabase
+            const { data: profileData, error: profileError } = await supabase
+                .from('profiles')
+                .select('id, insurance_policy_id')
+                .eq('email', user?.email || '')
+                .single();
+            if (profileError) {
+                toast({ title: "שגיאת פרופיל", description: profileError.message, variant: "destructive" });
+                setIsUploading(false);
+                return;
+            }
+
+            // 3. If profile has insurance_policy_id, check the policy
+            if (profileData && profileData.insurance_policy_id) {
+                const { data: policyData, error: policyError } = await supabase
+                    .from('insurance_policies')
+                    .select('file_name, file_hash')
+                    .eq('id', profileData.insurance_policy_id)
+                    .single();
+                if (policyError) {
+                    toast({ title: "שגיאת פוליסה", description: policyError.message, variant: "destructive" });
+                    setIsUploading(false);
+                    return;
+                }
+                if (policyData.file_hash === hashHex) {
+                    setExistingPolicyFile(policyData.file_name);
+                    setStep(1); // Show file name and next btn
+                    setIsUploading(false);
+                    return;
+                } else {
+                    toast({ title: "פוליסה קיימת שונה", description: "הפוליסה הקיימת שונה מהקובץ שהועלה. אנא פנה לתמיכה לעדכון.", variant: "destructive" });
+                    setIsUploading(false);
+                    return;
+                }
+            }
+
+            // 4. If no insurance_policy_id, upload file and create policy
             const { file_url } = await UploadFile({ file });
             const analysisPrompt = `You are a world-class insurance policy analyst. Your task is to meticulously analyze the attached insurance policy document and transform its complex clauses into a simple, two-tiered questionnaire for the user.
 Primary Goal: Extract EVERY SINGLE coverage item, refund, or eligibility clause. Do not miss any.
-Output Structure: For each clause you find, you MUST format it into a JSON object with the following fields:
-1.  \`service_name\`: (string) A clear, user-friendly name for the service. E.g., "Chiropractic Treatments", "Second Medical Opinion".
-2.  \`category\`: (string) A general category. E.g., "Alternative Medicine", "Consultations".
-3.  \`initial_question\`: (string) A REQUIRED broad, general Yes/No question in HEBREW. Format: "האם השתמשת, ביצעת או נזקקת ל[service_name]?"
-4.  \`follow_up_questions\`: (array of strings) A list of specific, targeted questions in HEBREW to be asked ONLY if the user answers "yes" to the \`initial_question\`. These questions must clarify the specific conditions from the policy. E.g., ["האם הטיפול בוצע בחו״ל?", "האם נדרשה הפניית רופא?"]. If no follow-ups are needed, provide an empty array [].
-5.  \`refund_details\`: (object) An object containing the raw details extracted directly from the policy, all in HEBREW.
-The final JSON output should be a single object containing an array of these structured items.`;
-
+Additionally, extract the name of the insurance provider from the document and include it as 'insurance_provider' (string) in the output.
+For each coverage item, you MUST assign a category from the following options ONLY: "כולנו" (general, applies to everyone), "נשים והריון" (women & pregnancy), "ילדים" (children), "מבוגרים" (adults). Choose the most appropriate category for each item.
+Output Structure: The final JSON output should be a single object containing:
+1.  'insurance_provider': (string) The name of the insurance provider as found in the document.
+2.  'coverage_analysis': (array) For each clause you find, format it into a JSON object with the following fields:
+    - 'service_name': (string) A clear, user-friendly name for the service. E.g., "Chiropractic Treatments", "Second Medical Opinion".
+    - 'category': (string) One of: "כולנו", "נשים והריון", "ילדים", "מבוגרים".
+    - 'initial_question': (string) A REQUIRED broad, general Yes/No question in HEBREW. Format: "האם השתמשת, ביצעת או נזקקת ל[service_name]?"
+    - 'follow_up_questions': (array of strings) A list of specific, targeted questions in HEBREW to be asked ONLY if the user answers "yes" to the 'initial_question'. These questions must clarify the specific conditions from the policy. E.g., ["האם הטיפול בוצע בחו״ל?", "האם נדרשה הפניית רופא?"]. If no follow-ups are needed, provide an empty array [].
+    - 'refund_details': (object) An object containing the raw details extracted directly from the policy, all in HEBREW.
+`;
             const analysisResponse = await InvokeLLM({
                 prompt: analysisPrompt,
                 file_urls: [file_url],
                 response_json_schema: {
                     type: "object",
                     properties: {
+                        insurance_provider: { type: "string" },
                         coverage_analysis: {
                             type: "array",
                             items: {
@@ -275,17 +359,34 @@ The final JSON output should be a single object containing an array of these str
                     }
                 }
             });
-
-            if (analysisResponse && analysisResponse.coverage_analysis.length > 0) {
-                setFullAnalysis(analysisResponse.coverage_analysis);
-                toast({ title: "ניתוח הפוליסה הושלם!", description: `זוהו ${analysisResponse.coverage_analysis.length} סעיפי כיסוי.` });
-                setStep(2);
-            } else {
-                toast({ title: "שגיאה בניתוח", description: "לא הצלחנו לזהות סעיפי כיסוי בפוליסה. אנא ודאו שהקובץ ברור.", variant: "destructive" });
+            // Insert new policy
+            const { data: insertData, error: insertError } = await supabase
+                .from('insurance_policies')
+                .insert([
+                    {
+                        file_hash: hashHex,
+                        file_url,
+                        uploaded_at: new Date().toISOString(),
+                        file_name: file.name,
+                        insurance_provider: analysisResponse?.insurance_provider || null
+                    }
+                ])
+                .select();
+            if (insertError || !insertData || !insertData[0]) {
+                toast({ title: "שגיאה בשמירת הפוליסה", description: insertError?.message || 'לא התקבל מזהה פוליסה', variant: "destructive" });
+                setIsUploading(false);
+                return;
             }
+            // Update profile with insurance_policy_id
+            await supabase
+                .from('profiles')
+                .update({ insurance_policy_id: insertData[0].id })
+                .eq('id', profileData.id);
+            setExistingPolicyFile(file.name);
+            setStep(1); // Show file name and next btn
+            setIsUploading(false);
         } catch (error) {
             toast({ title: "שגיאה כללית", description: "אירעה שגיאה בעיבוד הפוליסה.", variant: "destructive" });
-        } finally {
             setIsUploading(false);
         }
     };
@@ -310,6 +411,10 @@ The final JSON output should be a single object containing an array of these str
         setResults([]);
     };
 
+    const handleExistingPolicyNext = () => {
+        setStep(2);
+    };
+
     const getProgress = () => {
         if (step === 0) return 10;
         if (step === 1) return 30;
@@ -323,8 +428,8 @@ The final JSON output should be a single object containing an array of these str
     const renderStep = () => {
         switch(step) {
             case 0: return <PersonalDetailsStep userData={userData} setUserData={setUserData} onNext={handlePersonalDetailsNext} />;
-            case 1: return <UploadStep onUpload={handlePolicyUpload} isUploading={isUploading} />;
-            case 2: return <SmartQuestionnaireStep analysis={fullAnalysis} onFinish={handleFinish} />;
+            case 1: return <UploadStep onUpload={handlePolicyUpload} isUploading={isUploading} existingPolicyFile={existingPolicyFile} onNext={handleExistingPolicyNext} />;
+            case 2: return <SmartQuestionnaireStep analysis={fullAnalysis} onFinish={handleFinish} userData={userData} />;
             case 3: return <ResultsStep results={results} onRestart={handleRestart} />;
             default: return null;
         }
