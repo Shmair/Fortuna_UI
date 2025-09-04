@@ -117,7 +117,7 @@ export default function Wizard() {
     
     const handlePolicyUpload = async (file) => {
         setIsUploading(true);
-        try {
+        try {debugger; // consider removing this code
             const email = userData.email || user?.email;
             if (!email) {
                 toast.error(ERROR_MISSING_EMAIL);
@@ -183,6 +183,7 @@ export default function Wizard() {
                             isUploading={isUploading}
                             existingPolicyFile={existingPolicyFile}
                             onUpload={handlePolicyUpload}
+                            email={userData.email || user?.email}
                         />
                     )}
                     {step === 2 && (

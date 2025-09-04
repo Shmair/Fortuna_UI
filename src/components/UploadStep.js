@@ -2,7 +2,7 @@ import React from 'react';
 import { Button } from './ui/button';
 import { Upload } from 'lucide-react';
 
-export default function UploadStep({ onUpload, isUploading, existingPolicyFile, onNext }) {
+export default function UploadStep({ onUpload, isUploading, existingPolicyFile, onNext, email }) {
     const [file, setFile] = React.useState(null);
 
     const handleFileChange = (e) => {
@@ -13,6 +13,8 @@ export default function UploadStep({ onUpload, isUploading, existingPolicyFile, 
     async function uploadPolicyFile(file) {
         const formData = new FormData();
         formData.append('file', file);
+        formData.append('email', email || window.localStorage.getItem('user_email') || '');
+
         // Send file and metadata to backend in one request
         const response = await fetch('http://localhost:4000/api/policy', {
             method: 'POST',
