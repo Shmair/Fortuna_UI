@@ -5,7 +5,6 @@ import SmartQuestionnaireStep from '../components/SmartQuestionnaireStep';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '../components/ui/card';
 import { Progress } from '../components/ui/progress';
 import UploadStep from '../components/UploadStep';
-import { getUserProfile } from '../entities/all';
 
 import PersonalDetailsStep from './PersonalDetailsStep';
 

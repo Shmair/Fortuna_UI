@@ -1,13 +1,13 @@
 
-import React, { useState, useEffect } from 'react';
-import { getUserProfile, updateUserProfile } from '../entities/all';
+import { useEffect, useState } from 'react';
 import { Button } from '../components/ui/button';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../components/ui/card';
 import { Input } from '../components/ui/input';
 import { Label } from '../components/ui/label';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '../components/ui/card';
 import { useToast } from "../components/ui/use-toast";
-import { createPageUrl } from '../utils';
 import UserProfileForm from '../components/UserProfileForm';
+
+import { createPageUrl } from '../utils';
 
 export default function ProfilePage() {
     const [user, setUser] = useState(null);
@@ -24,7 +24,9 @@ export default function ProfilePage() {
                     setIsLoading(false);
                     return;
                 }
-                const { data: currentUser, error } = await getUserProfile(email);
+                // Fetch user profile from backend API
+                const res = await fetch(`/api/profile?email=${encodeURIComponent(email)}`);
+                const { data: currentUser, error } = await res.json();
                 if (error || !currentUser) {
                     setUser(null);
                     setIsLoading(false);
@@ -61,8 +63,17 @@ export default function ProfilePage() {
         // Remove non-updatable fields before sending
         const { email, ...updatableData } = userData;
         try {
-            await updateUserProfile(userData.email, updatableData);
-            toast.success("הפרופיל עודכן בהצלחה! הפרטים שלך נשמרו.");
+            const res = await fetch('/api/profile', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ ...updatableData, email: userData.email })
+            });
+            const { error } = await res.json();
+            if (!error) {
+                toast.success("הפרופיל עודכן בהצלחה! הפרטים שלך נשמרו.");
+            } else {
+                toast.error("שגיאה בעדכון הפרופיל: " + error.message);
+            }
         } catch (error) {
             console.error("Failed to update user", error);
             toast.error("שגיאה בעדכון הפרופיל: אנא נסה שוב מאוחר יותר.");

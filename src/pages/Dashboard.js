@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { getUserProfile, UserSubmission, PotentialRefund } from '../entities/all';
+import { UserSubmission } from '../entities/all';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
 import { Button } from '../components/ui/button';
 import { Badge } from '../components/ui/badge';
@@ -28,7 +28,9 @@ export default function Dashboard() {
                     setIsLoading(false);
                     return;
                 }
-                const { data: currentUser, error } = await getUserProfile(email);
+                // Fetch user profile from backend API
+                const res = await fetch(`/api/profile?email=${encodeURIComponent(email)}`);
+                const { data: currentUser, error } = await res.json();
                 if (error || !currentUser) {
                     setUser(null);
                     setIsLoading(false);
@@ -41,7 +43,9 @@ export default function Dashboard() {
 
                 if (userSubmissions.length > 0) {
                     const refundIds = userSubmissions.map(s => s.potential_refund_id);
-                    const refunds = await PotentialRefund.list(); // Simplified for now
+                    // Fetch potential refunds from backend API
+                    const response = await fetch('/api/potential-refunds');
+                    const refunds = await response.json();
                     const refundsMap = refunds.reduce((acc, refund) => {
                         acc[refund.id] = refund;
                         return acc;

@@ -1,21 +1,5 @@
-export const getUserProfile = async (email) => {
-  const { data, error } = await supabase
-    .from('profiles')
-    .select('*')
-    .eq('email', email)
-    .single();
-  return { data, error };
-};
 
-export const updateUserProfile = async (email, profileData) => {
-  // Use upsert to create or update profile by email
-  const { data, error } = await supabase
-    .from('profiles')
-    .upsert([{ email, ...profileData }], { onConflict: ['email'] });
-  return { data, error };
-};
 // Mock DB entities for local development
-import { supabase } from '../utils/supabaseClient';
 
 export const PotentialRefund = {
   async list() {
@@ -60,11 +44,3 @@ export const UserSubmission = {
   }
 };
 
-export const saveOrUpdateUserProfile = async (profileData) => {
-    // profileData should include: email, full_name, date_of_birth, gender, children_ages, is_pregnant, planning_pregnancy, is_smoker, insurance_policy_id
-    // Try to upsert (insert or update) the profile by email
-    const { data, error } = await supabase
-        .from('profiles')
-        .upsert([profileData], { onConflict: ['email'] });
-    return { data, error };
-};

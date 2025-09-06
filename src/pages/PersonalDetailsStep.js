@@ -3,7 +3,7 @@ import { toast } from 'sonner';
 import { Button } from '../components/ui/button';
 import { ArrowLeft } from 'lucide-react';
 import UserProfileForm from '../components/UserProfileForm.js';
-import { updateUserProfile } from '../entities/all';
+
 
 const PersonalDetailsStep = ({ userData, setUserData, onNext }) => {
     const requiredFields = ["email", "date_of_birth", "gender"];
@@ -20,12 +20,22 @@ const PersonalDetailsStep = ({ userData, setUserData, onNext }) => {
         if (isValid) {
             // Save profile before advancing
             if (userData.email) {
-                updateUserProfile(userData.email, userData).then(({ error }) => {
+                fetch('/api/profile', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(userData)
+                })
+                .then(res => res.json())
+                .then(({ error }) => {
                     if (!error) {
                         toast.success("הפרטים נשמרו בהצלחה. הפרופיל שלך עודכן במערכת.");
                     } else {
                         toast.error("שגיאה בשמירת הפרופיל: " + error.message);
                     }
+                    onNext();
+                })
+                .catch(() => {
+                    toast.error("שגיאה בשמירת הפרופיל.");
                     onNext();
                 });
             } else {
