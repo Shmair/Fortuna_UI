@@ -23,6 +23,7 @@ const SUCCESS_PROFILE = "הפרטים נשמרו בהצלחה. הפרופיל ש
 
 
 
+import Header from '../components/Header';
 
 export default function Wizard() {
     const [step, setStep] = useState(0);
@@ -161,49 +162,54 @@ export default function Wizard() {
     }
 
     return (
-        <div className="max-w-2xl mx-auto py-8">
-            <Card>
-                <CardHeader>
-                    <CardTitle>הגשת בקשת החזר ביטוח</CardTitle>
-                    <CardDescription>מלא את הפרטים והעלה את הפוליסה שלך</CardDescription>
-                </CardHeader>
-                <CardContent>
-                    <Progress value={step * 33} max={100} />
-                    {step === 0 && (
-                        <PersonalDetailsStep
-                            userData={userData}
-                            setUserData={setUserData}
-                            onNext={handlePersonalDetailsNext}
-                            isLoading={isLoading}
-                        />
-                    )}
-                    {step === 1 && (
-                        <UploadStep
-                            isUploading={isUploading}
-                            existingPolicyFile={existingPolicyFile}
-                            onUpload={handlePolicyUpload}
-                            email={userData.email || user?.email}
-                        />
-                    )}
-                    {step === 2 && (
-                        <SmartQuestionnaireStep
-                            questions={fullAnalysis}
-                            userData={userData}
-                            setUserData={setUserData}
-                            onNext={() => setStep(3)}
-                        />
-                    )}
-                    {step === 3 && (
-                        <ResultsStep
-                            results={results}
-                            userData={userData}
-                        />
-                    )}
-                </CardContent>
-                <CardFooter>
-                    {/* Navigation buttons or summary can go here */}
-                </CardFooter>
-            </Card>
-        </div>
+        <>
+            <Header />
+            <div className="flex flex-col items-center justify-center pt-24 pb-12 min-h-[80vh]">
+                <div className="w-full max-w-2xl">
+                    <Card>
+                        <CardHeader className="text-center">
+                            <CardTitle className="text-2xl font-bold text-blue-700">הגשת בקשת החזר ביטוח</CardTitle>
+                            <CardDescription className="text-blue-500">מלא את הפרטים והעלה את הפוליסה שלך</CardDescription>
+                        </CardHeader>
+                        <CardContent>
+                            <Progress value={step * 33} max={100} />
+                            {step === 0 && (
+                                <PersonalDetailsStep
+                                    userData={userData}
+                                    setUserData={setUserData}
+                                    onNext={handlePersonalDetailsNext}
+                                    isLoading={isLoading}
+                                />
+                            )}
+                            {step === 1 && (
+                                <UploadStep
+                                    isUploading={isUploading}
+                                    existingPolicyFile={existingPolicyFile}
+                                    onUpload={handlePolicyUpload}
+                                    email={userData.email || user?.email}
+                                />
+                            )}
+                            {step === 2 && (
+                                <SmartQuestionnaireStep
+                                    questions={fullAnalysis}
+                                    userData={userData}
+                                    setUserData={setUserData}
+                                    onNext={() => setStep(3)}
+                                />
+                            )}
+                            {step === 3 && (
+                                <ResultsStep
+                                    results={results}
+                                    userData={userData}
+                                />
+                            )}
+                        </CardContent>
+                        <CardFooter>
+                            {/* Navigation buttons or summary can go here */}
+                        </CardFooter>
+                    </Card>
+                </div>
+            </div>
+        </>
     );
 }

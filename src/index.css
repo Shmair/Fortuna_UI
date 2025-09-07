@@ -1,8 +1,7 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
-
 body {
   direction: rtl;
-  font-family: 'Inter', sans-serif;
+  font-family: 'Varela Round', 'Inter', sans-serif;
 }
