@@ -2,6 +2,59 @@
 @tailwind components;
 @tailwind utilities;
 body {
+/* Header button styles */
+.btn-dark {
+  background: #14213d;
+  color: #fff;
+  border: none;
+  border-radius: 12px;
+  font-weight: 700;
+  font-size: 18px;
+  padding: 10px 22px;
+  box-shadow: 0 2px 8px rgba(20,33,61,0.08);
+  margin-left: 8px;
+  font-family: 'Varela Round', Arial, sans-serif;
+  transition: background 0.2s;
+}
+.btn-dark:hover {
+  background: #1a2a4d;
+}
+.btn-outline {
+  background: #fff;
+  color: #14213d;
+  border: 2px solid #14213d;
+  border-radius: 12px;
+  font-weight: 700;
+  font-size: 18px;
+  padding: 10px 22px;
+  box-shadow: 0 2px 8px rgba(20,33,61,0.08);
+  font-family: 'Varela Round', Arial, sans-serif;
+  transition: background 0.2s;
+}
+.btn-outline:hover {
+  background: #f3f6fa;
+}
+/* Shared CTA button style */
+.cta-btn {
+  background-color: #63cf80ff;
+  font-family: 'Rubik', Arial, sans-serif;
+  font-size: 22px;
+  font-weight: 400;
+  line-height: 35px;
+  word-spacing: 0;
+  color: #163634ff;
+  box-shadow: 0px 0px 12px 3px rgba(57, 97, 65, 0.14);
+  border: 1px solid #34b152;
+  border-radius: 35px;
+  padding: 15px 25px 10px 15px;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  transition: background 0.2s;
+}
+.cta-btn:hover {
+  background-color: #b8f1c6ff;
+}
   direction: rtl;
   font-family: 'Varela Round', 'Inter', sans-serif;
 }

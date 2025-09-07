@@ -20,8 +20,18 @@ export default function Header() {
         </nav>
       </div>
       <div className="flex items-center gap-2 min-w-[160px] justify-end">
-        <Link to={createPageUrl("Login")} className="px-4 py-2 rounded-full border border-blue-600 text-blue-600 hover:bg-blue-50 font-bold" style={{ fontFamily: 'Varela Round, Arial, sans-serif' }}>כניסה</Link>
-        <Link to={createPageUrl("Register")} className="px-4 py-2 rounded-full bg-blue-600 text-white hover:bg-blue-700 font-bold" style={{ fontFamily: 'Varela Round, Arial, sans-serif' }}>הרשמה</Link>
+        <Link
+          to={createPageUrl("Login")}
+          className="btn-dark"
+        >
+          כניסה
+        </Link>
+        <Link
+          to={createPageUrl("Register")}
+          className="btn-outline"
+        >
+          הרשמה
+        </Link>
       </div>
     </header>
   );

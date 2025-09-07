@@ -7,8 +7,8 @@ import Header from "../components/Header";
 
 const FeatureCard = ({ icon, title, description }) => (
   <div className="bg-white p-6 rounded-lg shadow-sm hover:shadow-lg transition-shadow">
-    <div className="flex items-center justify-center h-12 w-12 rounded-full bg-blue-100 text-blue-600 mb-4">
-      {icon}
+    <div className="flex items-center justify-center h-12 w-12 rounded-full mb-4" style={{ background: '#e6f8f2' }}>
+      {React.cloneElement(icon, { color: '#63cf80ff' })}
     </div>
     <h3 className="text-lg font-semibold mb-2">{title}</h3>
     <p className="text-gray-600 text-sm">{description}</p>
@@ -31,9 +31,32 @@ export default function Home() {
           </p>
           <div className="mt-10">
             <Link to={createPageUrl("Wizard")}> 
-              <Button size="lg" className="bg-blue-600 hover:bg-blue-700">
+              <Button
+                size="lg"
+                style={{
+                  backgroundColor: '#63cf80ff',
+                  fontFamily: 'Rubik, Arial, sans-serif',
+                  fontSize: 22,
+                  fontWeight: 400,
+                  lineHeight: '35px',
+                  wordSpacing: 0,
+                  color: '#163634ff',
+                  boxShadow: '0px 0px 12px 3px rgba(57, 97, 65, 0.14)',
+                  borderStyle: 'solid',
+                  borderWidth: '1px',
+                  borderColor: 'rgb(52 177 82)',
+                  borderRadius: '35px',
+                  padding: '15px 25px 10px 15px',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '8px',
+                  transition: 'background 0.2s',
+                }}
+                onMouseOver={e => e.currentTarget.style.backgroundColor = '#b8f1c6ff'}
+                onMouseOut={e => e.currentTarget.style.backgroundColor = '#63cf80ff'}
+              >
                 מצאו את ההחזרים שלכם
-                <ArrowLeft className="mr-2 h-5 w-5" />
+                <ArrowLeft className="mr-2 h-5 w-5" style={{ color: '#38605D' }} />
               </Button>
             </Link>
           </div>
