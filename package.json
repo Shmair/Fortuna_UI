@@ -7,6 +7,7 @@
     "date-fns": "^3.6.0",
     "framer-motion": "^11.0.0",
     "lucide-react": "latest",
+    "pdf-parse": "^1.1.1",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "react-router-dom": "^6.23.0",
@@ -23,7 +24,9 @@
     "start": "react-scripts start",
     "build": "react-scripts build",
     "test": "react-scripts test",
-    "eject": "react-scripts eject"
+    "eject": "react-scripts eject",
+    "postinstall": "patch-package" 
+
   },
   "browserslist": {
     "production": [

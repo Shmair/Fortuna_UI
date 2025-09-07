@@ -168,7 +168,7 @@ export default function Wizard() {
                 <div className="w-full max-w-2xl">
                     <Card>
                         <CardHeader className="text-center">
-                            <CardTitle className="text-2xl font-bold text-blue-700">הגשת בקשת החזר ביטוח</CardTitle>
+                            <CardTitle className="text-2xl font-bold" style={{ color: '#63cf80ff' }}>בדיקת החזר ביטוח</CardTitle>
                             <CardDescription className="text-blue-500">מלא את הפרטים והעלה את הפוליסה שלך</CardDescription>
                         </CardHeader>
                         <CardContent>

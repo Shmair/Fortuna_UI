@@ -8,7 +8,9 @@ export default function Header() {
       style={{ height: 72, fontFamily: 'Varela Round, Arial, sans-serif' }}
     >
       <div className="flex items-center gap-2 min-w-[160px]">
-        <img src="/RefunD logo1.png" alt="RefunD Logo" style={{ width: 250, height: 150 }} />
+        <Link to={createPageUrl("Home")}> 
+          <img src="/RefunD logo1.png" alt="RefunD Logo" style={{ width: 250, height: 150, cursor: 'pointer' }} />
+        </Link>
       </div>
       <div className="flex-1 flex justify-center">
         <nav className="flex items-center gap-8 text-lg font-bold" style={{ fontFamily: 'Varela Round, Arial, sans-serif' }}>
