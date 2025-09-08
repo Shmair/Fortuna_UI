@@ -44,10 +44,11 @@ export default function Wizard() {
     
     const [isLoading, setIsLoading] = useState(true);
     const [isUploading, setIsUploading] = useState(false);
+    const [uploadProgress, setUploadProgress] = useState(0);
     const [existingPolicyFile, setExistingPolicyFile] = useState(null);
 
     useEffect(() => {
-        const loadUser = async () => {debugger;
+        const loadUser = async () => {
             try {
                 const email = window.localStorage.getItem(LOCALSTORAGE_EMAIL);
                 if (!email) {
@@ -115,8 +116,9 @@ export default function Wizard() {
         }
     };
     
-    const handlePolicyUpload = async (file) => {
-        setIsUploading(true);
+    const handlePolicyUpload = async (result) => {debugger;
+    setIsUploading(true);
+    setUploadProgress(0);
         try {debugger; // consider removing this code
             const email = userData.email || user?.email;
             if (!email) {
@@ -128,18 +130,23 @@ export default function Wizard() {
             const formData = new FormData();
             formData.append('file', file);
             formData.append('email', email);
+            // Simulate progress for now (replace with SSE/WebSocket for real-time updates)
+            setUploadProgress(10);
+            // fetch file's data from insurance_policies
             const response = await fetch(API_POLICY, {
                 method: 'POST',
                 body: formData
             });
-            const result = await response.json();
+            setUploadProgress(80);
+           // const result = await response.json();
+            setUploadProgress(100);
             if (!response.ok || !result.success) {
                 toast.error(ERROR_POLICY_SAVE + (result.message || ''));
                 setIsUploading(false);
                 return;
             }
             // If duplicate, show existing file name and questions
-            if (result.duplicate) {
+            if (result.duplicate) {debugger;
                 setExistingPolicyFile(result.file_name);
                 setFullAnalysis(result.coverage_analysis || []);
                 setStep(1);
@@ -182,12 +189,16 @@ export default function Wizard() {
                                 />
                             )}
                             {step === 1 && (
-                                <UploadStep
-                                    isUploading={isUploading}
-                                    existingPolicyFile={existingPolicyFile}
-                                    onUpload={handlePolicyUpload}
-                                    email={userData.email || user?.email}
-                                />
+                                <>
+                                    <UploadStep
+                                        isUploading={isUploading}
+                                        existingPolicyFile={existingPolicyFile}
+                                        onUpload={handlePolicyUpload}
+                                        email={userData.email || user?.email}
+                                        uploadProgress={uploadProgress}
+                                    />
+
+                                </>
                             )}
                             {step === 2 && (
                                 <SmartQuestionnaireStep

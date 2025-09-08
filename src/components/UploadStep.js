@@ -1,8 +1,9 @@
 import React from 'react';
 import { Button } from './ui/button';
 import { Upload } from 'lucide-react';
+import { Progress } from './ui/progress';
 
-export default function UploadStep({ onUpload, isUploading, existingPolicyFile, onNext, email }) {
+export default function UploadStep({ onUpload, isUploading, existingPolicyFile, onNext, email }) {debugger;
     const [file, setFile] = React.useState(null);
 
     const handleFileChange = (e) => {
@@ -10,7 +11,7 @@ export default function UploadStep({ onUpload, isUploading, existingPolicyFile, 
     };
 
     // Replace direct Supabase upload logic with backend API upload
-    async function uploadPolicyFile(file) {
+    async function uploadPolicyFile(file) {debugger;
         const formData = new FormData();
         formData.append('file', file);
         formData.append('email', email || window.localStorage.getItem('user_email') || '');
@@ -30,9 +31,9 @@ export default function UploadStep({ onUpload, isUploading, existingPolicyFile, 
     const handleUpload = async () => {
         if (file && onUpload) {
             try {
-                const fileUrl = await uploadPolicyFile(file);
-                await onUpload(fileUrl); // Pass the uploaded file URL to parent
-            } catch (err) {debugger;
+                const response = await uploadPolicyFile(file);
+                await onUpload(response); // Pass the uploaded file URL to parent
+            } catch (err) {
                 alert('שגיאה בהעלאת הקובץ: ' + err.message);
             }
         }
@@ -51,10 +52,16 @@ export default function UploadStep({ onUpload, isUploading, existingPolicyFile, 
                 </div>
             ) : (
                 <>
-                    <input type="file" accept=".pdf,.jpg,.jpeg,.png" onChange={handleFileChange} className="w-full" />
+                    <input type="file" accept=".pdf" onChange={handleFileChange} className="w-full" />
                     <Button className="w-full mt-4" onClick={handleUpload} disabled={!file || isUploading}>
                         {isUploading ? 'מעלה...' : 'העלה פוליסה'} <Upload className="ml-2 h-4 w-4" />
                     </Button>
+                    {isUploading && (
+                        <div className="mt-4">
+                            <Progress value={typeof window.uploadProgress !== 'undefined' ? window.uploadProgress : 10} />
+                            <div className="text-xs text-gray-500 mt-1">{typeof window.uploadProgress !== 'undefined' ? window.uploadProgress : 10}%</div>
+                        </div>
+                    )}
                 </>
             )}
         </div>
