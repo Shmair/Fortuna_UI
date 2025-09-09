@@ -174,6 +174,7 @@ debugger
                                     setUserData={setUserData}
                                     onNext={handleSavePersonalDetails}
                                     isLoading={isLoading}
+                                    onBack={() => window.history.back()}
                                 />
                             )}
                             {step === 1 && (
@@ -183,6 +184,7 @@ debugger
                                         onUpload={handlePolicyFileUpload}
                                         email={userData.email || user?.email}
                                         uploadProgress={uploadProgress}
+                                        onBack={() => setStep(0)}
                                     />
 
                                 </>
@@ -202,6 +204,7 @@ debugger
                                 <ResultsStep
                                     results={results}
                                     userData={userData}
+                                    onBack={() => setStep(2)}
                                 />
                             )}
                         </CardContent>

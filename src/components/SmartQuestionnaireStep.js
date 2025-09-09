@@ -1,8 +1,8 @@
+import { ArrowLeft, Check, X } from 'lucide-react';
 import { useState } from 'react';
+import BackButton from '../components/BackButton.js';
 import { Button } from '../components/ui/button';
 import { Card } from '../components/ui/card';
-import { Check, X, ArrowLeft } from 'lucide-react';
-import { ArrowRight } from 'lucide-react';
 
 
 // QuestionCard: Single question UI
@@ -11,10 +11,30 @@ const QuestionCard = ({ questionText, onAnswer, answer }) => (
         <div className="flex justify-between items-center">
             <p className="flex-1 font-medium">{questionText}</p>
             <div className="flex gap-2">
-                <Button size="icon" variant={answer === true ? 'default' : 'outline'} className={`bg-green-100 hover:bg-green-200 text-green-700 ${answer === true ? '!bg-green-600 !text-white' : ''}`} onClick={() => onAnswer(true)}>
+                <Button
+                    size="icon"
+                    style={{
+                        backgroundColor: answer === true ? '#d1fae5' : '#e6f4ea', // greenish
+                        borderColor: '#34d399',
+                        color: '#059669',
+                        boxShadow: 'none'
+                    }}
+                    selected={answer === true}
+                    onClick={() => onAnswer(true)}
+                >
                     <Check className="w-4 h-4" />
                 </Button>
-                <Button size="icon" variant={answer === false ? 'destructive' : 'outline'} className={`bg-red-100 hover:bg-red-200 text-red-700 ${answer === false ? '!bg-red-600 !text-white' : ''}`} onClick={() => onAnswer(false)}>
+                <Button
+                    size="icon"
+                    style={{
+                        backgroundColor: answer === false ? '#fee2e2' : '#fbeaea', // reddish
+                        borderColor: '#f87171',
+                        color: '#dc2626',
+                        boxShadow: 'none'
+                    }}
+                    selected={answer === false}
+                    onClick={() => onAnswer(false)}
+                >
                     <X className="w-4 h-4" />
                 </Button>
             </div>
@@ -113,14 +133,7 @@ export default function SmartQuestionnaireStep({ questions, onNext, userData, on
                 </Button>
             </div>
             <div className="mt-4 flex w-full">
-                <button
-                    className="flex items-center gap-2 px-4 py-2 bg-white rounded hover:bg-gray-100 text-[#374151] font-semibold border border-gray-200 shadow-sm"
-                    style={{ minWidth: '90px' }}
-                    onClick={onBack}
-                >
-                    חזור
-                    <ArrowRight className="h-4 w-4" />
-                </button>
+               <BackButton onClick={onBack} />
             </div>
         </div>
     );

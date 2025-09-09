@@ -1,9 +1,10 @@
+import { Upload } from 'lucide-react';
 import React from 'react';
+import BackButton from './BackButton';
 import { Button } from './ui/button';
-import { Upload, ArrowRight } from 'lucide-react';
 import { Progress } from './ui/progress';
 
-export default function UploadStep({ onUpload, isUploading, uploadProgress }) {
+export default function UploadStep({ onUpload, isUploading, uploadProgress, onBack }) {
     const [file, setFile] = React.useState(null);
 
     const handleFileChange = async (e) => {debugger
@@ -32,7 +33,7 @@ export default function UploadStep({ onUpload, isUploading, uploadProgress }) {
                 />
                 <Button
                     className="flex items-center justify-center gap-2 font-bold text-base px-6 py-3 rounded-lg shadow-none"
-                    style={{ background: '#52ad6ae6', color: '#fff', boxShadow: 'none', minWidth: '220px', maxWidth: '340px' }}
+                    // style={{ background: '#52ad6ae6', color: '#fff', boxShadow: 'none', minWidth: '220px', maxWidth: '340px' }}
                     disabled={isUploading}
                     onClick={() => document.getElementById('file-upload-input').click()}
                 >
@@ -41,14 +42,7 @@ export default function UploadStep({ onUpload, isUploading, uploadProgress }) {
                 </Button>
             </div>
             <div className="mt-4 flex w-full">
-                <button
-                    className="flex items-center gap-2 px-4 py-2 bg-white rounded hover:bg-gray-100 text-[#374151] font-semibold border border-gray-200 shadow-sm"
-                    style={{ minWidth: '90px' }}
-                    onClick={() => window.history.back()}
-                >
-                    חזור
-                    <ArrowRight className="h-4 w-4" />
-                </button>
+                <BackButton onClick={onBack} />
             </div>
             {isUploading && (
                 <div className="mt-4">

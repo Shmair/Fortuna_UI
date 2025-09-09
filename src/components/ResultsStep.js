@@ -2,7 +2,7 @@ import { Button } from '../components/ui/button';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '../components/ui/card';
 import { PartyPopper, FileCheck, AlertTriangle } from 'lucide-react';
 
-export default function ResultsStep({ results, onRestart }) {debugger;
+export default function ResultsStep({ results, onRestart, onBack }) {
     return (
         <div>
             {results.length > 0 ? (
