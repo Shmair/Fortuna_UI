@@ -32,7 +32,6 @@ export default function Wizard() {
         email: "",
         date_of_birth: "",
         gender: "",
-        //insurance_provider: "",
         children_ages: [],
         is_pregnant: false,
         planning_pregnancy: false,
@@ -41,7 +40,6 @@ export default function Wizard() {
     
     const [fullAnalysis, setFullAnalysis] = useState([]);
     const [results, setResults] = useState([]);
-    
     const [isLoading, setIsLoading] = useState(true);
     const [isUploading, setIsUploading] = useState(false);
     const [uploadProgress, setUploadProgress] = useState(0);
@@ -82,24 +80,7 @@ export default function Wizard() {
         loadUser();
     }, []);
 
-    //  async function uploadPolicyFile(file) {debugger;
-    //     const formData = new FormData();
-    //     formData.append('file', file);
-    //     formData.append('email', email || window.localStorage.getItem('user_email') || '');
-
-    //     // Send file and metadata to backend in one request
-    //     const response = await fetch('http://localhost:4000/api/policy', {
-    //         method: 'POST',
-    //         body: formData
-    //     });
-    //     const result = await response.json();
-    //     if (!response.ok) {
-    //         throw new Error(result.error || 'Policy upload/creation failed');
-    //     }
-    //     return result;
-    // }
-
-    const handlePersonalDetailsNext = async () => {debugger
+    const handleSavePersonalDetails = async () => {
         // Save or update user profile via backend API
         try {
             const email = userData.email || user?.email;
@@ -134,10 +115,9 @@ export default function Wizard() {
         }
     };
 
-    const handlePolicyUpload = async (file) => {
+    const handlePolicyFileUpload = async (file) => {
         setIsUploading(true);
         setUploadProgress(0);
-        //const result = await uploadPolicyFile(file);
 
         try {
             const email = userData.email || user?.email;
@@ -152,7 +132,7 @@ export default function Wizard() {
             formData.append('email', email);
             // Simulate progress for now (replace with SSE/WebSocket for real-time updates)
             setUploadProgress(10);
-            // fetch file's data from insurance_policies
+            // fetch file's data from policy_metadata
             const response = await fetch(API_POLICY, {
                 method: 'POST',
                 body: formData
@@ -166,7 +146,7 @@ export default function Wizard() {
                 setIsUploading(false);
                 return;
             }
-
+debugger
             setFullAnalysis(result.coverage_analysis || []);
             setStep(2);
             setIsUploading(false);
@@ -192,7 +172,7 @@ export default function Wizard() {
                                 <PersonalDetailsStep
                                     userData={userData}
                                     setUserData={setUserData}
-                                    onNext={handlePersonalDetailsNext}
+                                    onNext={handleSavePersonalDetails}
                                     isLoading={isLoading}
                                 />
                             )}
@@ -200,7 +180,7 @@ export default function Wizard() {
                                 <>
                                     <UploadStep
                                         isUploading={isUploading}
-                                        onUpload={handlePolicyUpload}
+                                        onUpload={handlePolicyFileUpload}
                                         email={userData.email || user?.email}
                                         uploadProgress={uploadProgress}
                                     />
@@ -208,12 +188,15 @@ export default function Wizard() {
                                 </>
                             )}
                             {step === 2 && (
-                                <SmartQuestionnaireStep
-                                    questions={fullAnalysis}
-                                    userData={userData}
-                                    setUserData={setUserData}
-                                    onNext={() => setStep(3)}
-                                />
+                                <>
+                                    <SmartQuestionnaireStep
+                                        questions={fullAnalysis}
+                                        userData={userData}
+                                        setUserData={setUserData}
+                                        onNext={() => setStep(3)}
+                                        onBack={() => setStep(1)}
+                                    />
+                                </>
                             )}
                             {step === 3 && (
                                 <ResultsStep

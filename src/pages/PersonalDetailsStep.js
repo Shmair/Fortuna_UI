@@ -1,7 +1,6 @@
-import React from 'react';
-import { toast } from 'sonner';
-import { Button } from '../components/ui/button';
 import { ArrowLeft } from 'lucide-react';
+import React from 'react';
+import { Button } from '../components/ui/button';
 import UserProfileForm from '../components/UserProfileForm.js';
 
 
@@ -18,29 +17,7 @@ const PersonalDetailsStep = ({ userData, setUserData, onNext }) => {
         e.preventDefault();
         setShowErrors(true);
         if (isValid) {
-            // Save profile before advancing
-            if (userData.email) {debugger;
-            //     fetch('/api/profile', {
-            //         method: 'POST',
-            //         headers: { 'Content-Type': 'application/json' },
-            //         body: JSON.stringify(userData)
-            //     })
-            //     .then(res => res.json())
-            //     .then(({ error }) => {
-            //         if (!error) {
-            //             toast.success("הפרטים נשמרו בהצלחה. הפרופיל שלך עודכן במערכת.");
-            //         } else {
-            //             toast.error("שגיאה בשמירת הפרופיל: " + error.message);
-            //         }
-            //         onNext();
-            //     })
-            //     .catch(() => {
-            //         toast.error("שגיאה בשמירת הפרופיל.");
-            //         onNext();
-            //     });
-            // } else {
-                onNext();
-            }
+            onNext(); 
         }
     };
     return (

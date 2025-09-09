@@ -2,6 +2,8 @@ import { useState } from 'react';
 import { Button } from '../components/ui/button';
 import { Card } from '../components/ui/card';
 import { Check, X, ArrowLeft } from 'lucide-react';
+import { ArrowRight } from 'lucide-react';
+
 
 // QuestionCard: Single question UI
 const QuestionCard = ({ questionText, onAnswer, answer }) => (
@@ -21,10 +23,10 @@ const QuestionCard = ({ questionText, onAnswer, answer }) => (
 );
 
 // SmartQuestionnaireStep: Dynamic questionnaire logic
-export default function SmartQuestionnaireStep({ analysis, onFinish, userData }) {
+export default function SmartQuestionnaireStep({ questions, onNext, userData, onBack }) {debugger
     const [answers, setAnswers] = useState({});
-    // Filter analysis by user profile
-    const filteredAnalysis = Array.isArray(analysis) ? analysis.filter(item => {
+    // Filter questions by user profile
+    const filteredQuestions = Array.isArray(questions) ? questions.filter(item => {
         switch (item.category) {
             case "כולנו": return true;
             case "נשים והריון": return userData.gender === "female" && (userData.is_pregnant || userData.planning_pregnancy);
@@ -40,11 +42,11 @@ export default function SmartQuestionnaireStep({ analysis, onFinish, userData })
     // Answer handler
     const handleAnswer = (questionId, answer) => setAnswers(prev => ({ ...prev, [questionId]: answer }));
     // Items needing follow-up
-    const itemsWithFollowUps = filteredAnalysis.filter(item => answers[item.service_name] === true && item.follow_up_questions.length > 0);
+    const itemsWithFollowUps = filteredQuestions.filter(item => answers[item.service_name] === true && item.follow_up_questions.length > 0);
     // All follow-ups answered?
     const allFollowUpsAnswered = itemsWithFollowUps.every(item => item.follow_up_questions.every(fu_question => answers[`${item.service_name}_${fu_question}`] !== undefined));
     // Final relevant refunds
-    const relevantRefunds = filteredAnalysis.filter(item => {
+    const relevantRefunds = filteredQuestions.filter(item => {
         if(answers[item.service_name] !== true) return false;
         if(item.follow_up_questions.length > 0) {
             return item.follow_up_questions.every(fu_question => answers[`${item.service_name}_${fu_question}`] === true);
@@ -52,7 +54,7 @@ export default function SmartQuestionnaireStep({ analysis, onFinish, userData })
         return true;
     });
     // If no questions, show a message
-    if (!filteredAnalysis || filteredAnalysis.length === 0) {
+    if (!filteredQuestions || filteredQuestions.length === 0) {
         return (
             <div className="flex flex-col items-center justify-center h-64 text-center">
                 <h3 className="text-lg font-semibold mb-2">לא נמצאו שאלות מתאימות</h3>
@@ -66,7 +68,7 @@ export default function SmartQuestionnaireStep({ analysis, onFinish, userData })
                 <h3 className="text-lg font-semibold text-center mb-2">שאלון חכם</h3>
                 <p className="text-sm text-gray-500 text-center">ענו 'כן' רק אם השירות רלוונטי עבורכם.</p>
                 <div className="space-y-4 mt-4">
-                    {filteredAnalysis.map(item => (
+                    {filteredQuestions.map(item => (
                         <QuestionCard
                             key={item.service_name}
                             questionText={item.initial_question}
@@ -99,10 +101,27 @@ export default function SmartQuestionnaireStep({ analysis, onFinish, userData })
                     </div>
                 </div>
             )}
-            <Button onClick={() => onFinish(relevantRefunds)} className="w-full" disabled={Object.keys(answers).length === 0 || (itemsWithFollowUps.length > 0 && !allFollowUpsAnswered)}>
-                הצג את ההחזרים שלי
-                <ArrowLeft className="mr-2 h-4 w-4" />
-            </Button>
+           <div className="mt-6 flex justify-center">
+                <Button
+                    onClick={() => onNext(relevantRefunds)}
+                    className="flex items-center gap-2 font-bold text-base px-6 py-3 rounded-lg shadow-none"
+                    style={{ background: '#52ad6ae6', color: '#fff', boxShadow: 'none' }}
+                    disabled={Object.keys(answers).length === 0 || (itemsWithFollowUps.length > 0 && !allFollowUpsAnswered)}
+                >
+                    <span>הצג את ההחזרים שלי</span>
+                    <ArrowLeft className="h-5 w-5" />
+                </Button>
+            </div>
+            <div className="mt-4 flex w-full">
+                <button
+                    className="flex items-center gap-2 px-4 py-2 bg-white rounded hover:bg-gray-100 text-[#374151] font-semibold border border-gray-200 shadow-sm"
+                    style={{ minWidth: '90px' }}
+                    onClick={onBack}
+                >
+                    חזור
+                    <ArrowRight className="h-4 w-4" />
+                </button>
+            </div>
         </div>
     );
 }
