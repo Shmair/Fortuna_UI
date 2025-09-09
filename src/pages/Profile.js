@@ -24,7 +24,7 @@ export default function ProfilePage() {
                     setUser(null);
                     setIsLoading(false);
                     return;
-                }
+                }debugger;
                 // Fetch user profile from backend API
                 const res = await fetch(`/api/profile?email=${encodeURIComponent(email)}`);
                 const { data: currentUser, error } = await res.json();
@@ -61,7 +61,7 @@ export default function ProfilePage() {
     const handleSubmit = async (e) => {
         e.preventDefault();
         const { email, ...updatableData } = userData;
-        try {
+        try {debugger;
             const res = await fetch('/api/profile', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },

@@ -19,26 +19,26 @@ const PersonalDetailsStep = ({ userData, setUserData, onNext }) => {
         setShowErrors(true);
         if (isValid) {
             // Save profile before advancing
-            if (userData.email) {
-                fetch('/api/profile', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(userData)
-                })
-                .then(res => res.json())
-                .then(({ error }) => {
-                    if (!error) {
-                        toast.success("הפרטים נשמרו בהצלחה. הפרופיל שלך עודכן במערכת.");
-                    } else {
-                        toast.error("שגיאה בשמירת הפרופיל: " + error.message);
-                    }
-                    onNext();
-                })
-                .catch(() => {
-                    toast.error("שגיאה בשמירת הפרופיל.");
-                    onNext();
-                });
-            } else {
+            if (userData.email) {debugger;
+            //     fetch('/api/profile', {
+            //         method: 'POST',
+            //         headers: { 'Content-Type': 'application/json' },
+            //         body: JSON.stringify(userData)
+            //     })
+            //     .then(res => res.json())
+            //     .then(({ error }) => {
+            //         if (!error) {
+            //             toast.success("הפרטים נשמרו בהצלחה. הפרופיל שלך עודכן במערכת.");
+            //         } else {
+            //             toast.error("שגיאה בשמירת הפרופיל: " + error.message);
+            //         }
+            //         onNext();
+            //     })
+            //     .catch(() => {
+            //         toast.error("שגיאה בשמירת הפרופיל.");
+            //         onNext();
+            //     });
+            // } else {
                 onNext();
             }
         }

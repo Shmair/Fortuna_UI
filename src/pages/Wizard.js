@@ -45,7 +45,6 @@ export default function Wizard() {
     const [isLoading, setIsLoading] = useState(true);
     const [isUploading, setIsUploading] = useState(false);
     const [uploadProgress, setUploadProgress] = useState(0);
-    const [existingPolicyFile, setExistingPolicyFile] = useState(null);
 
     useEffect(() => {
         const loadUser = async () => {
@@ -55,7 +54,7 @@ export default function Wizard() {
                     setUser(null);
                     setIsLoading(false);
                     return;
-                }
+                }debugger;
                 const params = new URLSearchParams({ email });
                 const response = await fetch(`${API_PROFILE}?${params.toString()}`);
                 const result = await response.json();
@@ -68,6 +67,8 @@ export default function Wizard() {
                 const currentUser = result.profile;
                 setUser(currentUser);
                 setUserData({
+                    email: currentUser.email || '',
+                    full_name: currentUser.full_name || '',
                     date_of_birth: currentUser.date_of_birth || '',
                     gender: currentUser.gender || '',
                     children_ages: currentUser.children_ages || [],
@@ -81,7 +82,24 @@ export default function Wizard() {
         loadUser();
     }, []);
 
-    const handlePersonalDetailsNext = async () => {
+    //  async function uploadPolicyFile(file) {debugger;
+    //     const formData = new FormData();
+    //     formData.append('file', file);
+    //     formData.append('email', email || window.localStorage.getItem('user_email') || '');
+
+    //     // Send file and metadata to backend in one request
+    //     const response = await fetch('http://localhost:4000/api/policy', {
+    //         method: 'POST',
+    //         body: formData
+    //     });
+    //     const result = await response.json();
+    //     if (!response.ok) {
+    //         throw new Error(result.error || 'Policy upload/creation failed');
+    //     }
+    //     return result;
+    // }
+
+    const handlePersonalDetailsNext = async () => {debugger
         // Save or update user profile via backend API
         try {
             const email = userData.email || user?.email;
@@ -115,11 +133,13 @@ export default function Wizard() {
             toast.error(ERROR_GENERAL_PROFILE);
         }
     };
-    
-    const handlePolicyUpload = async (result) => {debugger;
-    setIsUploading(true);
-    setUploadProgress(0);
-        try {debugger; // consider removing this code
+
+    const handlePolicyUpload = async (file) => {
+        setIsUploading(true);
+        setUploadProgress(0);
+        //const result = await uploadPolicyFile(file);
+
+        try {
             const email = userData.email || user?.email;
             if (!email) {
                 toast.error(ERROR_MISSING_EMAIL);
@@ -138,35 +158,23 @@ export default function Wizard() {
                 body: formData
             });
             setUploadProgress(80);
-           // const result = await response.json();
+            const result = await response.json();
             setUploadProgress(100);
+
             if (!response.ok || !result.success) {
                 toast.error(ERROR_POLICY_SAVE + (result.message || ''));
                 setIsUploading(false);
                 return;
             }
-            // If duplicate, show existing file name and questions
-            if (result.duplicate) {debugger;
-                setExistingPolicyFile(result.file_name);
-                setFullAnalysis(result.coverage_analysis || []);
-                setStep(1);
-                setIsUploading(false);
-                return;
-            }
-            // If new, show questions from analysis
-            setExistingPolicyFile(result.file_name);
+
             setFullAnalysis(result.coverage_analysis || []);
-            setStep(1);
+            setStep(2);
             setIsUploading(false);
         } catch (error) {
             toast.error(ERROR_GENERAL_POLICY);
             setIsUploading(false);
         }
-    }
-    // Wizard step rendering logic
-    if (isLoading) {
-    // ...existing code...
-    }
+    };
 
     return (
         <>
@@ -192,7 +200,6 @@ export default function Wizard() {
                                 <>
                                     <UploadStep
                                         isUploading={isUploading}
-                                        existingPolicyFile={existingPolicyFile}
                                         onUpload={handlePolicyUpload}
                                         email={userData.email || user?.email}
                                         uploadProgress={uploadProgress}
