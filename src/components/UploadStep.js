@@ -7,9 +7,9 @@ import { Progress } from './ui/progress';
 export default function UploadStep({ onUpload, isUploading, uploadProgress, onBack }) {
     const [file, setFile] = React.useState(null);
 
-    const handleFileChange = async (e) => {debugger
+    const handleFileChange = async (e) => {
         const selectedFile = e.target.files[0];
-        setFile(selectedFile);debugger
+        setFile(selectedFile);
         if (selectedFile && onUpload) {
             try {
                 await onUpload(selectedFile);

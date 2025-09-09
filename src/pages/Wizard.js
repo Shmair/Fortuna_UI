@@ -52,7 +52,7 @@ export default function Wizard() {
                     setUser(null);
                     setIsLoading(false);
                     return;
-                }debugger;
+                }
                 const params = new URLSearchParams({ email });
                 const response = await fetch(`${API_PROFILE}?${params.toString()}`);
                 const result = await response.json();
@@ -146,7 +146,6 @@ export default function Wizard() {
                 setIsUploading(false);
                 return;
             }
-debugger
             setFullAnalysis(result.coverage_analysis || []);
             setStep(2);
             setIsUploading(false);
