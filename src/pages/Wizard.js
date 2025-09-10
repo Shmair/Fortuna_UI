@@ -204,6 +204,7 @@ export default function Wizard() {
                                     results={results}
                                     userData={userData}
                                     onBack={() => setStep(2)}
+                                    onRestart={() => setStep(0)}
                                 />
                             )}
                         </CardContent>
