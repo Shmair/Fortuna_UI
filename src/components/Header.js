@@ -13,7 +13,7 @@ export default function Header() {
         </Link>
       </div>
       <div className="flex-1 flex justify-center">
-        <nav className="flex items-center gap-8 text-lg font-bold" style={{ fontFamily: 'Varela Round, Arial, sans-serif' }}>
+        <nav className="flex items-center gap-8 text-lg font-bold" style={{ fontFamily: 'system-ui, Arial, sans-serif' }}>
           <Link to={createPageUrl("Home")} className="hover:text-blue-600">דף הבית</Link>
           <Link to={createPageUrl("Wizard")} className="hover:text-blue-600">אשף ההחזרים</Link>
           <Link to={createPageUrl("Profile")} className="hover:text-blue-600">הפרופיל שלי</Link>
