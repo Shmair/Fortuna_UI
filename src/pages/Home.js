@@ -1,9 +1,7 @@
+import { ArrowLeft, BarChart, CheckCircle2, FileText } from "lucide-react";
 import React from "react";
 import { Button } from "../components/ui/button";
-import { Link } from "react-router-dom";
 import { createPageUrl } from "../utils";
-import { ArrowLeft, CheckCircle2, FileText, BarChart } from "lucide-react";
-import Header from "../components/Header";
 
 const FeatureCard = ({ icon, title, description }) => (
   <div className="bg-white p-6 rounded-lg shadow-sm hover:shadow-lg transition-shadow">
@@ -15,10 +13,9 @@ const FeatureCard = ({ icon, title, description }) => (
   </div>
 );
 
-export default function Home() {
+export default function Home({ isAuthenticated, setShowAuth }) {
   return (
-    <>
-      <Header />
+    <React.Fragment>
       <div className="text-center">
         <div className="py-20 sm:py-28 bg-gradient-to-b from-blue-50 to-white rounded-xl shadow-inner-lg">
           <h1 className="text-4xl sm:text-5xl md:text-6xl font-extrabold text-gray-900 tracking-tight">
@@ -29,59 +26,49 @@ export default function Home() {
           <p className="mt-6 max-w-2xl mx-auto text-lg text-gray-600">
             "אשף ההחזרים" עוזר לכם למצוא בקלות ובמהירות החזרים כספיים מפוליסת ביטוח הבריאות שלכם.
           </p>
-          <div className="mt-10">
-            <Link to={createPageUrl("Wizard")}> 
-              <Button
-                size="lg"
-                style={{
-                  backgroundColor: '#63cf80ff',
-                  fontFamily: 'Rubik, Arial, sans-serif',
-                  fontSize: 22,
-                  fontWeight: 400,
-                  lineHeight: '35px',
-                  wordSpacing: 0,
-                  color: '#163634ff',
-                  boxShadow: '0px 0px 12px 3px rgba(57, 97, 65, 0.14)',
-                  borderStyle: 'solid',
-                  borderWidth: '1px',
-                  borderColor: 'rgb(52 177 82)',
-                  borderRadius: '35px',
-                  padding: '15px 25px 10px 15px',
-                  display: 'inline-flex',
-                  alignItems: 'center',
-                  gap: '8px',
-                  transition: 'background 0.2s',
-                }}
-                onMouseOver={e => e.currentTarget.style.backgroundColor = '#b8f1c6ff'}
-                onMouseOut={e => e.currentTarget.style.backgroundColor = '#63cf80ff'}
-              >
-                מצאו את ההחזרים שלכם
-                <ArrowLeft className="mr-2 h-5 w-5" style={{ color: '#38605D' }} />
-              </Button>
-            </Link>
+          <div className="mt-10 flex flex-col items-center gap-4">
+            <Button
+              size="lg"
+              className="main-btn"
+              onMouseOver={e => e.currentTarget.classList.add('main-btn-hover')}
+              onMouseOut={e => e.currentTarget.classList.remove('main-btn-hover')}
+              onClick={() => {
+                if (isAuthenticated) {
+                  window.location.href = '/wizard';
+                } else {
+                  setShowAuth(true);
+                }
+              }}
+            >
+              מצאו את ההחזרים שלכם
+              <ArrowLeft className="mr-2 h-5 w-5" style={{ color: '#38605D' }} />
+            </Button>
           </div>
         </div>
         <div className="mt-20">
           <h2 className="text-3xl font-bold text-center mb-12">איך זה עובד?</h2>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-5xl mx-auto">
             <FeatureCard 
-              icon={<FileText size={24}/>}
-              title="1. ספרו לנו עליכם"
-              description="ענו על מספר שאלות קצרות לגביכם ולגבי הביטוח שלכם. אנחנו לא צריכים את הפוליסה עצמה!"
+              key="about"
+              icon={<FileText size={24}/>} 
+              title="1. ספרו לנו עליכם" 
+              description="ענו על מספר שאלות קצרות לגביכם ולגבי הביטוח שלכם. אנחנו לא צריכים את הפוליסה עצמה!" 
             />
             <FeatureCard 
-              icon={<BarChart size={24}/>}
-              title="2. קבלו רשימה מותאמת"
-              description="המערכת החכמה שלנו תנתח את תשובותיכם ותציג רשימה של החזרים פוטנציאליים הרלוונטיים בדיוק לכם."
+              key="list"
+              icon={<BarChart size={24}/>} 
+              title="2. קבלו רשימה מותאמת" 
+              description="המערכת החכמה שלנו תנתח את תשובותיכם ותציג רשימה של החזרים פוטנציאליים הרלוונטיים בדיוק לכם." 
             />
             <FeatureCard 
-              icon={<CheckCircle2 size={24}/>}
-              title="3. הגישו בקלות"
-              description="לכל החזר שמצאנו, נסביר לכם בדיוק אילו מסמכים צריך ואיך להגיש את הבקשה לחברת הביטוח."
+              key="submit"
+              icon={<CheckCircle2 size={24}/>} 
+              title="3. הגישו בקלות" 
+              description="לכל החזר שמצאנו, נסביר לכם בדיוק אילו מסמכים צריך ואיך להגיש את הבקשה לחברת הביטוח." 
             />
           </div>
         </div>
       </div>
-    </>
+    </React.Fragment>
   );
 }

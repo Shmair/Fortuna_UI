@@ -5,7 +5,8 @@ import SmartQuestionnaireStep from '../components/SmartQuestionnaireStep';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '../components/ui/card';
 import { Progress } from '../components/ui/progress';
 import UploadStep from '../components/UploadStep';
-
+import PolicyChatStep from '../components/PolicyChatStep';
+import PolicyLoadedOptions from '../components/PolicyLoadedOptions';
 import PersonalDetailsStep from './PersonalDetailsStep';
 
 // String constants
@@ -155,65 +156,73 @@ export default function Wizard() {
         }
     };
 
-    return (
-        <>
-            <Header />
-            <div className="flex flex-col items-center justify-center pt-24 pb-12 min-h-[80vh]">
-                <div className="w-full max-w-2xl">
-                    <Card>
-                        <CardHeader className="text-center">
-                            <CardTitle className="text-2xl font-bold" style={{ color: '#63cf80ff' }}>בדיקת החזר ביטוח</CardTitle>
-                            <CardDescription className="text-blue-500">מלא את הפרטים והעלה את הפוליסה שלך</CardDescription>
-                        </CardHeader>
-                        <CardContent>
-                            <Progress value={step * 33} max={100} />
-                            {step === 0 && (
-                                <PersonalDetailsStep
+    return (                    
+        <div className="flex flex-col items-center justify-center pt-24 pb-12 min-h-[80vh]">
+            <div className="w-full max-w-2xl">
+                <Card>
+                    <CardHeader className="text-center">
+                        <CardTitle className="text-2xl font-bold" style={{ color: '#63cf80ff' }}>בדיקת החזר ביטוח</CardTitle>
+                        <CardDescription className="text-blue-500">מלא את הפרטים והעלה את הפוליסה שלך</CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                        <Progress value={step * 33} max={100} />
+                        {step === 0 && (
+                            <PersonalDetailsStep
+                                userData={userData}
+                                setUserData={setUserData}
+                                onNext={handleSavePersonalDetails}
+                                isLoading={isLoading}
+                                onBack={() => window.history.back()}
+                            />
+                        )}
+                        {step === 1 && (
+                            <UploadStep
+                                isUploading={isUploading}
+                                onUpload={handlePolicyFileUpload}
+                                email={userData.email || user?.email}
+                                uploadProgress={uploadProgress}
+                                onBack={() => setStep(0)}
+                            />
+                        )}
+                        {step === 2 && (
+                            <PolicyLoadedOptions
+                                results={results}
+                                userName={user.name || ''}
+                                onBack={() => setStep(1)}
+                                onGuidedFlow={() => setStep(3)}
+                                onFreeChat={() => setStep(4)}
+                            />
+                        )}
+                        {step === 3 && (
+                            <SmartQuestionnaireStep
+                                    questions={fullAnalysis}
                                     userData={userData}
                                     setUserData={setUserData}
-                                    onNext={handleSavePersonalDetails}
-                                    isLoading={isLoading}
-                                    onBack={() => window.history.back()}
+                                    onNext={() => setStep(3)}
+                                    onBack={() => setStep(1)}
                                 />
-                            )}
-                            {step === 1 && (
-                                <>
-                                    <UploadStep
-                                        isUploading={isUploading}
-                                        onUpload={handlePolicyFileUpload}
-                                        email={userData.email || user?.email}
-                                        uploadProgress={uploadProgress}
-                                        onBack={() => setStep(0)}
-                                    />
-
-                                </>
-                            )}
-                            {step === 2 && (
-                                <>
-                                    <SmartQuestionnaireStep
-                                        questions={fullAnalysis}
-                                        userData={userData}
-                                        setUserData={setUserData}
-                                        onNext={() => setStep(3)}
-                                        onBack={() => setStep(1)}
-                                    />
-                                </>
-                            )}
-                            {step === 3 && (
-                                <ResultsStep
-                                    results={results}
-                                    userData={userData}
-                                    onBack={() => setStep(2)}
-                                    onRestart={() => setStep(0)}
-                                />
-                            )}
-                        </CardContent>
-                        <CardFooter>
-                            {/* Navigation buttons or summary can go here */}
-                        </CardFooter>
-                    </Card>
-                </div>
+                        )}
+                        {step === 4 && (
+                            <PolicyChatStep
+                                userName={user.name || ''}
+                                onBack={() => setStep(2)}
+                                email={userData.email || user?.email}
+                            />
+                        )}
+                        {step === 5 && (
+                            <ResultsStep
+                                results={results}
+                                userData={userData}
+                                onBack={() => setStep(2)}
+                                onRestart={() => setStep(0)}
+                            />
+                        )}
+                    </CardContent>
+                    <CardFooter>
+                        {/* Navigation buttons or summary can go here */}
+                    </CardFooter>
+                </Card>
             </div>
-        </>
+        </div>
     );
 }

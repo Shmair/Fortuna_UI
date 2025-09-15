@@ -8,7 +8,7 @@ export const PotentialRefund = {
       {
         id: 1,
         name: "החזר בדיקות דם",
-        category: "בדיקות",
+        main_category: "בדיקות",
         description: "החזר עבור בדיקות דם שגרתיות",
         eligibility_rules: {
           min_age: 18,

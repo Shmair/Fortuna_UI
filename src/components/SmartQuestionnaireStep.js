@@ -43,12 +43,13 @@ const QuestionCard = ({ questionText, onAnswer, answer }) => (
 );
 
 // SmartQuestionnaireStep: Dynamic questionnaire logic
-export default function SmartQuestionnaireStep({ questions, onNext, userData, onBack }) {debugger
+export default function SmartQuestionnaireStep({ questions, onNext, userData, onBack }) {
     const [answers, setAnswers] = useState({});
     // Filter questions by user profile
     const filteredQuestions = Array.isArray(questions) ? questions.filter(item => {
-        switch (item.category) {
+        switch (item.main_category) {
             case "כולנו": return true;
+            case "נשים": return userData.gender === "female";
             case "נשים והריון": return userData.gender === "female" && (userData.is_pregnant || userData.planning_pregnancy);
             case "ילדים": return Array.isArray(userData.children_ages) && userData.children_ages.length > 0;
             case "מבוגרים":
@@ -103,21 +104,21 @@ export default function SmartQuestionnaireStep({ questions, onNext, userData, on
                     <h3 className="text-lg font-semibold text-center mb-2">שאלות המשך</h3>
                     <p className="text-sm text-gray-500 text-center">כמה שאלות נוספות כדי לדייק את הזכאות.</p>
                     <div className="space-y-4 mt-4">
-                        {itemsWithFollowUps.map(item => (
-                            <div key={item.service_name} className="p-4 border rounded-lg bg-gray-50">
-                                <p className="font-semibold mb-3">לגבי "{item.service_name}":</p>
-                                <div className="space-y-3">
-                                    {item.follow_up_questions.map(fu_question => (
-                                         <QuestionCard
-                                            key={fu_question}
-                                            questionText={fu_question}
-                                            answer={answers[`${item.service_name}_${fu_question}`]}
-                                            onAnswer={(answer) => handleAnswer(`${item.service_name}_${fu_question}`, answer)}
-                                        />
-                                    ))}
+                            {itemsWithFollowUps.map(item => (
+                                <div key={item.service_name} className="p-4 border rounded-lg bg-gray-50">
+                                    <p className="font-semibold mb-3">לגבי "{item.service_name}":</p>
+                                    <div className="space-y-3">
+                                            {item.follow_up_questions.map(fu_question => (
+                                                <QuestionCard
+                                                    key={`fu_${item.service_name}_${fu_question.id || fu_question.text}`}
+                                                    questionText={fu_question.text}
+                                                    answer={answers[`fu_${item.service_name}_${fu_question.id || fu_question.text}`]}
+                                                    onAnswer={(answer) => handleAnswer(`fu_${item.service_name}_${fu_question.id || fu_question.text}`, answer)}
+                                                />
+                                            ))}
+                                    </div>
                                 </div>
-                            </div>
-                        ))}
+                            ))}
                     </div>
                 </div>
             )}

@@ -1,7 +1,7 @@
 import { Link } from "react-router-dom";
 import { createPageUrl } from "../utils";
 
-export default function Header() {
+export default function Header({ isAuthenticated, userName, setShowAuth, showAuth, onAuth, onLogout }) {
   return (
     <header
       className="w-full bg-white shadow-sm border-b border-gray-100 flex items-center justify-between px-8 py-3 fixed top-0 left-0 z-50"
@@ -22,18 +22,24 @@ export default function Header() {
         </nav>
       </div>
       <div className="flex items-center gap-2 min-w-[160px] justify-end">
-        <Link
-          to={createPageUrl("Login")}
-          className="btn-dark"
-        >
-          כניסה
-        </Link>
-        <Link
-          to={createPageUrl("Register")}
-          className="btn-outline"
-        >
-          הרשמה
-        </Link>
+        {!isAuthenticated ? (
+          <button
+            className="btn-dark"
+            onClick={() => setShowAuth(true)}
+          >
+            כניסה
+          </button>
+        ) : (
+          <>
+            <span className="font-bold text-green-700">ברוך הבא {userName}!</span>
+            <button
+              className="btn-outline ml-4"
+              onClick={onLogout}
+            >
+              התנתקות
+            </button>
+          </>
+        )}
       </div>
     </header>
   );

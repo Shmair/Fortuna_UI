@@ -5,26 +5,87 @@ import { Toaster } from "sonner";
 import { AnimatePresence } from "framer-motion";
 import './index.css';
 
+import { supabase } from './utils/supabaseClient';
 import Home from "./pages/Home";
 import Dashboard from "./pages/Dashboard";
 import ProfilePage from "./pages/Profile";
 import Wizard from "./pages/Wizard";
 import UserProfileForm from "./components/UserProfileForm";
+import Header from "./components/Header";
+import Auth from "./components/Auth";
+import { Button } from "./components/ui/button";
 
 function App() {
-  // Example state for UserProfileForm usage
+  // Auth state
+  const [showAuth, setShowAuth] = React.useState(false);
+  const [isAuthenticated, setIsAuthenticated] = React.useState(false);
+  const [userName, setUserName] = React.useState("");
   const [userData, setUserData] = React.useState({});
+
+  // On mount, check for existing Supabase user/session
+  React.useEffect(() => {
+    supabase.auth.getUser().then(({ data: { user } }) => {
+      if (user) {
+        setIsAuthenticated(true);
+        setUserName(user.user_metadata?.full_name || user.email || "");
+      }
+    });
+  }, []);
+
+  const handleAuth = (user) => {
+    console.log("handleAuth called with user:", user);
+    setIsAuthenticated(true);
+    setShowAuth(false);
+    setUserName(user.user_metadata?.full_name || user.email || "");
+    // window.location.href = createPageUrl("Wizard");
+  };
+
+  // Example state for UserProfileForm usage
+
+  const handleLogout = async () => {
+    await supabase.auth.signOut();
+    setIsAuthenticated(false);
+    setUserName("");
+    setShowAuth(false);
+    setUserData({});
+    // Optionally reload to clear state
+    window.location.href = "/";
+  };
+
   return (
     <div dir="rtl" className="font-sans bg-gray-50 min-h-screen">
-      <Router>
+  <Router future={{ v7_startTransition: true }}>
         <AnimatePresence>
-          <Routes>
-            <Route path="/" element={<Home />} />
-            <Route path="/dashboard" element={<Dashboard />} />
-            <Route path="/profile" element={<ProfilePage />} />
-            <Route path="/wizard" element={<Wizard />} />
-            <Route path="/user-profile-form" element={<UserProfileForm userData={userData} setUserData={setUserData} />} />
-          </Routes>
+          <>
+            <Header 
+              isAuthenticated={isAuthenticated}
+              userName={userName}
+              setShowAuth={setShowAuth}
+              showAuth={showAuth}
+              onAuth={handleAuth}
+              onLogout={handleLogout}
+            />
+            {showAuth && (
+              <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50">
+                <div className="bg-white rounded-lg shadow-lg p-8 min-w-[320px]">
+                  <Auth onAuth={handleAuth}/>
+                  <Button variant="outline" className="mt-4 w-full" onClick={() => setShowAuth(false)}>סגור</Button>
+                </div>
+              </div>
+            )}
+            <Routes>
+              <Route path="/" element={
+                <Home 
+                  setShowAuth={setShowAuth}
+                  isAuthenticated={isAuthenticated}
+                />
+              } />
+              <Route path="/dashboard" element={<Dashboard />} />
+              <Route path="/profile" element={<ProfilePage />} />
+              <Route path="/wizard" element={<Wizard />} />
+              <Route path="/user-profile-form" element={<UserProfileForm userData={userData} setUserData={setUserData} />} />
+            </Routes>
+          </>
         </AnimatePresence>
       </Router>
       <Toaster position="top-left" />
