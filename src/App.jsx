@@ -14,31 +14,28 @@ import UserProfileForm from "./components/UserProfileForm";
 import Header from "./components/Header";
 import Auth from "./components/Auth";
 import { Button } from "./components/ui/button";
+import { useState } from "react";
 
 function App() {
   // Auth state
-  const [showAuth, setShowAuth] = React.useState(false);
-  const [isAuthenticated, setIsAuthenticated] = React.useState(false);
-  const [userName, setUserName] = React.useState("");
-  const [userData, setUserData] = React.useState({});
+  const [showAuth, setShowAuth] = useState(false);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [userName, setUserName] = useState("");
+  const [userData, setUserData] = useState({});
+  const [user, setUser] = useState(null);
+  
 
   // On mount, check for existing Supabase user/session
   React.useEffect(() => {
     supabase.auth.getUser().then(({ data: { user } }) => {
       if (user) {
+        console.log("Existing user found on mount:", user);
         setIsAuthenticated(true);
+        setUser(user);
         setUserName(user.user_metadata?.full_name || user.email || "");
       }
     });
   }, []);
-
-  const handleAuth = (user) => {
-    console.log("handleAuth called with user:", user);
-    setIsAuthenticated(true);
-    setShowAuth(false);
-    setUserName(user.user_metadata?.full_name || user.email || "");
-    // window.location.href = createPageUrl("Wizard");
-  };
 
   // Example state for UserProfileForm usage
 
@@ -62,13 +59,12 @@ function App() {
               userName={userName}
               setShowAuth={setShowAuth}
               showAuth={showAuth}
-              onAuth={handleAuth}
               onLogout={handleLogout}
             />
             {showAuth && (
               <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50">
                 <div className="bg-white rounded-lg shadow-lg p-8 min-w-[320px]">
-                  <Auth onAuth={handleAuth}/>
+                  <Auth/>
                   <Button variant="outline" className="mt-4 w-full" onClick={() => setShowAuth(false)}>סגור</Button>
                 </div>
               </div>
@@ -82,7 +78,7 @@ function App() {
               } />
               <Route path="/dashboard" element={<Dashboard />} />
               <Route path="/profile" element={<ProfilePage />} />
-              <Route path="/wizard" element={<Wizard />} />
+              <Route path="/wizard" element={<Wizard user={user} />} />
               <Route path="/user-profile-form" element={<UserProfileForm userData={userData} setUserData={setUserData} />} />
             </Routes>
           </>

@@ -9,6 +9,8 @@ import UserProfileForm from '../components/UserProfileForm';
 
 import { createPageUrl } from '../utils';
 
+import { PROFILE_ERRORS, SUCCESS_PROFILE } from '../constants/profile';
+
 
 export default function ProfilePage() {
     const [user, setUser] = useState(null);
@@ -23,6 +25,7 @@ export default function ProfilePage() {
                 if (!email) {
                     setUser(null);
                     setIsLoading(false);
+                    toast.error(PROFILE_ERRORS.MISSING_EMAIL);
                     return;
                 }
                 // Fetch user profile from backend API
@@ -31,6 +34,7 @@ export default function ProfilePage() {
                 if (error || !currentUser) {
                     setUser(null);
                     setIsLoading(false);
+                    toast.error(PROFILE_ERRORS.GENERAL_PROFILE);
                     return;
                 }
                 setUser(currentUser);
@@ -46,6 +50,7 @@ export default function ProfilePage() {
                 });
             } catch (error) {
                 console.error("Failed to fetch user", error);
+                toast.error(PROFILE_ERRORS.GENERAL_PROFILE);
             } finally {
                 setIsLoading(false);
             }
@@ -69,13 +74,13 @@ export default function ProfilePage() {
             });
             const { error } = await res.json();
             if (!error) {
-                toast.success("הפרופיל עודכן בהצלחה! הפרטים שלך נשמרו.");
+                toast.success(SUCCESS_PROFILE);
             } else {
-                toast.error("שגיאה בעדכון הפרופיל: " + error.message);
+                toast.error(PROFILE_ERRORS.PROFILE_SAVE + (error.message || ''));
             }
         } catch (error) {
             console.error("Failed to update user", error);
-            toast.error("שגיאה בעדכון הפרופיל: אנא נסה שוב מאוחר יותר.");
+            toast.error(PROFILE_ERRORS.GENERAL_PROFILE);
         }
     };
 

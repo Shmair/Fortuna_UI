@@ -1,35 +1,27 @@
 import { useEffect, useState } from 'react';
 import { toast } from "sonner";
+import PolicyChatStep from '../components/PolicyChatStep';
+import PolicyLoadedOptions from '../components/PolicyLoadedOptions';
 import ResultsStep from '../components/ResultsStep';
 import SmartQuestionnaireStep from '../components/SmartQuestionnaireStep';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '../components/ui/card';
 import { Progress } from '../components/ui/progress';
 import UploadStep from '../components/UploadStep';
-import PolicyChatStep from '../components/PolicyChatStep';
-import PolicyLoadedOptions from '../components/PolicyLoadedOptions';
 import PersonalDetailsStep from './PersonalDetailsStep';
 
-// String constants
-const API_BASE = 'http://localhost:4000';
-const API_PROFILE = API_BASE + '/api/profile';
-const API_POLICY = API_BASE + '/api/policy';
-const LOCALSTORAGE_EMAIL = 'user_email';
-const CONTENT_TYPE_JSON = 'application/json';
-const ERROR_MISSING_EMAIL = "חסר אימייל: אנא הזן כתובת אימייל תקינה.";
-const ERROR_PROFILE_SAVE = "שגיאה בשמירת הפרופיל: ";
-const ERROR_GENERAL_PROFILE = "שגיאה כללית: אירעה שגיאה בשמירת הפרופיל.";
-const ERROR_POLICY_SAVE = "שגיאה בשמירת הפוליסה: ";
-const ERROR_GENERAL_POLICY = "שגיאה כללית: אירעה שגיאה בעיבוד הפוליסה.";
-const SUCCESS_PROFILE = "הפרטים נשמרו בהצלחה. הפרופיל שלך עודכן במערכת.";
+import {
+    API_POLICY,
+    API_PROFILE,
+    CONTENT_TYPE_JSON,
+    ERRORS,
+    LOCALSTORAGE_EMAIL,
+    SUCCESS_PROFILE
+} from '../constants/wizard';
 
-
-
-import Header from '../components/Header';
-
-export default function Wizard() {
+export default function Wizard({ user }) {
     const [step, setStep] = useState(0);
-    const [user, setUser] = useState(null);
     const [userData, setUserData] = useState({
+        userId: null,
         email: "",
         date_of_birth: "",
         gender: "",
@@ -46,53 +38,73 @@ export default function Wizard() {
     const [uploadProgress, setUploadProgress] = useState(0);
 
     useEffect(() => {
+        let isMounted = true;
         const loadUser = async () => {
             try {
-                const email = window.localStorage.getItem(LOCALSTORAGE_EMAIL);
-                if (!email) {
-                    setUser(null);
-                    setIsLoading(false);
+                const userId = user?.id;
+                if (!userId) {
+                    if (isMounted) {
+                        setUserData({
+                            userId: null,
+                            email: "",
+                            date_of_birth: "",
+                            gender: "",
+                            children_ages: [],
+                            is_pregnant: false,
+                            planning_pregnancy: false,
+                            is_smoker: false
+                        });
+                        setIsLoading(false);
+                    }
                     return;
                 }
-                const params = new URLSearchParams({ email });
+                const params = new URLSearchParams({ user_id: userId });
                 const response = await fetch(`${API_PROFILE}?${params.toString()}`);
                 const result = await response.json();
                 if (!response.ok || !result.success || !result.profile) {
-                    setUser(null);
-                    setIsLoading(false);
+                    if (isMounted) {
+                        setIsLoading(false);
+                    }
                     return;
                 }
 
                 const currentUser = result.profile;
-                setUser(currentUser);
-                setUserData({
-                    email: currentUser.email || '',
-                    full_name: currentUser.full_name || '',
-                    date_of_birth: currentUser.date_of_birth || '',
-                    gender: currentUser.gender || '',
-                    children_ages: currentUser.children_ages || [],
-                    is_pregnant: currentUser.is_pregnant || false,
-                    planning_pregnancy: currentUser.planning_pregnancy || false,
-                    is_smoker: currentUser.is_smoker || false,
-                });
-            } catch (e) { /* User not logged in */ }
-            finally { setIsLoading(false); }
+                console.log("Fetched user profile:", currentUser);
+                if (isMounted) {
+                    setUserData({
+                        userId: userId,
+                        email: currentUser.email || '',
+                        full_name: currentUser.full_name || '',
+                        date_of_birth: currentUser.date_of_birth || '',
+                        gender: currentUser.gender || '',
+                        children_ages: currentUser.children_ages || [],
+                        is_pregnant: currentUser.is_pregnant || false,
+                        planning_pregnancy: currentUser.planning_pregnancy || false,
+                        is_smoker: currentUser.is_smoker || false,
+                    });
+                    setIsLoading(false);
+                }
+            } catch (e) { /* User not logged in */
+                if (isMounted) setIsLoading(false);
+            }
         };
         loadUser();
-    }, []);
+        return () => { isMounted = false; };
+    }, [user]);
 
     const handleSavePersonalDetails = async () => {
         // Save or update user profile via backend API
         try {
             const email = userData.email || user?.email;
             if (!email) {
-                toast.error(ERROR_MISSING_EMAIL);
+                toast.error(ERRORS.MISSING_EMAIL);
                 return;
             }
             const response = await fetch(API_PROFILE, {
                 method: 'POST',
                 headers: { 'Content-Type': CONTENT_TYPE_JSON },
                 body: JSON.stringify({
+                    userId: user.id,
                     email,
                     date_of_birth: userData.date_of_birth,
                     gender: userData.gender,
@@ -104,15 +116,25 @@ export default function Wizard() {
             });
             const result = await response.json();
             if (!response.ok || !result.success) {
-                toast.error(ERROR_PROFILE_SAVE + (result.message || ''));
+                toast.error(ERRORS.PROFILE_SAVE + (result.message || ''));
                 return;
             }
-            window.localStorage.setItem(LOCALSTORAGE_EMAIL, email);
-            setUser(result.profile || null);
+            // window.localStorage.setItem(LOCALSTORAGE_EMAIL, email);
+            setUserData({
+                userId: user.id,
+                email: result.profile?.email || '',
+                full_name: result.profile?.full_name || '',
+                date_of_birth: result.profile?.date_of_birth || '',
+                gender: result.profile?.gender || '',
+                children_ages: result.profile?.children_ages || [],
+                is_pregnant: result.profile?.is_pregnant || false,
+                planning_pregnancy: result.profile?.planning_pregnancy || false,
+                is_smoker: result.profile?.is_smoker || false,
+            });
             toast.success(SUCCESS_PROFILE);
             setStep(1);
         } catch (e) {
-            toast.error(ERROR_GENERAL_PROFILE);
+            toast.error(ERRORS.GENERAL_PROFILE);
         }
     };
 
@@ -123,7 +145,7 @@ export default function Wizard() {
         try {
             const email = userData.email || user?.email;
             if (!email) {
-                toast.error(ERROR_MISSING_EMAIL);
+                toast.error(ERRORS.MISSING_EMAIL);
                 setIsUploading(false);
                 return;
             }
@@ -133,7 +155,7 @@ export default function Wizard() {
             formData.append('email', email);
             // Simulate progress for now (replace with SSE/WebSocket for real-time updates)
             setUploadProgress(10);
-            // fetch file's data from policy_metadata
+            // fetch file's data from policy
             const response = await fetch(API_POLICY, {
                 method: 'POST',
                 body: formData
@@ -143,7 +165,7 @@ export default function Wizard() {
             setUploadProgress(100);
 
             if (!response.ok || !result.success) {
-                toast.error(ERROR_POLICY_SAVE + (result.message || ''));
+                toast.error(ERRORS.POLICY_SAVE + (result.message || ''));
                 setIsUploading(false);
                 return;
             }
@@ -151,7 +173,7 @@ export default function Wizard() {
             setStep(2);
             setIsUploading(false);
         } catch (error) {
-            toast.error(ERROR_GENERAL_POLICY);
+            toast.error(ERRORS.GENERAL_POLICY);
             setIsUploading(false);
         }
     };

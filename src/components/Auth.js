@@ -2,30 +2,23 @@
 import { useEffect, useState, useRef } from 'react';
 import { supabase } from '../utils/supabaseClient';
 
-export default function Auth({ onAuth }) {
+export default function Auth({ }) {
 
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
   const justSignedIn = useRef(false);
-  // Use supabase client passed from App.jsx
 
   useEffect(() => {
-    supabase.auth.getUser().then(({ data: { user } }) => {
-      setUser(user);
-      setLoading(false);
-    });
+    setLoading(false);
     // Listen for auth changes
     const { data: listener } = supabase.auth.onAuthStateChange((event, session) => {
-      setUser(session?.user || null);
-      if (event === 'SIGNED_IN' && session?.user && onAuth) {
-        justSignedIn.current = true;
-        onAuth(session.user);
-      }
+
     });
     return () => {
       listener?.subscription?.unsubscribe();
     };
-  }, [onAuth]);
+  }, []);
+
 
   if (loading) return <div>טוען...</div>;
   // Only show greeting if just signed in during this session
