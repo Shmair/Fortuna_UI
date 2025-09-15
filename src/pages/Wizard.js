@@ -14,8 +14,9 @@ import {
     API_PROFILE,
     CONTENT_TYPE_JSON,
     ERRORS,
-    LOCALSTORAGE_EMAIL,
-    SUCCESS_PROFILE
+    SUCCESS_PROFILE,
+    WIZARD_DESCRIPTION,
+    WIZARD_TITLE
 } from '../constants/wizard';
 
 export default function Wizard({ user }) {
@@ -119,7 +120,7 @@ export default function Wizard({ user }) {
                 toast.error(ERRORS.PROFILE_SAVE + (result.message || ''));
                 return;
             }
-            // window.localStorage.setItem(LOCALSTORAGE_EMAIL, email);
+
             setUserData({
                 userId: user.id,
                 email: result.profile?.email || '',
@@ -143,16 +144,16 @@ export default function Wizard({ user }) {
         setUploadProgress(0);
 
         try {
-            const email = userData.email || user?.email;
-            if (!email) {
-                toast.error(ERRORS.MISSING_EMAIL);
+            const userId = userData.userId || user?.id;
+            if (!userId) {
+                toast.error(ERRORS.MISSING_USER_ID);
                 setIsUploading(false);
                 return;
             }
-            // Send file and email as FormData to backend
+            // Send file and userId as FormData to backend
             const formData = new FormData();
             formData.append('file', file);
-            formData.append('email', email);
+            formData.append('user_id', userId);
             // Simulate progress for now (replace with SSE/WebSocket for real-time updates)
             setUploadProgress(10);
             // fetch file's data from policy
@@ -183,8 +184,8 @@ export default function Wizard({ user }) {
             <div className="w-full max-w-2xl">
                 <Card>
                     <CardHeader className="text-center">
-                        <CardTitle className="text-2xl font-bold" style={{ color: '#63cf80ff' }}>בדיקת החזר ביטוח</CardTitle>
-                        <CardDescription className="text-blue-500">מלא את הפרטים והעלה את הפוליסה שלך</CardDescription>
+                        <CardTitle className="text-2xl font-bold" style={{ color: '#63cf80ff' }}>{WIZARD_TITLE}</CardTitle>
+                        <CardDescription className="text-blue-500">{WIZARD_DESCRIPTION}</CardDescription>
                     </CardHeader>
                     <CardContent>
                         <Progress value={step * 33} max={100} />
@@ -228,7 +229,7 @@ export default function Wizard({ user }) {
                             <PolicyChatStep
                                 userName={user.name || ''}
                                 onBack={() => setStep(2)}
-                                email={userData.email || user?.email}
+                                userId={userData.userId}
                             />
                         )}
                         {step === 5 && (

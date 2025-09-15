@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Button } from './ui/button';
 import { POLICY_CHAT } from '../constants/policyChat';
 
-export default function PolicyChatStep({ userName = '', onBack, email }) {
+export default function PolicyChatStep({ userName = '', onBack, userId }) {
   const [messages, setMessages] = useState([
     {
       sender: 'bot',
@@ -18,16 +18,21 @@ export default function PolicyChatStep({ userName = '', onBack, email }) {
     fetch(POLICY_CHAT.API_URL, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ question: input, email: email })
+      body: JSON.stringify({ question: input, userId })
     })
       .then(res => res.json())
       .then(data => {
-        if (data && data.answer) {
-          setMessages(msgs => [...msgs, { sender: 'bot', text: data.answer }]);
+        if (data && data.answers && data.answers.length > 0) {
+          // Show all answers, or just the first one if you prefer
+          data.answers.forEach(ansObj => {
+            if (ansObj.answer) {
+              setMessages(msgs => [...msgs, { sender: 'bot', text: ansObj.answer }]);
+            }
+          });
         }
       })
       .catch(() => {
-  setMessages(msgs => [...msgs, { sender: 'bot', text: POLICY_CHAT.ERROR }]);
+        setMessages(msgs => [...msgs, { sender: 'bot', text: POLICY_CHAT.ERROR }]);
       });
   };
 
