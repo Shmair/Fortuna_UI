@@ -1,8 +1,9 @@
 import { Button } from './ui/button';
+import BackButton from './BackButton';
 
-export default function PolicyLoadedOptions({ onFreeChat, onGuidedFlow }) {
+export default function PolicyLoadedOptions({ onFreeChat, onGuidedFlow, onBack }) {
     return (
-        <div className="flex flex-col items-center justify-center min-h-[60vh]">
+        <div className="flex flex-col items-center justify-center min-h-[40vh]">
             <h2 className="text-2xl font-bold mb-2 text-center">הפוליסה נטענה בהצלחה!</h2>
             <p className="text-gray-600 mb-8 text-center">איך תרצו להמשיך מכאן?</p>
             <div className="flex flex-row gap-8 items-center justify-center w-full max-w-3xl">
@@ -25,6 +26,11 @@ export default function PolicyLoadedOptions({ onFreeChat, onGuidedFlow }) {
                     <Button style={{ background: '#22c55e', color: '#fff', fontWeight: 'bold' }} className="w-full py-2 text-lg rounded" onClick={onGuidedFlow}>המערכת תשאל אותי</Button>
                 </div>
             </div>
+            {onBack && (
+            <div className="mt-4 flex w-full">
+                <BackButton onClick={onBack} />
+            </div>            
+            )}
         </div>
     );
 }

@@ -37,6 +37,7 @@ export default function Wizard({ user }) {
     const [isLoading, setIsLoading] = useState(true);
     const [isUploading, setIsUploading] = useState(false);
     const [uploadProgress, setUploadProgress] = useState(0);
+    const [uploadedPolicyName, setUploadedPolicyName] = useState("");
 
     useEffect(() => {
         let isMounted = true;
@@ -70,7 +71,6 @@ export default function Wizard({ user }) {
                 }
 
                 const currentUser = result.profile;
-                console.log("Fetched user profile:", currentUser);
                 if (isMounted) {
                     setUserData({
                         userId: userId,
@@ -171,6 +171,7 @@ export default function Wizard({ user }) {
                 return;
             }
             setFullAnalysis(result.coverage_analysis || []);
+            setUploadedPolicyName(result?.file_name || file.name || "");
             setStep(2);
             setIsUploading(false);
         } catch (error) {
@@ -178,6 +179,9 @@ export default function Wizard({ user }) {
             setIsUploading(false);
         }
     };
+
+    // Handler to continue with existing policy
+    const handleContinueWithPolicy = () => setStep(2);
 
     return (                    
         <div className="flex flex-col items-center justify-center pt-24 pb-12 min-h-[80vh]">
@@ -205,6 +209,8 @@ export default function Wizard({ user }) {
                                 email={userData.email || user?.email}
                                 uploadProgress={uploadProgress}
                                 onBack={() => setStep(0)}
+                                policyName={uploadedPolicyName}
+                                onContinueWithPolicy={handleContinueWithPolicy}
                             />
                         )}
                         {step === 2 && (

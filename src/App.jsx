@@ -29,7 +29,6 @@ function App() {
   React.useEffect(() => {
     supabase.auth.getUser().then(({ data: { user } }) => {
       if (user) {
-        console.log("Existing user found on mount:", user);
         setIsAuthenticated(true);
         setUser(user);
         setUserName(user.user_metadata?.full_name || user.email || "");
