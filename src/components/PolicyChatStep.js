@@ -4,75 +4,50 @@ import { POLICY_CHAT } from '../constants/policyChat';
 import BackButton from './BackButton';
 
 import ResultsStep from './ResultsStep';
-export default function PolicyChatStep({ userName = '', onBack, userId, guided = false, questions }) {
-  // If guided, show the questions text as the first bot message
-  let initialMessages;
-  if (guided && typeof questions === 'string' && questions.trim().length > 0) {
-    initialMessages = [{ sender: 'bot', text: questions }];
-  } else if (guided && Array.isArray(questions) && questions.length > 0) {
-    initialMessages = [{ sender: 'bot', text: questions[0].initial_question }];
-  } else {
-    initialMessages = [{ sender: 'bot', text: POLICY_CHAT.BOT_GREETING(userName) }];
-  }
-  const [messages, setMessages] = useState(initialMessages);
+export default function PolicyChatStep({ userName = '', onBack, userId, guided = false, answer, policyId}) {
+
+  // Determine initial chat messages
+  const getInitialMessages = () => {
+    if (guided && typeof answer === 'string' && answer.trim().length > 0) {
+      return [{ sender: 'bot', text: answer }];
+    }
+    return [{ sender: 'bot', text: POLICY_CHAT.BOT_GREETING(userName) }];
+  };
+
+  const [messages, setMessages] = useState(getInitialMessages);
   const [input, setInput] = useState('');
-  const [currentQuestionIdx, setCurrentQuestionIdx] = useState(guided && Array.isArray(questions) ? 0 : null);
   const [showSummary, setShowSummary] = useState(false);
   const [answers, setAnswers] = useState({});
 
-  const handleSend = () => {
-    if (!input.trim() && !guided) return;
-    if (guided) {
-      // If questions is a string, just echo user input as chat
-      if (typeof questions === 'string') {
-        setMessages([...messages, { sender: 'user', text: input.trim() }]);
-        setInput('');
-        return;
-      }
-      // If questions is array, keep old logic
-      if (Array.isArray(questions)) {
-        const userAnswer = input.trim();
-        setMessages([...messages, { sender: 'user', text: userAnswer }]);
-        setAnswers(prev => ({ ...prev, [questions[currentQuestionIdx].service_name]: userAnswer }));
-        setInput('');
-        // Move to next question if exists
-        const nextIdx = (currentQuestionIdx ?? 0) + 1;
-        if (questions[nextIdx]) {
-          setTimeout(() => {
-            setMessages(msgs => [...msgs, { sender: 'bot', text: questions[nextIdx].initial_question }]);
-            setCurrentQuestionIdx(nextIdx);
-          }, 500);
-        }
-        return;
-      }
-    }
-    // Free chat mode
-    setMessages([...messages, { sender: 'user', text: input }]);
+  const handleSend = async () => {
+    const userMessage = input.trim();
+    if (!userMessage) return;
+    setMessages(msgs => [...msgs, { sender: 'user', text: userMessage }]);
     setInput('');
-    fetch(POLICY_CHAT.API_URL, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ question: input, userId })
-    })
-      .then(res => res.json())
-      .then(data => {
-        if (data && data.answers && data.answers.length > 0) {
-          // Show all answers, or just the first one if you prefer
-          data.answers.forEach(ansObj => {
-            if (ansObj.answer) {
-              setMessages(msgs => [...msgs, { sender: 'bot', text: ansObj.answer }]);
-            }
-          });
-        }
-      })
-      .catch(() => {
-        setMessages(msgs => [...msgs, { sender: 'bot', text: POLICY_CHAT.ERROR }]);
+
+    const payload = { userId, user_question: userMessage, policyId };
+
+    try {
+      const res = await fetch(POLICY_CHAT.API_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
       });
+      const data = await res.json();
+
+      if (data && data.answer) {
+        setMessages(msgs => [...msgs, { sender: 'bot', text: data.answer }]);
+      }
+    } catch (err) {
+      setMessages(msgs => [...msgs, { sender: 'bot', text: POLICY_CHAT.ERROR }]);
+    }
   };
 
   if (showSummary) {
-    // Filter questions to those answered 'כן' (or true)
-    const relevantRefunds = questions.filter(q => answers[q.service_name] && answers[q.service_name].toLowerCase() === 'כן');
+    // Filter answer to those answered 'כן' (or true)
+    const relevantRefunds = Array.isArray(answer)
+      ? answer.filter(q => answers[q.service_name] && answers[q.service_name].toLowerCase() === 'כן')
+      : [];
     return (
       <div className="flex flex-col items-center justify-center min-h-[60vh] w-full">
         <ResultsStep results={relevantRefunds} onRestart={() => { setShowSummary(false); }} onBack={onBack} />

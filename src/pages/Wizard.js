@@ -3,7 +3,6 @@ import { toast } from "sonner";
 import PolicyChatStep from '../components/PolicyChatStep';
 import PolicyLoadedOptions from '../components/PolicyLoadedOptions';
 import ResultsStep from '../components/ResultsStep';
-import SmartQuestionnaireStep from '../components/SmartQuestionnaireStep';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '../components/ui/card';
 import { Progress } from '../components/ui/progress';
 import UploadStep from '../components/UploadStep';
@@ -39,12 +38,15 @@ export default function Wizard({ user }) {
     const [isUploading, setIsUploading] = useState(false);
     const [uploadProgress, setUploadProgress] = useState(0);
     const [fileHash, setFileHash] = useState("");
+    const [policyId, setPolicyId] = useState(0);
     const [uploadedPolicyName, setUploadedPolicyName] = useState(() => {
         if (typeof window !== 'undefined') {
             return localStorage.getItem('uploadedPolicyName') || "";
         }
         return "";
     });
+    // Store onboarding messages for chat context
+    const [initialMessages, setInitialMessages] = useState(null);
 
         // When entering the upload step, if no policy name is set, fetch the latest policy for the user
     useEffect(() => {
@@ -56,7 +58,7 @@ export default function Wizard({ user }) {
                     const result = await response.json();
                     if (response.ok && result.success && result.file_name) {
                         setUploadedPolicyName(result.file_name);
-                        setFullAnalysis(result.answer || 'Opps.. no analysis found');
+                        setFullAnalysis(result.answer || 'Opps.. no analysis found2');
                     }
                 } catch (e) {
                     // Ignore errors, just don't set policy name
@@ -67,15 +69,15 @@ export default function Wizard({ user }) {
     }, [step, uploadedPolicyName, userData.userId]);
 
     // Persist uploadedPolicyName to localStorage
-    useEffect(() => {
-        if (typeof window !== 'undefined') {
-            if (uploadedPolicyName) {
-                localStorage.setItem('uploadedPolicyName', uploadedPolicyName);
-            } else {
-                localStorage.removeItem('uploadedPolicyName');
-            }
-        }
-    }, [uploadedPolicyName]);
+    // useEffect(() => {
+    //     if (typeof window !== 'undefined') {
+    //         if (uploadedPolicyName) {
+    //             localStorage.setItem('uploadedPolicyName', uploadedPolicyName);
+    //         } else {
+    //             localStorage.removeItem('uploadedPolicyName');
+    //         }
+    //     }
+    // }, [uploadedPolicyName]);
     
     useEffect(() => {
         let isMounted = true;
@@ -208,10 +210,16 @@ export default function Wizard({ user }) {
                 setIsUploading(false);
                 return;
             }
-            setFullAnalysis(result.answer || "Opps.. no analysis found");
+            setFullAnalysis(result.answer);
             setFileHash(result?.file_hash || "");
             setUploadedPolicyName(result?.file_name || file.name || "");
-
+            setPolicyId(result?.policy_id || 0);
+            // Store onboarding messages for chat context if present
+            if (result.messages && Array.isArray(result.messages)) {
+                setInitialMessages(result.messages);
+            } else {
+                setInitialMessages(null);
+            }
             setStep(2);
             setIsUploading(false);
         } catch (error) {
@@ -224,7 +232,7 @@ export default function Wizard({ user }) {
     const handleContinueWithPolicy = async () => { // => setStep(2);
         // If we already have questions from the last upload, use them
         if (fullAnalysis && fullAnalysis.length > 0) {
-            setStep(3);
+            setStep(2);
             return;
         }
         // Otherwise, try to fetch questions for the current user/policy
@@ -242,8 +250,8 @@ export default function Wizard({ user }) {
                 toast.error(ERRORS.POLICY_SAVE + (result.message || ''));
                 return;
             }
-            setFullAnalysis(result.answer || "Opps.. no analysis found");
-            setStep(3);
+            setFullAnalysis(result.answer || "Opps.. no analysis found3");
+            setStep(2);
         } catch (e) {
             toast.error(ERRORS.GENERAL_POLICY);
         }
@@ -295,7 +303,9 @@ export default function Wizard({ user }) {
                                 onBack={() => setStep(2)}
                                 userId={userData.userId}
                                 guided={isGuidedChat}
-                                questions={fullAnalysis}
+                                answer={fullAnalysis}
+                                policyId={policyId}
+                                //messages={initialMessages}
                                 //setResults={setResults}
                             />
                         )}
