@@ -259,7 +259,7 @@ export default function Wizard({ user }) {
 
     return (                    
         <div className="flex flex-col items-center justify-center pt-24 pb-12 min-h-[80vh]">
-            <div className="w-full max-w-2xl">
+            <div className="w-full max-w-5xl" style={{ width: '40vw' }}>
                 <Card>
                     <CardHeader className="text-center">
                         <CardTitle className="text-2xl font-bold" style={{ color: '#63cf80ff' }}>{WIZARD_TITLE}</CardTitle>

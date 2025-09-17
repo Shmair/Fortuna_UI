@@ -56,11 +56,11 @@ export default function PolicyChatStep({ userName = '', onBack, userId, guided =
     );
   }
 return (
-    <div className="flex flex-col items-center justify-center min-h-[60vh]">
+  <div className="flex flex-col items-center justify-center mb-0">
         <h2 className="text-2xl font-bold mb-2 text-right w-full">{POLICY_CHAT.TITLE}</h2>
         <p className="text-gray-600 mb-6 text-right w-full">{POLICY_CHAT.DESCRIPTION}</p>
-        <div className="bg-white rounded-xl shadow p-6 w-full max-w-2xl flex flex-col" style={{ minHeight: 400 }}>
-            <div className="flex-1 overflow-y-auto mb-4" style={{ maxHeight: 300 }}>
+  <div className="bg-white rounded-xl shadow p-2 w-full max-w-7xl flex flex-col mb-0" style={{ minHeight: 900 }}>
+            <div className="flex-1 overflow-y-auto mb-4" style={{ maxHeight: 750 }}>
                 {messages.map((msg, idx) => (
                     <div key={idx} className={`mb-2 flex ${msg.sender === 'user' ? 'justify-end' : 'justify-start'}`}>
                         <div className={`rounded-lg px-4 py-2 ${msg.sender === 'user' ? 'bg-gray-100 text-right' : 'bg-gray-50 text-right'}`} style={{ maxWidth: '80%' }}>
