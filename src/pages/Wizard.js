@@ -21,6 +21,7 @@ import {
 
 export default function Wizard({ user }) {
     const [step, setStep] = useState(0);
+    const [isGuidedChat, setIsGuidedChat] = useState(false);
     const [userData, setUserData] = useState({
         userId: null,
         email: "",
@@ -37,8 +38,45 @@ export default function Wizard({ user }) {
     const [isLoading, setIsLoading] = useState(true);
     const [isUploading, setIsUploading] = useState(false);
     const [uploadProgress, setUploadProgress] = useState(0);
-    const [uploadedPolicyName, setUploadedPolicyName] = useState("");
+    const [fileHash, setFileHash] = useState("");
+    const [uploadedPolicyName, setUploadedPolicyName] = useState(() => {
+        if (typeof window !== 'undefined') {
+            return localStorage.getItem('uploadedPolicyName') || "";
+        }
+        return "";
+    });
 
+        // When entering the upload step, if no policy name is set, fetch the latest policy for the user
+    useEffect(() => {
+        const fetchPolicyForUser = async () => {
+            if (step === 1 && !uploadedPolicyName && userData.userId) {
+                try {
+                    const params = new URLSearchParams({ user_id: userData.userId });
+                    const response = await fetch(`${API_POLICY}?${params.toString()}`);
+                    const result = await response.json();
+                    if (response.ok && result.success && result.file_name) {
+                        setUploadedPolicyName(result.file_name);
+                        setFullAnalysis(result.answer || 'Opps.. no analysis found');
+                    }
+                } catch (e) {
+                    // Ignore errors, just don't set policy name
+                }
+            }
+        };
+        fetchPolicyForUser();
+    }, [step, uploadedPolicyName, userData.userId]);
+
+    // Persist uploadedPolicyName to localStorage
+    useEffect(() => {
+        if (typeof window !== 'undefined') {
+            if (uploadedPolicyName) {
+                localStorage.setItem('uploadedPolicyName', uploadedPolicyName);
+            } else {
+                localStorage.removeItem('uploadedPolicyName');
+            }
+        }
+    }, [uploadedPolicyName]);
+    
     useEffect(() => {
         let isMounted = true;
         const loadUser = async () => {
@@ -50,7 +88,7 @@ export default function Wizard({ user }) {
                             userId: null,
                             email: "",
                             date_of_birth: "",
-                            gender: "",
+                            gender: "female", // default to אישה
                             children_ages: [],
                             is_pregnant: false,
                             planning_pregnancy: false,
@@ -170,8 +208,10 @@ export default function Wizard({ user }) {
                 setIsUploading(false);
                 return;
             }
-            setFullAnalysis(result.coverage_analysis || []);
+            setFullAnalysis(result.answer || "Opps.. no analysis found");
+            setFileHash(result?.file_hash || "");
             setUploadedPolicyName(result?.file_name || file.name || "");
+
             setStep(2);
             setIsUploading(false);
         } catch (error) {
@@ -181,7 +221,33 @@ export default function Wizard({ user }) {
     };
 
     // Handler to continue with existing policy
-    const handleContinueWithPolicy = () => setStep(2);
+    const handleContinueWithPolicy = async () => { // => setStep(2);
+        // If we already have questions from the last upload, use them
+        if (fullAnalysis && fullAnalysis.length > 0) {
+            setStep(3);
+            return;
+        }
+        // Otherwise, try to fetch questions for the current user/policy
+        try {
+            const userId = userData.userId || user?.id;
+            if (!userId) {
+                toast.error(ERRORS.MISSING_USER_ID);
+                return;
+            }
+            // Try to fetch the latest questions for this user from the backend
+            const params = new URLSearchParams({ user_id: userId, file_hash: fileHash });
+            const response = await fetch(`${API_POLICY}?${params.toString()}`);
+            const result = await response.json();
+            if (!response.ok || !result.success) {
+                toast.error(ERRORS.POLICY_SAVE + (result.message || ''));
+                return;
+            }
+            setFullAnalysis(result.answer || "Opps.. no analysis found");
+            setStep(3);
+        } catch (e) {
+            toast.error(ERRORS.GENERAL_POLICY);
+        }
+    };
 
     return (                    
         <div className="flex flex-col items-center justify-center pt-24 pb-12 min-h-[80vh]">
@@ -218,24 +284,19 @@ export default function Wizard({ user }) {
                                 results={results}
                                 userName={user.name || ''}
                                 onBack={() => setStep(1)}
-                                onGuidedFlow={() => setStep(3)}
-                                onFreeChat={() => setStep(4)}
+                                onGuidedFlow={() => { setIsGuidedChat(true); setStep(4); }}
+                                onFreeChat={() => { setIsGuidedChat(false); setStep(4); }}
                             />
                         )}
-                        {step === 3 && (
-                            <SmartQuestionnaireStep
-                                    questions={fullAnalysis}
-                                    userData={userData}
-                                    setUserData={setUserData}
-                                    onNext={() => setStep(3)}
-                                    onBack={() => setStep(1)}
-                                />
-                        )}
+                        {/* שלב 3 (SmartQuestionnaireStep) מבוטל – הכל עובר לצ'אט */}
                         {step === 4 && (
                             <PolicyChatStep
                                 userName={user.name || ''}
                                 onBack={() => setStep(2)}
                                 userId={userData.userId}
+                                guided={isGuidedChat}
+                                questions={fullAnalysis}
+                                //setResults={setResults}
                             />
                         )}
                         {step === 5 && (

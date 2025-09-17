@@ -75,7 +75,7 @@ export default function UserProfileForm({ userData, setUserData, showErrors }) {
                 <Select 
                     id="gender"
                     name="gender"
-                    value={userData.gender || ''}
+                    value={userData.gender === 'אישה' ? 'female' : userData.gender === 'גבר' ? 'male' : userData.gender || ''}
                     onValueChange={(value) => setUserData({ ...userData, gender: value })}
                 >
                     <SelectTrigger><SelectValue placeholder="בחרו מגדר" /></SelectTrigger>

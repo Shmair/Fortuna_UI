@@ -46,14 +46,14 @@ export default function UploadStep({ onUpload, isUploading, uploadProgress, onBa
                         >
                             המשך עם הפוליסה הקיימת
                         </Button>
-                        <Button
+                        {/* <Button
                             variant="outline"
                             className="w-full max-w-md font-bold text-base px-6 py-3 rounded-lg shadow-none flex items-center justify-center gap-2"
                             onClick={() => document.getElementById('file-upload-input').click()}
                         >
                             <Upload className="h-4 w-4 ml-2" />
                             החלף פוליסה
-                        </Button>
+                        </Button> */}
                     </div>
                 </>
             ) : (
