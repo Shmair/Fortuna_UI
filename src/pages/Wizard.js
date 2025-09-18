@@ -7,6 +7,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Progress } from '../components/ui/progress';
 import UploadStep from '../components/UploadStep';
 import PersonalDetailsStep from './PersonalDetailsStep';
+import ClaimStep from '../components/ClaimStep';
 
 import {
     API_POLICY,
@@ -259,7 +260,11 @@ export default function Wizard({ user }) {
         }
     };
 
-    return (                    
+    const handleProfessionalHelp = () => {
+        setStep(6);
+    };
+
+    return (
         <div className="flex flex-col items-center justify-center pt-24 pb-12 min-h-[80vh]">
             <div className="w-full max-w-5xl" style={{ width: '40vw' }}>
                 <Card>
@@ -321,6 +326,17 @@ export default function Wizard({ user }) {
                                 userData={userData}
                                 onBack={() => setStep(2)}
                                 onRestart={() => setStep(0)}
+                                claim={handleProfessionalHelp}
+                            />
+                        )}
+                        {step === 6 && (
+                            <ClaimStep
+                                results={refunds}
+                                userData={userData}
+                                onBack={() => setStep(2)}
+                                onRestart={() => setStep(0)}
+                                claim={handleProfessionalHelp}
+                            
                             />
                         )}
                     </CardContent>

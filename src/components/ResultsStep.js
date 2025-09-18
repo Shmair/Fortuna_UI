@@ -3,13 +3,31 @@ import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '../co
 import { PartyPopper, FileCheck, AlertTriangle } from 'lucide-react';
 import BackButton from './BackButton';
 
-export default function ResultsStep({ results, onRestart, onBack }) {
+export default function ResultsStep({ results, onRestart, onBack, claim }) {
+    // Calculate total refund
+    const totalRefund = results.reduce((sum, r) => sum + (typeof r.amount === 'number' ? r.amount : 0), 0);
+
+    // Handler for professional help button
+    const handleProfessionalHelp = () => {
+        if (typeof claim === 'function') {
+            claim(); // parent should setStep(6) or similar
+        }
+    };
+
     return (
         <div>
             {results.length > 0 ? (
                 <div className="text-center">
                     <PartyPopper className="w-16 h-16 text-green-500 mx-auto mb-4" />
                     <h2 className="text-2xl font-bold">מצאנו {results.length} החזרים פוטנציאליים!</h2>
+
+                    {/* Total Refund Card */}
+                    <div className="bg-green-50 rounded-lg p-4 max-w-lg mx-auto mt-6 mb-2 border border-green-200">
+                        <div className="text-lg font-bold text-green-800">סכום החזר פוטנציאלי כולל:</div>
+                        <div className="text-3xl font-bold text-green-600 mt-2">{totalRefund.toLocaleString()} ₪</div>
+                        <div className="text-xs text-gray-500 mt-1">*הסכום משוער בהתאם לתנוני הפוליסה</div>
+                    </div>
+
                     <div className="mt-6 space-y-4 text-right">
                         {results.map((r, idx) => (
                             <Card key={r.type + idx}>
@@ -44,6 +62,20 @@ export default function ResultsStep({ results, onRestart, onBack }) {
                             </Card>
                         ))}
                     </div>
+
+                    {/* Professional Help Section */}
+                    <div className="bg-blue-50 rounded-lg p-4 max-w-lg mx-auto mt-8 mb-2 border border-blue-200 text-right">
+                        <div className="font-bold text-lg mb-2">מעוניינים בעזרה מקצועית?</div>
+                        <div className="text-sm mb-2">הצוות המומחה שלנו יכול לטפל בכל התביעות בשבילכם – מהכנת המסמכים ועד קבלת ההחזר.</div>
+                        <ul className="text-sm mb-2 list-disc pr-4">
+                            <li>הכנת כל המסמכים הנדרשים</li>
+                            <li>הגשת תביעות לחברות הביטוח</li>
+                            <li>שירות מקצועי ואמין</li>
+                            <li>מעקב אחר התהליך עד קבלת הכסף</li>
+                        </ul>
+                        <Button onClick={handleProfessionalHelp} className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 mt-2 text-lg transition-colors">כן! רוצה שתטפלו בשבילי <span role="img" aria-label="lightning">⚡</span></Button>
+                        <div className="text-xs text-gray-500 mt-1">*התשלום רק במקרה של קבלת החזר בפועל</div>
+                    </div>
                 </div>
             ) : (
                 <div className="text-center">
@@ -52,8 +84,7 @@ export default function ResultsStep({ results, onRestart, onBack }) {
                     <p className="text-gray-600 mt-2">על סמך תשובותיך, לא זוהו החזרים התואמים את התנאים בפוליסה.</p>
                 </div>
             )}
-            <Button onClick={onRestart} variant="outline" className="w-full mt-6">בדיקה חדשה</Button>
-             {onBack && (
+            {onBack && (
                 <div className="mt-4 flex w-full">
                         <BackButton onClick={onBack} />
                 </div>
