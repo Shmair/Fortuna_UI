@@ -14,3 +14,4 @@ export const ERRORS = {
     GENERAL_POLICY: "שגיאה כללית: אירעה שגיאה בעיבוד הפוליסה."
 };
 export const SUCCESS_PROFILE = "הפרטים נשמרו בהצלחה. הפרופיל שלך עודכן במערכת.";
+

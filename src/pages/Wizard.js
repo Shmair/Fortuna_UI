@@ -45,6 +45,8 @@ export default function Wizard({ user }) {
         }
         return "";
     });
+    const [refunds, setRefunds] = useState({});
+
     // Store onboarding messages for chat context
     const [initialMessages, setInitialMessages] = useState(null);
 
@@ -305,13 +307,17 @@ export default function Wizard({ user }) {
                                 guided={isGuidedChat}
                                 answer={fullAnalysis}
                                 policyId={policyId}
+                                onShowResults={(refunds) => {
+                                    setRefunds(refunds); // assuming refunds is an array
+                                    setStep(5);
+                                }}
                                 //messages={initialMessages}
                                 //setResults={setResults}
                             />
                         )}
                         {step === 5 && (
                             <ResultsStep
-                                results={results}
+                                results={refunds}
                                 userData={userData}
                                 onBack={() => setStep(2)}
                                 onRestart={() => setStep(0)}

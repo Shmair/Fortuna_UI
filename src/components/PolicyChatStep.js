@@ -4,7 +4,7 @@ import { POLICY_CHAT } from '../constants/policyChat';
 import BackButton from './BackButton';
 
 import ResultsStep from './ResultsStep';
-export default function PolicyChatStep({ userName = '', onBack, userId, guided = false, answer, policyId}) {
+export default function PolicyChatStep({ userName = '', onBack, userId, guided = false, answer, policyId, onShowResults }) {
 
   // Determine initial chat messages
   const getInitialMessages = () => {
@@ -36,7 +36,21 @@ export default function PolicyChatStep({ userName = '', onBack, userId, guided =
       const data = await res.json();
 
       if (data && data.answer) {
-        setMessages(msgs => [...msgs, { sender: 'bot', text: data.answer }]);
+        // If answer is an object with a message property, use it. Otherwise, use as string.
+        const botText = typeof data.answer === 'object' && data.answer.message
+          ? data.answer.message
+          : data.answer;
+
+        // Check for refunds_ready step
+        if (typeof data.answer === 'object' && data.answer.meta && data.answer.meta.step === 'refunds_ready') {
+          // Move to refunds step and pass the refunds data
+          setShowSummary(false); // just in case
+          setAnswers({}); // reset answers if needed
+          onShowResults(data.answer.refunds);
+          return;
+        }
+
+        setMessages(msgs => [...msgs, { sender: 'bot', text: botText }]);
       }
     } catch (err) {
       setMessages(msgs => [...msgs, { sender: 'bot', text: POLICY_CHAT.ERROR }]);

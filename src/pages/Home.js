@@ -24,12 +24,12 @@ export default function Home({ isAuthenticated, setShowAuth }) {
             </span>
           </h1>
           <p className="mt-6 max-w-2xl mx-auto text-lg text-gray-600">
-            "אשף ההחזרים" עוזר לכם למצוא בקלות ובמהירות החזרים כספיים מפוליסת ביטוח הבריאות שלכם.
+            RefunD עוזר לכם למצוא בקלות ובמהירות החזרים כספיים מפוליסת ביטוח הבריאות שלכם.
           </p>
           <div className="mt-10 flex flex-col items-center gap-4">
             <Button
               size="lg"
-              className="main-btn"
+              className="main-btn min-w-[260px] px-10"
               onMouseOver={e => e.currentTarget.classList.add('main-btn-hover')}
               onMouseOut={e => e.currentTarget.classList.remove('main-btn-hover')}
               onClick={() => {
