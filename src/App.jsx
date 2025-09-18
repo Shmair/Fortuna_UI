@@ -1,20 +1,20 @@
 
-import React from "react";
-import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
-import { Toaster } from "sonner";
 import { AnimatePresence } from "framer-motion";
+import React from "react";
+import { Route, BrowserRouter as Router, Routes } from "react-router-dom";
+import { Toaster } from "sonner";
 import './index.css';
 
-import { supabase } from './utils/supabaseClient';
-import Home from "./pages/Home";
+import { useState } from "react";
+import Header from "./components/Header";
+import { Button } from "./components/ui/button";
+import UserProfileForm from "./components/UserProfileForm";
 import Dashboard from "./pages/Dashboard";
+import Home from "./pages/Home";
 import ProfilePage from "./pages/Profile";
 import Wizard from "./pages/Wizard";
-import UserProfileForm from "./components/UserProfileForm";
-import Header from "./components/Header";
-import Auth from "./components/Auth";
-import { Button } from "./components/ui/button";
-import { useState } from "react";
+import { supabase } from './utils/supabaseClient';
+import LoginCard from "./components/LoginCard";
 
 function App() {
   // Auth state
@@ -62,8 +62,21 @@ function App() {
             />
             {showAuth && (
               <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50">
-                <div className="bg-white rounded-lg shadow-lg p-8 min-w-[320px]">
-                  <Auth/>
+                <div className="bg-white rounded-lg shadow-lg p-8 min-w-[420px]">
+                  <LoginCard 
+                    onLogin={(email, password) => {
+                      // Handle login
+                    }}
+                    onGoogle={() => {
+                      // Handle Google login
+                    }}
+                    onSignup={() => {
+                      // Handle signup
+                    }}
+                    onForgot={() => {
+                      // Handle forgot password
+                    }}
+                  />
                   <Button variant="outline" className="mt-4 w-full" onClick={() => setShowAuth(false)}>סגור</Button>
                 </div>
               </div>
