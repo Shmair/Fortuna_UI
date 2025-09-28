@@ -14,7 +14,9 @@ import Home from "./pages/Home";
 import ProfilePage from "./pages/Profile";
 import Wizard from "./pages/Wizard";
 import { supabase } from './utils/supabaseClient';
-import LoginCard from "./components/LoginCard";
+import Auth from "./components/Auth";
+import AuthCallback from "./pages/AuthCallback";
+import ResetPassword from "./pages/ResetPassword";
 
 function App() {
   // Auth state
@@ -34,6 +36,24 @@ function App() {
         setUserName(user.user_metadata?.full_name || user.email || "");
       }
     });
+
+    // Listen for auth changes
+    const { data: listener } = supabase.auth.onAuthStateChange((event, session) => {
+      if (session?.user) {
+        setIsAuthenticated(true);
+        setUser(session.user);
+        setUserName(session.user.user_metadata?.full_name || session.user.email || "");
+        setShowAuth(false); // Close auth modal on successful login
+      } else {
+        setIsAuthenticated(false);
+        setUser(null);
+        setUserName("");
+      }
+    });
+
+    return () => {
+      listener?.subscription?.unsubscribe();
+    };
   }, []);
 
   // Example state for UserProfileForm usage
@@ -63,20 +83,7 @@ function App() {
             {showAuth && (
               <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50">
                 <div className="bg-white rounded-lg shadow-lg p-8 min-w-[420px]">
-                  <LoginCard 
-                    onLogin={(email, password) => {
-                      // Handle login
-                    }}
-                    onGoogle={() => {
-                      // Handle Google login
-                    }}
-                    onSignup={() => {
-                      // Handle signup
-                    }}
-                    onForgot={() => {
-                      // Handle forgot password
-                    }}
-                  />
+                  <Auth />
                   <Button variant="outline" className="mt-4 w-full" onClick={() => setShowAuth(false)}>סגור</Button>
                 </div>
               </div>
@@ -88,6 +95,8 @@ function App() {
                   isAuthenticated={isAuthenticated}
                 />
               } />
+              <Route path="/reset-password" element={<ResetPassword />} />
+              <Route path="/auth/callback" element={<AuthCallback />} />
               <Route path="/dashboard" element={<Dashboard />} />
               <Route path="/profile" element={<ProfilePage />} />
               <Route path="/wizard" element={<Wizard user={user} />} />

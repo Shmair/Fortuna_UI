@@ -16,20 +16,20 @@ const FeatureCard = ({ icon, title, description }) => (
 export default function Home({ isAuthenticated, setShowAuth }) {
   return (
     <React.Fragment>
-      <div className="text-center">
-        <div className="py-20 sm:py-28 bg-gradient-to-b from-blue-50 to-white rounded-xl shadow-inner-lg">
-          <h1 className="text-4xl sm:text-5xl md:text-6xl font-extrabold text-gray-900 tracking-tight">
+      <div className="text-center px-2 sm:px-0">
+        <div className="py-10 sm:py-20 md:py-28 bg-gradient-to-b from-blue-50 to-white rounded-xl shadow-inner-lg">
+          <h1 className="text-3xl sm:text-5xl md:text-6xl font-extrabold text-gray-900 tracking-tight leading-tight">
             <span style={{ fontFamily: 'Karantina, Varela Round, Arial, sans-serif', fontWeight: 700, letterSpacing: '0.06em' }}>
               אל תפספסו את מה שמגיע לכם
             </span>
           </h1>
-          <p className="mt-6 max-w-2xl mx-auto text-lg text-gray-600">
+          <p className="mt-4 sm:mt-6 max-w-xs sm:max-w-2xl mx-auto text-base sm:text-lg text-gray-600">
             RefunD עוזר לכם למצוא בקלות ובמהירות החזרים כספיים מפוליסת ביטוח הבריאות שלכם.
           </p>
-          <div className="mt-10 flex flex-col items-center gap-4">
+          <div className="mt-8 sm:mt-10 flex flex-col items-center gap-4">
             <Button
               size="lg"
-              className="main-btn min-w-[260px] px-10"
+              className="main-btn min-w-[200px] sm:min-w-[260px] px-6 sm:px-10"
               onMouseOver={e => e.currentTarget.classList.add('main-btn-hover')}
               onMouseOut={e => e.currentTarget.classList.remove('main-btn-hover')}
               onClick={() => {
@@ -45,9 +45,9 @@ export default function Home({ isAuthenticated, setShowAuth }) {
             </Button>
           </div>
         </div>
-        <div className="mt-20">
-          <h2 className="text-3xl font-bold text-center mb-12">איך זה עובד?</h2>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-5xl mx-auto">
+        <div className="mt-10 sm:mt-20">
+          <h2 className="text-2xl sm:text-3xl font-bold text-center mb-8 sm:mb-12">איך זה עובד?</h2>
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6 sm:gap-8 max-w-xs sm:max-w-5xl mx-auto">
             <FeatureCard 
               key="about"
               icon={<FileText size={24}/>} 

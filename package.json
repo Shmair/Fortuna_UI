@@ -13,6 +13,7 @@
     "react-icons": "^5.5.0",
     "react-router-dom": "^6.23.0",
     "react-scripts": "^5.0.1",
+    "scoop": "^0.0.2",
     "shadcn-ui": "latest",
     "sonner": "latest",
     "tailwindcss": "^3.4.1"
@@ -26,6 +27,8 @@
     "build": "react-scripts build",
     "test": "react-scripts test",
     "eject": "react-scripts eject",
+    "qa:gen": "node qa/generate-tests.js",
+    "qa": "npm run qa:gen && node qa/run.js",
     "postinstall": "patch-package"
   },
   "browserslist": {
