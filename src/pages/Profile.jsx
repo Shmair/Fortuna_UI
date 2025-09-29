@@ -5,7 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../co
 import { Input } from '../components/ui/input';
 import { Label } from '../components/ui/label';
 import { useToast } from "../components/ui/use-toast";
-import UserProfileForm from '../components/UserProfileForm';
+import UserProfileForm from '../components/forms/UserProfileForm';
 
 import { createPageUrl } from '../utils';
 
@@ -116,7 +116,7 @@ export default function ProfilePage() {
 
     return (
         <div className="flex flex-col items-center justify-center min-h-[80vh] bg-gradient-to-b from-white to-blue-50">
-            <img src="/RefunD logo1.png" alt="RefunD Logo" className="w-48 mb-6 drop-shadow-lg" style={{marginTop: '-32px'}} />
+            <img src="/images/refund-logo.png" alt="RefunD Logo" className="w-48 mb-6 drop-shadow-lg" style={{marginTop: '-32px'}} />
             <Card className="max-w-2xl w-full shadow-xl rounded-3xl border-0 p-8">
                 <CardHeader className="text-center pb-2">
                     <CardTitle className="text-3xl font-bold text-blue-700 mb-2">הפרופיל שלי</CardTitle>

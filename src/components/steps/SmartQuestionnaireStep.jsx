@@ -1,8 +1,8 @@
 import { ArrowLeft, Check, X } from 'lucide-react';
 import { useState } from 'react';
-import BackButton from '../components/BackButton.js';
-import { Button } from '../components/ui/button';
-import { Card } from '../components/ui/card';
+import BackButton from '../layout/BackButton';
+import { Button } from '../ui/button';
+import { Card } from '../ui/card';
 
 
 // QuestionCard: Single question UI

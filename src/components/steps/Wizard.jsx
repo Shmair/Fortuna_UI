@@ -1,13 +1,13 @@
 import { useEffect, useState } from 'react';
 import { toast } from "sonner";
-import PolicyChatStep from '../components/PolicyChatStep';
-import PolicyLoadedOptions from '../components/PolicyLoadedOptions';
-import ResultsStep from '../components/ResultsStep';
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '../components/ui/card';
-import { Progress } from '../components/ui/progress';
-import UploadStep from '../components/UploadStep';
+import PolicyChatStep from './PolicyChatStep';
+import PolicyLoadedOptions from '../PolicyLoadedOptions';
+import ResultsStep from './ResultsStep';
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '../ui/card';
+import { Progress } from '../ui/progress';
+import UploadStep from './UploadStep';
 import PersonalDetailsStep from './PersonalDetailsStep';
-import ClaimStep from '../components/ClaimStep';
+import ClaimStep from './ClaimStep';
 
 import {
     API_POLICY,

@@ -1,8 +1,8 @@
 import { ArrowLeft } from 'lucide-react';
 import React from 'react';
-import BackButton from '../components/BackButton.js';
-import { Button } from '../components/ui/button';
-import UserProfileForm from '../components/UserProfileForm.js';
+import BackButton from '../layout/BackButton';
+import { Button } from '../ui/button';
+import UserProfileForm from '../forms/UserProfileForm';
 
 
 const PersonalDetailsStep = ({ userData, setUserData, onNext, onBack }) => {

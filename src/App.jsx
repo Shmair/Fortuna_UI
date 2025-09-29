@@ -6,17 +6,17 @@ import { Toaster } from "sonner";
 import './index.css';
 
 import { useState } from "react";
-import Header from "./components/Header";
+import Header from "./components/layout/Header";
 import { Button } from "./components/ui/button";
-import UserProfileForm from "./components/UserProfileForm";
+import UserProfileForm from "./components/forms/UserProfileForm";
 import Dashboard from "./pages/Dashboard";
 import Home from "./pages/Home";
 import ProfilePage from "./pages/Profile";
-import Wizard from "./pages/Wizard";
+import Wizard from "./components/steps/Wizard";
 import { supabase } from './utils/supabaseClient';
-import Auth from "./components/Auth";
-import AuthCallback from "./pages/AuthCallback";
-import ResetPassword from "./pages/ResetPassword";
+import Auth from "./components/auth/Auth";
+import AuthCallback from "./components/auth/AuthCallback";
+import ResetPassword from "./components/auth/ResetPassword";
 
 function App() {
   // Auth state
