@@ -1,8 +1,8 @@
 import { Upload, X } from 'lucide-react';
 import React from 'react';
-import BackButton from './BackButton';
-import { Button } from './ui/button';
-import { Progress } from './ui/progress';
+import BackButton from '../layout/BackButton';
+import { Button } from '../ui/button';
+import { Progress } from '../ui/progress';
 
 export default function UploadStep({ onUpload, isUploading, uploadProgress, onBack, policyName, onContinueWithPolicy }) {
     const [file, setFile] = React.useState(null);

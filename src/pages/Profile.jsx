@@ -43,7 +43,7 @@ export default function ProfilePage() {
                     email: currentUser.email || '',
                     date_of_birth: currentUser.date_of_birth || '',
                     gender: currentUser.gender || '',
-                    children_ages: currentUser.children_ages || [],
+                    children_ages: Array.isArray(currentUser.children_ages) ? currentUser.children_ages : [],
                     is_pregnant: currentUser.is_pregnant || false,
                     planning_pregnancy: currentUser.planning_pregnancy || false,
                     is_smoker: currentUser.is_smoker || false,

@@ -1,7 +1,7 @@
-import { Button } from '../components/ui/button';
-import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '../components/ui/card';
+import { Button } from '../ui/button';
+import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '../ui/card';
 import { PartyPopper, FileCheck, AlertTriangle } from 'lucide-react';
-import BackButton from './BackButton';
+import BackButton from '../layout/BackButton';
 
 export default function ResultsStep({ results, onRestart, onBack, claim }) {
     // Calculate total refund

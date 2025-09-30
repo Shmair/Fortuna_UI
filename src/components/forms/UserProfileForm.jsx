@@ -1,10 +1,10 @@
 
 import React, { useState } from 'react';
-import { Button } from "../components/ui/button";
-import { Input } from "../components/ui/input";
-import { Label } from "../components/ui/label";
-import { Badge } from "./ui/badge";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "./ui/select";
+import { Button } from "../ui/button";
+import { Input } from "../ui/input";
+import { Label } from "../ui/label";
+import { Badge } from "../ui/badge";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../ui/select";
 // import { Badge } from '../components/ui/badge';
 import { Plus, X } from 'lucide-react';
 
@@ -32,7 +32,8 @@ export default function UserProfileForm({ userData, setUserData, showErrors }) {
         if (newChildAge && !isNaN(newChildAge)) {
             const age = parseInt(newChildAge);
             if (age >= 0 && age <= 25) {
-                const updatedAges = [...(userData.children_ages || []), age];
+                const currentAges = Array.isArray(userData.children_ages) ? userData.children_ages : [];
+                const updatedAges = [...currentAges, age];
                 setUserData({ ...userData, children_ages: updatedAges });
                 setNewChildAge('');
             }
@@ -40,7 +41,8 @@ export default function UserProfileForm({ userData, setUserData, showErrors }) {
     };
 
     const removeChild = (index) => {
-        const updatedAges = userData.children_ages.filter((_, i) => i !== index);
+        const currentAges = Array.isArray(userData.children_ages) ? userData.children_ages : [];
+        const updatedAges = currentAges.filter((_, i) => i !== index);
         setUserData({ ...userData, children_ages: updatedAges });
     };
 
@@ -138,7 +140,7 @@ export default function UserProfileForm({ userData, setUserData, showErrors }) {
                     </Button>
                 </div>
                 <div className="flex flex-wrap gap-2 mt-2">
-                    {userData.children_ages && userData.children_ages.map((age, index) => (
+                    {Array.isArray(userData.children_ages) && userData.children_ages.map((age, index) => (
                         <Badge key={index} variant="secondary" className="flex items-center gap-1">
                             גיל {age}
                             <button onClick={() => removeChild(index)} className="ml-1">
@@ -147,7 +149,7 @@ export default function UserProfileForm({ userData, setUserData, showErrors }) {
                         </Badge>
                     ))}
                 </div>
-                {(!userData.children_ages || userData.children_ages.length === 0) && (
+                {(!Array.isArray(userData.children_ages) || userData.children_ages.length === 0) && (
                     <p className="text-sm text-gray-500 mt-1">אין ילדים? זה בסדר גמור, רק תשאירו ריק</p>
                 )}
             </div>

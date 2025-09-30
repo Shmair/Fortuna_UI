@@ -1,5 +1,5 @@
 import { Button } from './ui/button';
-import BackButton from './BackButton';
+import BackButton from './layout/BackButton';
 
 export default function PolicyLoadedOptions({ onFreeChat, onGuidedFlow, onBack }) {
     return (

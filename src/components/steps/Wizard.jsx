@@ -17,7 +17,7 @@ import {
     SUCCESS_PROFILE,
     WIZARD_DESCRIPTION,
     WIZARD_TITLE
-} from '../constants/wizard';
+} from '../../constants/wizard';
 
 export default function Wizard({ user }) {
     const [step, setStep] = useState(0);
@@ -121,7 +121,7 @@ export default function Wizard({ user }) {
                         full_name: currentUser.full_name || '',
                         date_of_birth: currentUser.date_of_birth || '',
                         gender: currentUser.gender || '',
-                        children_ages: currentUser.children_ages || [],
+                        children_ages: Array.isArray(currentUser.children_ages) ? currentUser.children_ages : [],
                         is_pregnant: currentUser.is_pregnant || false,
                         planning_pregnancy: currentUser.planning_pregnancy || false,
                         is_smoker: currentUser.is_smoker || false,
@@ -139,11 +139,21 @@ export default function Wizard({ user }) {
     const handleSavePersonalDetails = async () => {
         // Save or update user profile via backend API
         try {
+            console.log('User object:', user);
+            console.log('User ID:', user?.id);
+            console.log('UserData:', userData);
+            
             const email = userData.email || user?.email;
             if (!email) {
                 toast.error(ERRORS.MISSING_EMAIL);
                 return;
             }
+            
+            if (!user?.id) {
+                toast.error('User not authenticated');
+                return;
+            }
+
             const response = await fetch(API_PROFILE, {
                 method: 'POST',
                 headers: { 'Content-Type': CONTENT_TYPE_JSON },
@@ -157,9 +167,17 @@ export default function Wizard({ user }) {
                     planning_pregnancy: userData.planning_pregnancy,
                     is_smoker: userData.is_smoker
                 })
+            }).catch(error => {
+                console.error('Fetch error:', error);
+                toast.error('Network error: ' + error.message);
+                throw error;
             });
             const result = await response.json();
+            console.log('Profile save response:', result);
+            console.log('Response status:', response.status);
+            
             if (!response.ok || !result.success) {
+                console.error('Profile save failed:', result);
                 toast.error(ERRORS.PROFILE_SAVE + (result.message || ''));
                 return;
             }
@@ -170,7 +188,7 @@ export default function Wizard({ user }) {
                 full_name: result.profile?.full_name || '',
                 date_of_birth: result.profile?.date_of_birth || '',
                 gender: result.profile?.gender || '',
-                children_ages: result.profile?.children_ages || [],
+                children_ages: Array.isArray(result.profile?.children_ages) ? result.profile.children_ages : [],
                 is_pregnant: result.profile?.is_pregnant || false,
                 planning_pregnancy: result.profile?.planning_pregnancy || false,
                 is_smoker: result.profile?.is_smoker || false,

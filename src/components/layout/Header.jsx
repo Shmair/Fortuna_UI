@@ -1,6 +1,6 @@
 import { Link } from "react-router-dom";
-import { createPageUrl } from "../utils";
-import { ROUTES, ROUTES_TITLES, STRINGS } from "../constants/header";
+import { createPageUrl } from "../../utils";
+import { ROUTES, ROUTES_TITLES, STRINGS } from "../../constants/header";
 
 export default function Header({ isAuthenticated, userName, setShowAuth, onLogout }) {
   const navLinks = [

@@ -1,7 +1,7 @@
 import { useState } from 'react';
-import { Button } from './ui/button';
-import { POLICY_CHAT } from '../constants/policyChat';
-import BackButton from './BackButton';
+import { Button } from '../ui/button';
+import { POLICY_CHAT } from '../../constants/policyChat';
+import BackButton from '../layout/BackButton';
 
 import ResultsStep from './ResultsStep';
 export default function PolicyChatStep({ userName = '', onBack, userId, guided = false, answer, policyId, onShowResults }) {
