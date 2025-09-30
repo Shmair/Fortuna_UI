@@ -5,7 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../co
 import { Input } from '../components/ui/input';
 import { Label } from '../components/ui/label';
 import { useToast } from "../components/ui/use-toast";
-import UserProfileForm from '../components/forms/UserProfileForm';
+import ComprehensiveUserProfileForm from '../components/forms/ComprehensiveUserProfileForm';
 
 import { createPageUrl } from '../utils';
 
@@ -134,7 +134,7 @@ export default function ProfilePage() {
                                 <Input id="email" name="email" type="email" value={userData.email || ''} onChange={handleInputChange} required autoComplete="email" className="rounded-full border-blue-200 focus:border-blue-400 px-4 py-2" />
                             </div>
                         </div>
-                        <UserProfileForm userData={userData} setUserData={setUserData} />
+                        <ComprehensiveUserProfileForm userData={userData} setUserData={setUserData} showErrors={false} />
                         <div className="flex flex-col sm:flex-row gap-4 pt-6 justify-center">
                             <Button type="submit" className="w-full sm:w-auto bg-blue-400 hover:bg-blue-500 text-white rounded-full py-2 px-6 text-lg font-semibold shadow-md">שמור שינויים</Button>
                             <Button variant="destructive" onClick={handleLogout} className="w-full sm:w-auto rounded-full py-2 px-6 text-lg font-semibold shadow-md">התנתקות</Button>

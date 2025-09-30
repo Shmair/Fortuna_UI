@@ -1,37 +1,57 @@
 {
   "name": "refunds-platform",
-  "version": "0.1.0",
-  "private": true,
-  "dependencies": {
-    "@supabase/supabase-js": "^2.56.1",
-    "date-fns": "^3.6.0",
-    "framer-motion": "^11.0.0",
-    "lucide-react": "latest",
-    "pdf-parse": "^1.1.1",
-    "react": "^18.2.0",
-    "react-dom": "^18.2.0",
-    "react-icons": "^5.5.0",
-    "react-router-dom": "^6.23.0",
-    "react-scripts": "^5.0.1",
-    "scoop": "^0.0.2",
-    "shadcn-ui": "latest",
-    "sonner": "latest",
-    "tailwindcss": "^3.4.1"
-  },
-  "devDependencies": {
-    "@babel/plugin-transform-flow-strip-types": "^7.27.1",
-    "autoprefixer": "^10.4.15",
-    "patch-package": "^8.0.1",
-    "postcss": "^8.4.31"
-  },
+  "version": "1.0.0",
+  "description": "Insurance refunds platform with comprehensive testing",
   "scripts": {
     "start": "react-scripts start",
     "build": "react-scripts build",
-    "test": "react-scripts test",
     "eject": "react-scripts eject",
-    "qa:gen": "node qa/generate-tests.js",
-    "qa": "npm run qa:gen && node qa/run.js",
-    "postinstall": "patch-package"
+    
+    "test": "jest --config tests/jest.config.js",
+    "test:unit": "jest --config tests/jest.config.js --testPathPattern=tests/unit",
+    "test:integration": "jest --config tests/jest.config.js --testPathPattern=tests/integration",
+    "test:e2e": "playwright test --config tests/playwright.config.js",
+    "test:watch": "jest --config tests/jest.config.js --watch",
+    "test:coverage": "jest --config tests/jest.config.js --coverage",
+    "test:setup": "node tests/setup/setup-test-db.js",
+    "test:cleanup": "node tests/setup/cleanup-test-data.js",
+    "test:supabase": "node tests/database/simple-supabase-test.js",
+    "test:supabase:sql": "node tests/database/run-supabase-tests.js",
+    "test:supabase:final": "node tests/database/run-supabase-tests.js --test=final",
+    "test:supabase:rls": "node tests/database/run-supabase-tests.js --test=rls",
+    "test:supabase:invoker": "node tests/database/run-supabase-tests.js --test=invoker",
+    "test:supabase:verbose": "node tests/database/run-supabase-tests.js --verbose",
+    
+    "backend:start": "cd backend && node index.js",
+    "backend:test": "jest --config tests/jest.config.js --testPathPattern=tests/integration/api",
+    
+    "lint": "eslint src backend",
+    "format": "prettier --write \"src/**/*.{js,jsx}\" \"backend/**/*.js\""
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "^2.0.0",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
+    "react-router-dom": "^6.0.0",
+    "lucide-react": "latest"
+  },
+  "devDependencies": {
+    "@babel/preset-env": "^7.23.0",
+    "@babel/preset-react": "^7.23.0",
+    "@playwright/test": "^1.40.0",
+    "@testing-library/jest-dom": "^6.1.5",
+    "@testing-library/react": "^14.1.2",
+    "@testing-library/user-event": "^14.5.1",
+    "babel-jest": "^29.7.0",
+    "dotenv": "^16.3.1",
+    "identity-obj-proxy": "^3.0.0",
+    "jest": "^29.7.0",
+    "jest-environment-jsdom": "^29.7.0",
+    "pg": "^8.11.3",
+    "supertest": "^6.3.3"
+  },
+  "jest": {
+    "testEnvironment": "jsdom"
   },
   "browserslist": {
     "production": [

@@ -24,13 +24,45 @@ export default function Wizard({ user }) {
     const [isGuidedChat, setIsGuidedChat] = useState(false);
     const [userData, setUserData] = useState({
         userId: null,
+        // Basic Information
         email: "",
+        full_name: "",
+        phone_number: "",
         date_of_birth: "",
         gender: "",
+        national_id: "",
+        
+        // Family Information
         children_ages: [],
         is_pregnant: false,
         planning_pregnancy: false,
-        is_smoker: false
+        marital_status: "",
+        spouse_name: "",
+        spouse_date_of_birth: "",
+        
+        // Health Information
+        is_smoker: false,
+        chronic_conditions: [],
+        medications: [],
+        disabilities: [],
+        
+        // Insurance Information
+        insurance_provider: "",
+        policy_number: "",
+        coverage_type: "",
+        
+        // Employment
+        employment_status: "",
+        employer_name: "",
+        income_level: "",
+        
+        // Preferences
+        preferred_language: "he",
+        communication_preferences: {
+            email: true,
+            sms: false,
+            phone: false
+        }
     });
     
     const [fullAnalysis, setFullAnalysis] = useState([]);
@@ -118,13 +150,44 @@ export default function Wizard({ user }) {
                     setUserData({
                         userId: userId,
                         email: currentUser.email || '',
+                        // Basic Information
                         full_name: currentUser.full_name || '',
+                        phone_number: currentUser.phone_number || '',
                         date_of_birth: currentUser.date_of_birth || '',
                         gender: currentUser.gender || '',
+                        national_id: currentUser.national_id || '',
+                        
+                        // Family Information
                         children_ages: Array.isArray(currentUser.children_ages) ? currentUser.children_ages : [],
                         is_pregnant: currentUser.is_pregnant || false,
                         planning_pregnancy: currentUser.planning_pregnancy || false,
+                        marital_status: currentUser.marital_status || '',
+                        spouse_name: currentUser.spouse_name || '',
+                        spouse_date_of_birth: currentUser.spouse_date_of_birth || '',
+                        
+                        // Health Information
                         is_smoker: currentUser.is_smoker || false,
+                        chronic_conditions: Array.isArray(currentUser.chronic_conditions) ? currentUser.chronic_conditions : [],
+                        medications: Array.isArray(currentUser.medications) ? currentUser.medications : [],
+                        disabilities: Array.isArray(currentUser.disabilities) ? currentUser.disabilities : [],
+                        
+                        // Insurance Information
+                        insurance_provider: currentUser.insurance_provider || '',
+                        policy_number: currentUser.policy_number || '',
+                        coverage_type: currentUser.coverage_type || '',
+                        
+                        // Employment
+                        employment_status: currentUser.employment_status || '',
+                        employer_name: currentUser.employer_name || '',
+                        income_level: currentUser.income_level || '',
+                        
+                        // Preferences
+                        preferred_language: currentUser.preferred_language || 'he',
+                        communication_preferences: currentUser.communication_preferences || {
+                            email: true,
+                            sms: false,
+                            phone: false
+                        },
                     });
                     setIsLoading(false);
                 }
@@ -159,13 +222,41 @@ export default function Wizard({ user }) {
                 headers: { 'Content-Type': CONTENT_TYPE_JSON },
                 body: JSON.stringify({
                     userId: user.id,
+                    // Basic Information
                     email,
+                    full_name: userData.full_name,
+                    phone_number: userData.phone_number,
                     date_of_birth: userData.date_of_birth,
                     gender: userData.gender,
-                    children_ages: userData.children_ages,
+                    national_id: userData.national_id,
+                    
+                    // Family Information
+                    children_ages: Array.isArray(userData.children_ages) ? userData.children_ages : [],
                     is_pregnant: userData.is_pregnant,
                     planning_pregnancy: userData.planning_pregnancy,
-                    is_smoker: userData.is_smoker
+                    marital_status: userData.marital_status,
+                    spouse_name: userData.spouse_name,
+                    spouse_date_of_birth: userData.spouse_date_of_birth,
+                    
+                    // Health Information
+                    is_smoker: userData.is_smoker,
+                    chronic_conditions: Array.isArray(userData.chronic_conditions) ? userData.chronic_conditions : [],
+                    medications: Array.isArray(userData.medications) ? userData.medications : [],
+                    disabilities: Array.isArray(userData.disabilities) ? userData.disabilities : [],
+                    
+                    // Insurance Information
+                    insurance_provider: userData.insurance_provider,
+                    policy_number: userData.policy_number,
+                    coverage_type: userData.coverage_type,
+                    
+                    // Employment
+                    employment_status: userData.employment_status,
+                    employer_name: userData.employer_name,
+                    income_level: userData.income_level,
+                    
+                    // Preferences
+                    preferred_language: userData.preferred_language,
+                    communication_preferences: userData.communication_preferences || { email: true, sms: false, phone: false }
                 })
             }).catch(error => {
                 console.error('Fetch error:', error);
@@ -185,13 +276,44 @@ export default function Wizard({ user }) {
             setUserData({
                 userId: user.id,
                 email: result.profile?.email || '',
+                // Basic Information
                 full_name: result.profile?.full_name || '',
+                phone_number: result.profile?.phone_number || '',
                 date_of_birth: result.profile?.date_of_birth || '',
                 gender: result.profile?.gender || '',
+                national_id: result.profile?.national_id || '',
+                
+                // Family Information
                 children_ages: Array.isArray(result.profile?.children_ages) ? result.profile.children_ages : [],
                 is_pregnant: result.profile?.is_pregnant || false,
                 planning_pregnancy: result.profile?.planning_pregnancy || false,
+                marital_status: result.profile?.marital_status || '',
+                spouse_name: result.profile?.spouse_name || '',
+                spouse_date_of_birth: result.profile?.spouse_date_of_birth || '',
+                
+                // Health Information
                 is_smoker: result.profile?.is_smoker || false,
+                chronic_conditions: Array.isArray(result.profile?.chronic_conditions) ? result.profile.chronic_conditions : [],
+                medications: Array.isArray(result.profile?.medications) ? result.profile.medications : [],
+                disabilities: Array.isArray(result.profile?.disabilities) ? result.profile.disabilities : [],
+                
+                // Insurance Information
+                insurance_provider: result.profile?.insurance_provider || '',
+                policy_number: result.profile?.policy_number || '',
+                coverage_type: result.profile?.coverage_type || '',
+                
+                // Employment
+                employment_status: result.profile?.employment_status || '',
+                employer_name: result.profile?.employer_name || '',
+                income_level: result.profile?.income_level || '',
+                
+                // Preferences
+                preferred_language: result.profile?.preferred_language || 'he',
+                communication_preferences: result.profile?.communication_preferences || {
+                    email: true,
+                    sms: false,
+                    phone: false
+                },
             });
             toast.success(SUCCESS_PROFILE);
             setStep(1);

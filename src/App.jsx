@@ -8,7 +8,7 @@ import './index.css';
 import { useState } from "react";
 import Header from "./components/layout/Header";
 import { Button } from "./components/ui/button";
-import UserProfileForm from "./components/forms/UserProfileForm";
+import ComprehensiveUserProfileForm from "./components/forms/ComprehensiveUserProfileForm";
 import Dashboard from "./pages/Dashboard";
 import Home from "./pages/Home";
 import ProfilePage from "./pages/Profile";
@@ -56,7 +56,7 @@ function App() {
     };
   }, []);
 
-  // Example state for UserProfileForm usage
+  // Example state for ComprehensiveUserProfileForm usage
 
   const handleLogout = async () => {
     await supabase.auth.signOut();
@@ -100,7 +100,7 @@ function App() {
               <Route path="/dashboard" element={<Dashboard />} />
               <Route path="/profile" element={<ProfilePage />} />
               <Route path="/wizard" element={<Wizard user={user} />} />
-              <Route path="/user-profile-form" element={<UserProfileForm userData={userData} setUserData={setUserData} />} />
+              <Route path="/user-profile-form" element={<ComprehensiveUserProfileForm userData={userData} setUserData={setUserData} showErrors={false} />} />
             </Routes>
           </>
         </AnimatePresence>
