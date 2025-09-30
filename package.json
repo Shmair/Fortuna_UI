@@ -6,7 +6,6 @@
     "start": "react-scripts start",
     "build": "react-scripts build",
     "eject": "react-scripts eject",
-    
     "test": "jest --config tests/jest.config.js",
     "test:unit": "jest --config tests/jest.config.js --testPathPattern=tests/unit",
     "test:integration": "jest --config tests/jest.config.js --testPathPattern=tests/integration",
@@ -21,25 +20,23 @@
     "test:supabase:rls": "node tests/database/run-supabase-tests.js --test=rls",
     "test:supabase:invoker": "node tests/database/run-supabase-tests.js --test=invoker",
     "test:supabase:verbose": "node tests/database/run-supabase-tests.js --verbose",
-    
     "backend:start": "cd backend && node index.js",
     "backend:test": "jest --config tests/jest.config.js --testPathPattern=tests/integration/api",
-    
     "lint": "eslint src backend",
     "format": "prettier --write \"src/**/*.{js,jsx}\" \"backend/**/*.js\""
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.0.0",
+    "lucide-react": "latest",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
-    "react-router-dom": "^6.0.0",
-    "lucide-react": "latest"
+    "react-router-dom": "^6.0.0"
   },
   "devDependencies": {
-    "@babel/preset-env": "^7.23.0",
-    "@babel/preset-react": "^7.23.0",
+    "@babel/preset-env": "^7.28.3",
+    "@babel/preset-react": "^7.27.1",
     "@playwright/test": "^1.40.0",
-    "@testing-library/jest-dom": "^6.1.5",
+    "@testing-library/jest-dom": "^6.9.0",
     "@testing-library/react": "^14.1.2",
     "@testing-library/user-event": "^14.5.1",
     "babel-jest": "^29.7.0",
