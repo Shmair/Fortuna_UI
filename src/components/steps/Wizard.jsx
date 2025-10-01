@@ -1,7 +1,6 @@
 import { useEffect, useState, useCallback } from 'react';
 import { toast } from "sonner";
 import PolicyChatStep from './PolicyChatStep';
-import PolicyLoadedOptions from '../PolicyLoadedOptions';
 import ResultsStep from './ResultsStep';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '../ui/card';
 import { Progress } from '../ui/progress';
@@ -9,6 +8,7 @@ import UploadStep from './UploadStep';
 import PersonalDetailsStep from './PersonalDetailsStep';
 import ClaimStep from './ClaimStep';
 import { supabase } from '../../utils/supabaseClient';
+import { apiService } from '../../services/apiService';
 
 import {
     API_ENDPOINTS,
@@ -84,6 +84,7 @@ export default function Wizard({ user, isLoadingUser }) {
     const [isLoading, setIsLoading] = useState(true);
     const [isInitializing, setIsInitializing] = useState(true);
     const [isUploading, setIsUploading] = useState(false);
+    const [isProcessing, setIsProcessing] = useState(false);
     const [uploadProgress, setUploadProgress] = useState(0);
     const [fileHash, setFileHash] = useState("");
     const [policyId, setPolicyId] = useState(0);
@@ -159,63 +160,29 @@ export default function Wizard({ user, isLoadingUser }) {
 
     // API functions
     const fetchUserProfile = useCallback(async (userId) => {
-        const response = await fetch(`${API_ENDPOINTS.PROFILE.GET(userId)}`);
-        const result = await response.json();
-        
-        if (!response.ok || !result.success) {
-            throw new Error('Failed to fetch profile');
-        }
+        const result = await apiService.getProfile(userId);
         
         // Return null if no profile exists (user needs to create one)
         return result.profile || null;
     }, []);
 
     const fetchUserPolicies = useCallback(async (userId) => {
-        const response = await fetch(`${API_ENDPOINTS.POLICY.GET(userId)}`);
-        const result = await response.json();
-        
-        if (!response.ok || !result.success) {
-            throw new Error('Failed to fetch policies');
-        }
-        
+        const result = await apiService.getPolicies(userId);
         return result;
     }, []);
 
     const fetchPolicyByHash = useCallback(async (fileHash) => {
-        const response = await fetch(`${API_ENDPOINTS.POLICY.GET_BY_HASH(fileHash)}`);
-        const result = await response.json();
-        
-        if (!response.ok || !result.success) {
-            throw new Error('Failed to fetch policy by hash');
-        }
-        
+        const result = await apiService.getPolicyByHash(fileHash);
         return result;
     }, []);
 
     const fetchPolicyById = useCallback(async (policyId) => {
-        const response = await fetch(`${API_ENDPOINTS.POLICY.GET_BY_ID(policyId)}`);
-        const result = await response.json();
-        
-        if (!response.ok || !result.success) {
-            throw new Error('Failed to fetch policy by ID');
-        }
-        
+        const result = await apiService.getPolicy(policyId);
         return result;
     }, []);
 
     const saveUserProfile = useCallback(async (profileData) => {
-        const response = await fetch(API_ENDPOINTS.PROFILE.POST, {
-            method: 'POST',
-            headers: HEADERS.JSON,
-            body: JSON.stringify(profileData)
-        });
-        
-        const result = await response.json();
-        
-        if (!response.ok || !result.success) {
-            throw new Error(result.message || 'Failed to save profile');
-        }
-        
+        const result = await apiService.saveProfile(profileData);
         return result;
     }, []);
 
@@ -224,26 +191,7 @@ export default function Wizard({ user, isLoadingUser }) {
         formData.append('file', file);
         formData.append('user_id', userId);
         
-        // Get the current session token
-        const { data: { session } } = await supabase.auth.getSession();
-        if (!session?.access_token) {
-            throw new Error('No authentication token available');
-        }
-        
-        const response = await fetch(API_ENDPOINTS.POLICY.UPLOAD, {
-            method: 'POST',
-            headers: {
-                'Authorization': `Bearer ${session.access_token}`
-            },
-            body: formData
-        });
-        
-        const result = await response.json();
-        
-        if (!response.ok || !result.success) {
-            throw new Error(result.message || 'Failed to upload policy');
-        }
-        
+        const result = await apiService.uploadPolicy(formData);
         return result;
     }, []);
 
@@ -439,6 +387,23 @@ export default function Wizard({ user, isLoadingUser }) {
             const result = await uploadPolicyFile(file, userId);
             setUploadProgress(100);
 
+            // Show processing step
+            setIsUploading(false);
+            setIsProcessing(true);
+            setStep(3); // Go to processing step
+
+            // Simulate processing time with progress updates
+            await delay(500);
+            setUploadProgress(20);
+            await delay(500);
+            setUploadProgress(40);
+            await delay(500);
+            setUploadProgress(60);
+            await delay(500);
+            setUploadProgress(80);
+            await delay(500);
+            setUploadProgress(100);
+
             setFullAnalysis(result.answer);
             setFileHash(result?.file_hash || "");
             setUploadedPolicyName(result?.file_name || file.name || "");
@@ -450,10 +415,14 @@ export default function Wizard({ user, isLoadingUser }) {
                 setInitialMessages(null);
             }
             
-            setStep(3);
+            // Move to chat step after processing
+            await delay(1000);
+            setIsProcessing(false);
+            setStep(5);
         } catch (error) {
             console.error('Error uploading policy:', error);
             toast.error(ERRORS.GENERAL_POLICY);
+            setIsProcessing(false);
         } finally {
             setIsUploading(false);
         }
@@ -552,7 +521,7 @@ export default function Wizard({ user, isLoadingUser }) {
                         </CardDescription>
                     </CardHeader>
                     <CardContent>
-                        <Progress value={step * 12.5} max={100} />
+                        <Progress value={isProcessing ? uploadProgress : step * 12.5} max={100} />
                         <div className="text-xs text-gray-400 mb-2">
                             Debug: Current step = {step}
                         </div>
@@ -594,24 +563,36 @@ export default function Wizard({ user, isLoadingUser }) {
                                 policyName={uploadedPolicyName}
                                 onContinueWithPolicy={handleContinueWithPolicy}
                                 userName={userData.full_name}
+                                showBackButton={!isProfileComplete(userData)}
                             />
                         )}
                         
-                        {step === 3 && (
-                            <PolicyLoadedOptions
-                                results={results}
-                                userName={userData.full_name || user.name || ''}
-                                onBack={() => setStep(2)}
-                                onGuidedFlow={() => { setIsGuidedChat(true); setStep(5); }}
-                                onFreeChat={() => { setIsGuidedChat(false); setStep(5); }}
-                                isReturningUser={isReturningUser}
-                            />
+                        {step === 3 && isProcessing && (
+                            <div className="flex flex-col items-center justify-center min-h-[60vh] space-y-6">
+                                <div className="text-center">
+                                    <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-blue-600 mx-auto mb-4"></div>
+                                    <h2 className="text-2xl font-bold mb-2">מעבדים את הפוליסה שלך</h2>
+                                    <p className="text-gray-600 mb-6">אנחנו מנתחים את הפוליסה כדי לזהות החזרים פוטנציאליים...</p>
+                                </div>
+                                
+                                <div className="w-full max-w-md">
+                                    <div className="flex justify-between text-sm text-gray-600 mb-2">
+                                        <span>התקדמות</span>
+                                        <span>{uploadProgress}%</span>
+                                    </div>
+                                    <Progress value={uploadProgress} className="h-3" />
+                                </div>
+                                
+                                <div className="text-center text-sm text-gray-500 max-w-md">
+                                    <p>זה יכול לקחת כמה דקות. אנא המתן...</p>
+                                </div>
+                            </div>
                         )}
                         
                         {step === 5 && (
                             <PolicyChatStep
                                 userName={userData.full_name || user.name || ''}
-                                onBack={() => setStep(3)}
+                                onBack={() => setStep(2)}
                                 userId={userData.userId}
                                 guided={isGuidedChat}
                                 answer={fullAnalysis}
@@ -628,7 +609,7 @@ export default function Wizard({ user, isLoadingUser }) {
                             <ResultsStep
                                 results={refunds}
                                 userData={userData}
-                                onBack={() => setStep(3)}
+                                onBack={() => setStep(5)}
                                 onRestart={() => setStep(1)}
                                 claim={handleProfessionalHelp}
                             />

@@ -1,4 +1,5 @@
 import { API_ENDPOINTS, HEADERS, API_ERRORS, REQUEST_CONFIG } from '../constants/api';
+import { supabase } from '../utils/supabaseClient';
 
 /**
  * Generic API service for making HTTP requests
@@ -9,14 +10,35 @@ class ApiService {
   }
 
   /**
+   * Get authentication headers with current session token
+   * @returns {Promise<Object>} - Headers with authorization
+   */
+  async getAuthHeaders() {
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session?.access_token) {
+        return {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${session.access_token}`
+        };
+      }
+    } catch (error) {
+      console.warn('Failed to get auth session:', error);
+    }
+    return HEADERS.JSON;
+  }
+
+  /**
    * Make a generic HTTP request
    * @param {string} url - The URL to make the request to
    * @param {Object} options - Fetch options
+   * @param {boolean} requireAuth - Whether to include auth headers
    * @returns {Promise<Object>} - The response data
    */
-  async request(url, options = {}) {
+  async request(url, options = {}, requireAuth = true) {
+    const headers = requireAuth ? await this.getAuthHeaders() : HEADERS.JSON;
     const defaultOptions = {
-      headers: HEADERS.JSON,
+      headers: { ...headers, ...options.headers },
       timeout: REQUEST_CONFIG.TIMEOUT,
       ...options
     };
@@ -53,13 +75,14 @@ class ApiService {
    * GET request
    * @param {string} url - The URL to make the request to
    * @param {Object} options - Additional options
+   * @param {boolean} requireAuth - Whether to include auth headers
    * @returns {Promise<Object>} - The response data
    */
-  async get(url, options = {}) {
+  async get(url, options = {}, requireAuth = true) {
     return this.request(url, {
       method: 'GET',
       ...options
-    });
+    }, requireAuth);
   }
 
   /**
@@ -67,14 +90,15 @@ class ApiService {
    * @param {string} url - The URL to make the request to
    * @param {Object} data - The data to send
    * @param {Object} options - Additional options
+   * @param {boolean} requireAuth - Whether to include auth headers
    * @returns {Promise<Object>} - The response data
    */
-  async post(url, data, options = {}) {
+  async post(url, data, options = {}, requireAuth = true) {
     return this.request(url, {
       method: 'POST',
       body: JSON.stringify(data),
       ...options
-    });
+    }, requireAuth);
   }
 
   /**
@@ -82,27 +106,29 @@ class ApiService {
    * @param {string} url - The URL to make the request to
    * @param {Object} data - The data to send
    * @param {Object} options - Additional options
+   * @param {boolean} requireAuth - Whether to include auth headers
    * @returns {Promise<Object>} - The response data
    */
-  async put(url, data, options = {}) {
+  async put(url, data, options = {}, requireAuth = true) {
     return this.request(url, {
       method: 'PUT',
       body: JSON.stringify(data),
       ...options
-    });
+    }, requireAuth);
   }
 
   /**
    * DELETE request
    * @param {string} url - The URL to make the request to
    * @param {Object} options - Additional options
+   * @param {boolean} requireAuth - Whether to include auth headers
    * @returns {Promise<Object>} - The response data
    */
-  async delete(url, options = {}) {
+  async delete(url, options = {}, requireAuth = true) {
     return this.request(url, {
       method: 'DELETE',
       ...options
-    });
+    }, requireAuth);
   }
 
   // Profile API methods
@@ -124,9 +150,14 @@ class ApiService {
 
   // Policy API methods
   async uploadPolicy(formData) {
+    // Get auth headers for FormData upload
+    const authHeaders = await this.getAuthHeaders();
     return this.request(API_ENDPOINTS.POLICY.UPLOAD, {
       method: 'POST',
-      headers: {}, // Let browser set Content-Type for FormData
+      headers: {
+        'Authorization': authHeaders.Authorization
+        // Let browser set Content-Type for FormData
+      },
       body: formData
     });
   }

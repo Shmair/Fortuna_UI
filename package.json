@@ -20,6 +20,8 @@
     "test:supabase:rls": "node tests/database/run-supabase-tests.js --test=rls",
     "test:supabase:invoker": "node tests/database/run-supabase-tests.js --test=invoker",
     "test:supabase:verbose": "node tests/database/run-supabase-tests.js --verbose",
+    "test:profile": "node tests/run-profile-tests.js",
+    "test:profile:comprehensive": "jest --config tests/jest.config.js tests/integration/api/comprehensive-profile-api.test.js --verbose",
     "backend:start": "cd backend && node index.js",
     "backend:test": "jest --config tests/jest.config.js --testPathPattern=tests/integration/api",
     "lint": "eslint src backend",

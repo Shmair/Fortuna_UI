@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Button } from '../ui/button';
 import { POLICY_CHAT } from '../../constants/policyChat';
 import BackButton from '../layout/BackButton';
+import { apiService } from '../../services/apiService';
 
 import ResultsStep from './ResultsStep';
 export default function PolicyChatStep({ userName = '', onBack, userId, guided = false, answer, policyId, onShowResults, isReturningUser }) {
@@ -28,12 +29,7 @@ export default function PolicyChatStep({ userName = '', onBack, userId, guided =
     const payload = { userId, user_question: userMessage, policyId };
 
     try {
-      const res = await fetch(POLICY_CHAT.API_URL, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload)
-      });
-      const data = await res.json();
+      const data = await apiService.post(POLICY_CHAT.API_URL, payload);
 
       if (data && data.answer) {
         // If answer is an object with a message property, use it. Otherwise, use as string.

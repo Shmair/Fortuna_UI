@@ -4,7 +4,7 @@ import BackButton from '../layout/BackButton';
 import { Button } from '../ui/button';
 import { Progress } from '../ui/progress';
 
-export default function UploadStep({ onUpload, isUploading, uploadProgress, onBack, policyName, onContinueWithPolicy, userName }) {
+export default function UploadStep({ onUpload, isUploading, uploadProgress, onBack, policyName, onContinueWithPolicy, userName, showBackButton = true }) {
     const [file, setFile] = React.useState(null);
     const [removed, setRemoved] = React.useState(false);
     const handleRemove = () => {
@@ -94,9 +94,11 @@ export default function UploadStep({ onUpload, isUploading, uploadProgress, onBa
                     </div>
                 </>
             )}
-            <div className="mt-4 flex w-full">
-                <BackButton onClick={onBack} />
-            </div>
+            {showBackButton && (
+                <div className="mt-4 flex w-full">
+                    <BackButton onClick={onBack} />
+                </div>
+            )}
             {isUploading && (
                 <div className="mt-4">
                     <Progress value={typeof uploadProgress !== 'undefined' ? uploadProgress : 11} className="[&>div]:bg-green-600" />
