@@ -12,6 +12,48 @@ const employmentStatuses = ["עובד/ת", "מובטל/ת", "סטודנט/ית",
 const incomeLevels = ["נמוך", "בינוני", "גבוה"];
 const languages = ["עברית", "אנגלית", "ערבית"];
 
+// Mapping from Hebrew to English values for database constraints
+const employmentStatusMapping = {
+    "עובד/ת": "employed",
+    "מובטל/ת": "unemployed", 
+    "סטודנט/ית": "student",
+    "פנסיונר/ית": "retired"
+};
+
+const maritalStatusMapping = {
+    "רווק/ה": "single",
+    "נשוי/ה": "married",
+    "גרוש/ה": "divorced",
+    "אלמן/ה": "widowed"
+};
+
+const incomeLevelMapping = {
+    "נמוך": "low",
+    "בינוני": "medium",
+    "גבוה": "high"
+};
+
+// Reverse mappings for displaying stored English values as Hebrew
+const reverseEmploymentStatusMapping = {
+    "employed": "עובד/ת",
+    "unemployed": "מובטל/ת",
+    "student": "סטודנט/ית",
+    "retired": "פנסיונר/ית"
+};
+
+const reverseMaritalStatusMapping = {
+    "single": "רווק/ה",
+    "married": "נשוי/ה",
+    "divorced": "גרוש/ה",
+    "widowed": "אלמן/ה"
+};
+
+const reverseIncomeLevelMapping = {
+    "low": "נמוך",
+    "medium": "בינוני",
+    "high": "גבוה"
+};
+
 export default function ComprehensiveUserProfileForm({ userData, setUserData, showErrors }) {
     const [expandedSections, setExpandedSections] = useState({
         basic: true,
@@ -224,8 +266,8 @@ export default function ComprehensiveUserProfileForm({ userData, setUserData, sh
                             <div>
                                 <Label htmlFor="marital_status">סטטוס משפחתי</Label>
                                 <Select
-                                    value={userData.marital_status || ''}
-                                    onValueChange={value => setUserData({ ...userData, marital_status: value })}
+                                    value={reverseMaritalStatusMapping[userData.marital_status] || userData.marital_status || ''}
+                                    onValueChange={value => setUserData({ ...userData, marital_status: maritalStatusMapping[value] || value })}
                                 >
                                     <SelectTrigger>
                                         <SelectValue placeholder="בחרו סטטוס" />
@@ -462,8 +504,8 @@ export default function ComprehensiveUserProfileForm({ userData, setUserData, sh
                             <div>
                                 <Label htmlFor="employment_status">סטטוס תעסוקתי</Label>
                                 <Select
-                                    value={userData.employment_status || ''}
-                                    onValueChange={value => setUserData({ ...userData, employment_status: value })}
+                                    value={reverseEmploymentStatusMapping[userData.employment_status] || userData.employment_status || ''}
+                                    onValueChange={value => setUserData({ ...userData, employment_status: employmentStatusMapping[value] || value })}
                                 >
                                     <SelectTrigger>
                                         <SelectValue placeholder="בחרו סטטוס" />
@@ -486,8 +528,8 @@ export default function ComprehensiveUserProfileForm({ userData, setUserData, sh
                             <div>
                                 <Label htmlFor="income_level">רמת הכנסה</Label>
                                 <Select
-                                    value={userData.income_level || ''}
-                                    onValueChange={value => setUserData({ ...userData, income_level: value })}
+                                    value={reverseIncomeLevelMapping[userData.income_level] || userData.income_level || ''}
+                                    onValueChange={value => setUserData({ ...userData, income_level: incomeLevelMapping[value] || value })}
                                 >
                                     <SelectTrigger>
                                         <SelectValue placeholder="בחרו רמת הכנסה" />

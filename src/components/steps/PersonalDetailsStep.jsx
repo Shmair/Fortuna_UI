@@ -5,7 +5,7 @@ import { Button } from '../ui/button';
 import ComprehensiveUserProfileForm from '../forms/ComprehensiveUserProfileForm';
 
 
-const PersonalDetailsStep = ({ userData, setUserData, onNext, onBack }) => {
+const PersonalDetailsStep = ({ userData, setUserData, onNext, onBack, isLoading }) => {
     const requiredFields = [
         "email", 
         "date_of_birth", 
@@ -28,6 +28,15 @@ const PersonalDetailsStep = ({ userData, setUserData, onNext, onBack }) => {
             onNext(); 
         }
     };
+    if (isLoading) {
+        return (
+            <div className="flex flex-col items-center justify-center min-h-[40vh]">
+                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mb-4"></div>
+                <p className="text-gray-600 text-center">בודקים את הפרופיל שלך...</p>
+            </div>
+        );
+    }
+
     return (
         <form id="personal-details-form" className="space-y-4" onSubmit={handleNext}>
             <h3 className="text-lg font-semibold text-center">בואו נכיר</h3>

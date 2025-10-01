@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { toast } from "sonner";
 import PolicyChatStep from './PolicyChatStep';
 import PolicyLoadedOptions from '../PolicyLoadedOptions';
@@ -10,64 +10,78 @@ import PersonalDetailsStep from './PersonalDetailsStep';
 import ClaimStep from './ClaimStep';
 
 import {
-    API_POLICY,
-    API_PROFILE,
-    CONTENT_TYPE_JSON,
+    API_ENDPOINTS,
+    HEADERS,
     ERRORS,
     SUCCESS_PROFILE,
     WIZARD_DESCRIPTION,
     WIZARD_TITLE
 } from '../../constants/wizard';
 
-export default function Wizard({ user }) {
+// Constants
+const REQUIRED_PROFILE_FIELDS = ['full_name', 'phone_number', 'national_id', 'date_of_birth', 'gender'];
+const LOADING_DELAY = 1000; // 1 second minimum loading time
+
+// Initial state objects
+const initialUserData = {
+    userId: null,
+    // Basic Information
+    email: "",
+    full_name: "",
+    phone_number: "",
+    date_of_birth: "",
+    gender: "",
+    national_id: "",
+    
+    // Family Information
+    children_ages: [],
+    is_pregnant: false,
+    planning_pregnancy: false,
+    marital_status: "",
+    spouse_name: "",
+    spouse_date_of_birth: "",
+    
+    // Health Information
+    is_smoker: false,
+    chronic_conditions: [],
+    medications: [],
+    disabilities: [],
+    
+    // Insurance Information
+    insurance_provider: "",
+    policy_number: "",
+    coverage_type: "",
+    
+    // Employment
+    employment_status: "",
+    employer_name: "",
+    income_level: "",
+    
+    // Preferences
+    preferred_language: "he",
+    communication_preferences: {
+        email: true,
+        sms: false,
+        phone: false
+    }
+};
+
+const initialCommunicationPreferences = {
+    email: true,
+    sms: false,
+    phone: false
+};
+
+export default function Wizard({ user, isLoadingUser }) {
+    // State management
     const [step, setStep] = useState(0);
     const [isGuidedChat, setIsGuidedChat] = useState(false);
-    const [userData, setUserData] = useState({
-        userId: null,
-        // Basic Information
-        email: "",
-        full_name: "",
-        phone_number: "",
-        date_of_birth: "",
-        gender: "",
-        national_id: "",
-        
-        // Family Information
-        children_ages: [],
-        is_pregnant: false,
-        planning_pregnancy: false,
-        marital_status: "",
-        spouse_name: "",
-        spouse_date_of_birth: "",
-        
-        // Health Information
-        is_smoker: false,
-        chronic_conditions: [],
-        medications: [],
-        disabilities: [],
-        
-        // Insurance Information
-        insurance_provider: "",
-        policy_number: "",
-        coverage_type: "",
-        
-        // Employment
-        employment_status: "",
-        employer_name: "",
-        income_level: "",
-        
-        // Preferences
-        preferred_language: "he",
-        communication_preferences: {
-            email: true,
-            sms: false,
-            phone: false
-        }
-    });
-    
+    const [isReturningUser, setIsReturningUser] = useState(false);
+    const [userData, setUserData] = useState(initialUserData);
     const [fullAnalysis, setFullAnalysis] = useState([]);
     const [results, setResults] = useState([]);
     const [isLoading, setIsLoading] = useState(true);
+    const [isInitializing, setIsInitializing] = useState(true);
     const [isUploading, setIsUploading] = useState(false);
     const [uploadProgress, setUploadProgress] = useState(0);
     const [fileHash, setFileHash] = useState("");
@@ -79,134 +93,260 @@ export default function Wizard({ user }) {
         return "";
     });
     const [refunds, setRefunds] = useState({});
-
-    // Store onboarding messages for chat context
     const [initialMessages, setInitialMessages] = useState(null);
 
-        // When entering the upload step, if no policy name is set, fetch the latest policy for the user
-    useEffect(() => {
-        const fetchPolicyForUser = async () => {
-            if (step === 1 && !uploadedPolicyName && userData.userId) {
-                try {
-                    const params = new URLSearchParams({ user_id: userData.userId });
-                    const response = await fetch(`${API_POLICY}?${params.toString()}`);
-                    const result = await response.json();
-                    if (response.ok && result.success && result.file_name) {
-                        setUploadedPolicyName(result.file_name);
-                        setFullAnalysis(result.answer || 'Opps.. no analysis found2');
-                    }
-                } catch (e) {
-                    // Ignore errors, just don't set policy name
-                }
-            }
-        };
-        fetchPolicyForUser();
-    }, [step, uploadedPolicyName, userData.userId]);
+    // Utility functions
+    const delay = (ms) => new Promise(resolve => setTimeout(resolve, ms));
 
-    // Persist uploadedPolicyName to localStorage
-    // useEffect(() => {
-    //     if (typeof window !== 'undefined') {
-    //         if (uploadedPolicyName) {
-    //             localStorage.setItem('uploadedPolicyName', uploadedPolicyName);
-    //         } else {
-    //             localStorage.removeItem('uploadedPolicyName');
-    //         }
-    //     }
-    // }, [uploadedPolicyName]);
-    
+    const isProfileComplete = useCallback((profile) => {
+        return REQUIRED_PROFILE_FIELDS.every(field => 
+            profile[field] && profile[field].trim() !== ''
+        );
+    }, []);
+
+    const updateUserData = useCallback((profile) => {
+        return {
+            userId: profile.user_id || user?.id,
+            email: profile.email || '',
+            // Basic Information
+            full_name: profile.full_name || '',
+            phone_number: profile.phone_number || '',
+            date_of_birth: profile.date_of_birth || '',
+            gender: profile.gender || '',
+            national_id: profile.national_id || '',
+            
+            // Family Information
+            children_ages: Array.isArray(profile.children_ages) ? profile.children_ages : [],
+            is_pregnant: profile.is_pregnant || false,
+            planning_pregnancy: profile.planning_pregnancy || false,
+            marital_status: profile.marital_status || '',
+            spouse_name: profile.spouse_name || '',
+            spouse_date_of_birth: profile.spouse_date_of_birth || '',
+            
+            // Health Information
+            is_smoker: profile.is_smoker || false,
+            chronic_conditions: Array.isArray(profile.chronic_conditions) ? profile.chronic_conditions : [],
+            medications: Array.isArray(profile.medications) ? profile.medications : [],
+            disabilities: Array.isArray(profile.disabilities) ? profile.disabilities : [],
+            
+            // Insurance Information
+            insurance_provider: profile.insurance_provider || '',
+            policy_number: profile.policy_number || '',
+            coverage_type: profile.coverage_type || '',
+            
+            // Employment
+            employment_status: profile.employment_status || '',
+            employer_name: profile.employer_name || '',
+            income_level: profile.income_level || '',
+            
+            // Preferences
+            preferred_language: profile.preferred_language || 'he',
+            communication_preferences: profile.communication_preferences || initialCommunicationPreferences,
+        };
+    }, [user?.id]);
+
+    const finishLoading = useCallback((nextStep) => {
+        return async () => {
+            console.log('finishLoading called with step:', nextStep);
+            await delay(LOADING_DELAY);
+            console.log('Setting step to:', nextStep);
+            setStep(nextStep);
+            setIsLoading(false);
+            setIsInitializing(false);
+        };
+    }, []);
+
+    // API functions
+    const fetchUserProfile = useCallback(async (userId) => {
+        const response = await fetch(`${API_ENDPOINTS.PROFILE.GET(userId)}`);
+        const result = await response.json();
+        
+        if (!response.ok || !result.success) {
+            throw new Error('Failed to fetch profile');
+        }
+        
+        // Return null if no profile exists (user needs to create one)
+        return result.profile || null;
+    }, []);
+
+    const fetchUserPolicies = useCallback(async (userId) => {
+        const response = await fetch(`${API_ENDPOINTS.POLICY.GET(userId)}`);
+        const result = await response.json();
+        
+        if (!response.ok || !result.success) {
+            throw new Error('Failed to fetch policies');
+        }
+        
+        return result;
+    }, []);
+
+    const fetchPolicyByHash = useCallback(async (fileHash) => {
+        const response = await fetch(`${API_ENDPOINTS.POLICY.GET_BY_HASH(fileHash)}`);
+        const result = await response.json();
+        
+        if (!response.ok || !result.success) {
+            throw new Error('Failed to fetch policy by hash');
+        }
+        
+        return result;
+    }, []);
+
+    const fetchPolicyById = useCallback(async (policyId) => {
+        const response = await fetch(`${API_ENDPOINTS.POLICY.GET_BY_ID(policyId)}`);
+        const result = await response.json();
+        
+        if (!response.ok || !result.success) {
+            throw new Error('Failed to fetch policy by ID');
+        }
+        
+        return result;
+    }, []);
+
+    const saveUserProfile = useCallback(async (profileData) => {
+        const response = await fetch(API_ENDPOINTS.PROFILE.POST, {
+            method: 'POST',
+            headers: HEADERS.JSON,
+            body: JSON.stringify(profileData)
+        });
+        
+        const result = await response.json();
+        
+        if (!response.ok || !result.success) {
+            throw new Error(result.message || 'Failed to save profile');
+        }
+        
+        return result;
+    }, []);
+
+    const uploadPolicyFile = useCallback(async (file, userId) => {
+        const formData = new FormData();
+        formData.append('file', file);
+        formData.append('user_id', userId);
+        
+        const response = await fetch(API_ENDPOINTS.POLICY.UPLOAD, {
+            method: 'POST',
+            body: formData
+        });
+        
+        const result = await response.json();
+        
+        if (!response.ok || !result.success) {
+            throw new Error(result.message || 'Failed to upload policy');
+        }
+        
+        return result;
+    }, []);
+
+    // Main initialization effect
     useEffect(() => {
         let isMounted = true;
-        const loadUser = async () => {
+
+        const initializeUser = async () => {
             try {
                 const userId = user?.id;
+                
                 if (!userId) {
                     if (isMounted) {
-                        setUserData({
-                            userId: null,
-                            email: "",
-                            date_of_birth: "",
-                            gender: "female", // default to אישה
-                            children_ages: [],
-                            is_pregnant: false,
-                            planning_pregnancy: false,
-                            is_smoker: false
-                        });
+                        console.log('No userId, staying on loading step');
+                        setUserData(prev => ({ ...prev, userId: null }));
                         setIsLoading(false);
-                    }
-                    return;
-                }
-                const params = new URLSearchParams({ user_id: userId });
-                const response = await fetch(`${API_PROFILE}?${params.toString()}`);
-                const result = await response.json();
-                if (!response.ok || !result.success || !result.profile) {
-                    if (isMounted) {
-                        setIsLoading(false);
+                        setIsInitializing(false);
+                        setStep(0); // Stay on loading step for unauthenticated users
                     }
                     return;
                 }
 
-                const currentUser = result.profile;
-                if (isMounted) {
-                    setUserData({
-                        userId: userId,
-                        email: currentUser.email || '',
-                        // Basic Information
-                        full_name: currentUser.full_name || '',
-                        phone_number: currentUser.phone_number || '',
-                        date_of_birth: currentUser.date_of_birth || '',
-                        gender: currentUser.gender || '',
-                        national_id: currentUser.national_id || '',
-                        
-                        // Family Information
-                        children_ages: Array.isArray(currentUser.children_ages) ? currentUser.children_ages : [],
-                        is_pregnant: currentUser.is_pregnant || false,
-                        planning_pregnancy: currentUser.planning_pregnancy || false,
-                        marital_status: currentUser.marital_status || '',
-                        spouse_name: currentUser.spouse_name || '',
-                        spouse_date_of_birth: currentUser.spouse_date_of_birth || '',
-                        
-                        // Health Information
-                        is_smoker: currentUser.is_smoker || false,
-                        chronic_conditions: Array.isArray(currentUser.chronic_conditions) ? currentUser.chronic_conditions : [],
-                        medications: Array.isArray(currentUser.medications) ? currentUser.medications : [],
-                        disabilities: Array.isArray(currentUser.disabilities) ? currentUser.disabilities : [],
-                        
-                        // Insurance Information
-                        insurance_provider: currentUser.insurance_provider || '',
-                        policy_number: currentUser.policy_number || '',
-                        coverage_type: currentUser.coverage_type || '',
-                        
-                        // Employment
-                        employment_status: currentUser.employment_status || '',
-                        employer_name: currentUser.employer_name || '',
-                        income_level: currentUser.income_level || '',
-                        
-                        // Preferences
-                        preferred_language: currentUser.preferred_language || 'he',
-                        communication_preferences: currentUser.communication_preferences || {
-                            email: true,
-                            sms: false,
-                            phone: false
-                        },
-                    });
+                // Fetch user profile
+                const profile = await fetchUserProfile(userId);
+                
+                if (!isMounted) return;
+
+                // If no profile exists, go to personal details step
+                if (!profile) {
+                    console.log('No profile found, going to personal details step');
                     setIsLoading(false);
+                    setIsInitializing(false);
+                    setStep(1); // Go to personal details step
+                    return;
                 }
-            } catch (e) { /* User not logged in */
-                if (isMounted) setIsLoading(false);
+
+                const updatedUserData = updateUserData(profile);
+                setUserData(updatedUserData);
+
+                // Check if profile is complete
+                const profileComplete = isProfileComplete(profile);
+                
+                if (profileComplete) {
+                    console.log('Profile is complete, checking for existing policy');
+                    
+                    try {
+                        // First check if profile has a linked policy ID
+                        if (profile.insurance_policy_id) {
+                            console.log('Found insurance_policy_id in profile, fetching policy by ID');
+                            const policyResult = await fetchPolicyById(profile.insurance_policy_id);
+                            
+                            if (policyResult.policy) {
+                                console.log('Found existing policy by ID, skipping to chat step');
+                                setUploadedPolicyName(policyResult.policy.file_name);
+                                setFullAnalysis(policyResult.policy.analysis || '');
+                                setPolicyId(policyResult.policy.id);
+                                setIsReturningUser(true);
+                                setIsGuidedChat(false);
+                            
+                                await finishLoading(5)(); // Skip to chat step
+                                return;
+                            }
+                        }
+                        
+                        // Fallback: check for any policies by user ID
+                        const policyResult = await fetchUserPolicies(userId);
+                        
+                        if (policyResult.policies && policyResult.policies.length > 0) {
+                            console.log('Found existing policies, using the most recent one');
+                            const mostRecentPolicy = policyResult.policies[0]; // Already sorted by uploaded_at desc
+                            setUploadedPolicyName(mostRecentPolicy.file_name);
+                            setFullAnalysis(mostRecentPolicy.analysis || '');
+                            setPolicyId(mostRecentPolicy.id);
+                            setIsReturningUser(true);
+                            setIsGuidedChat(false);
+                            
+                            await finishLoading(5)(); // Skip to chat step
+                        } else {
+                            console.log('No existing policies, going to upload step');
+                            console.log('About to call finishLoading(2)');
+                            await finishLoading(2)(); // Skip to upload step
+                        }
+                    } catch (error) {
+                        console.log('Error checking for policies, going to upload step:', error);
+                        await finishLoading(2)(); // Skip to upload step
+                    }
+                } else {
+                    console.log('Profile incomplete, setting step to 1');
+                    setIsLoading(false);
+                    setIsInitializing(false);
+                    setStep(1); // Go to personal details step for incomplete profiles
+                }
+            } catch (error) {
+                console.error('Error initializing user:', error);
+                if (isMounted) {
+                    console.log('Error occurred, staying on loading step');
+                    setIsLoading(false);
+                    setIsInitializing(false);
+                    setStep(0); // Stay on loading step on error
+                }
             }
         };
-        loadUser();
-        return () => { isMounted = false; };
-    }, [user]);
 
-    const handleSavePersonalDetails = async () => {
-        // Save or update user profile via backend API
+        initializeUser();
+        
+        return () => { isMounted = false; };
+    }, [user, fetchUserProfile, fetchUserPolicies, fetchPolicyById, updateUserData, isProfileComplete, finishLoading]);
+
+    // Event handlers
+    const handleSavePersonalDetails = useCallback(async () => {
         try {
-            console.log('User object:', user);
-            console.log('User ID:', user?.id);
-            console.log('UserData:', userData);
-            
             const email = userData.email || user?.email;
+            
             if (!email) {
                 toast.error(ERRORS.MISSING_EMAIL);
                 return;
@@ -217,204 +357,206 @@ export default function Wizard({ user }) {
                 return;
             }
 
-            const response = await fetch(API_PROFILE, {
-                method: 'POST',
-                headers: { 'Content-Type': CONTENT_TYPE_JSON },
-                body: JSON.stringify({
-                    userId: user.id,
-                    // Basic Information
-                    email,
-                    full_name: userData.full_name,
-                    phone_number: userData.phone_number,
-                    date_of_birth: userData.date_of_birth,
-                    gender: userData.gender,
-                    national_id: userData.national_id,
-                    
-                    // Family Information
-                    children_ages: Array.isArray(userData.children_ages) ? userData.children_ages : [],
-                    is_pregnant: userData.is_pregnant,
-                    planning_pregnancy: userData.planning_pregnancy,
-                    marital_status: userData.marital_status,
-                    spouse_name: userData.spouse_name,
-                    spouse_date_of_birth: userData.spouse_date_of_birth,
-                    
-                    // Health Information
-                    is_smoker: userData.is_smoker,
-                    chronic_conditions: Array.isArray(userData.chronic_conditions) ? userData.chronic_conditions : [],
-                    medications: Array.isArray(userData.medications) ? userData.medications : [],
-                    disabilities: Array.isArray(userData.disabilities) ? userData.disabilities : [],
-                    
-                    // Insurance Information
-                    insurance_provider: userData.insurance_provider,
-                    policy_number: userData.policy_number,
-                    coverage_type: userData.coverage_type,
-                    
-                    // Employment
-                    employment_status: userData.employment_status,
-                    employer_name: userData.employer_name,
-                    income_level: userData.income_level,
-                    
-                    // Preferences
-                    preferred_language: userData.preferred_language,
-                    communication_preferences: userData.communication_preferences || { email: true, sms: false, phone: false }
-                })
-            }).catch(error => {
-                console.error('Fetch error:', error);
-                toast.error('Network error: ' + error.message);
-                throw error;
-            });
-            const result = await response.json();
-            console.log('Profile save response:', result);
-            console.log('Response status:', response.status);
-            
-            if (!response.ok || !result.success) {
-                console.error('Profile save failed:', result);
-                toast.error(ERRORS.PROFILE_SAVE + (result.message || ''));
-                return;
-            }
+            // Set loading state
+            setIsLoading(true);
 
-            setUserData({
+            const profileData = {
                 userId: user.id,
-                email: result.profile?.email || '',
                 // Basic Information
-                full_name: result.profile?.full_name || '',
-                phone_number: result.profile?.phone_number || '',
-                date_of_birth: result.profile?.date_of_birth || '',
-                gender: result.profile?.gender || '',
-                national_id: result.profile?.national_id || '',
+                email,
+                full_name: userData.full_name,
+                phone_number: userData.phone_number,
+                date_of_birth: userData.date_of_birth,
+                gender: userData.gender,
+                national_id: userData.national_id,
                 
                 // Family Information
-                children_ages: Array.isArray(result.profile?.children_ages) ? result.profile.children_ages : [],
-                is_pregnant: result.profile?.is_pregnant || false,
-                planning_pregnancy: result.profile?.planning_pregnancy || false,
-                marital_status: result.profile?.marital_status || '',
-                spouse_name: result.profile?.spouse_name || '',
-                spouse_date_of_birth: result.profile?.spouse_date_of_birth || '',
+                children_ages: Array.isArray(userData.children_ages) ? userData.children_ages : [],
+                is_pregnant: userData.is_pregnant,
+                planning_pregnancy: userData.planning_pregnancy,
+                marital_status: userData.marital_status,
+                spouse_name: userData.spouse_name,
+                spouse_date_of_birth: userData.spouse_date_of_birth,
                 
                 // Health Information
-                is_smoker: result.profile?.is_smoker || false,
-                chronic_conditions: Array.isArray(result.profile?.chronic_conditions) ? result.profile.chronic_conditions : [],
-                medications: Array.isArray(result.profile?.medications) ? result.profile.medications : [],
-                disabilities: Array.isArray(result.profile?.disabilities) ? result.profile.disabilities : [],
+                is_smoker: userData.is_smoker,
+                chronic_conditions: Array.isArray(userData.chronic_conditions) ? userData.chronic_conditions : [],
+                medications: Array.isArray(userData.medications) ? userData.medications : [],
+                disabilities: Array.isArray(userData.disabilities) ? userData.disabilities : [],
                 
                 // Insurance Information
-                insurance_provider: result.profile?.insurance_provider || '',
-                policy_number: result.profile?.policy_number || '',
-                coverage_type: result.profile?.coverage_type || '',
+                insurance_provider: userData.insurance_provider,
+                policy_number: userData.policy_number,
+                coverage_type: userData.coverage_type,
                 
                 // Employment
-                employment_status: result.profile?.employment_status || '',
-                employer_name: result.profile?.employer_name || '',
-                income_level: result.profile?.income_level || '',
+                employment_status: userData.employment_status,
+                employer_name: userData.employer_name,
+                income_level: userData.income_level,
                 
                 // Preferences
-                preferred_language: result.profile?.preferred_language || 'he',
-                communication_preferences: result.profile?.communication_preferences || {
-                    email: true,
-                    sms: false,
-                    phone: false
-                },
-            });
-            toast.success(SUCCESS_PROFILE);
-            setStep(1);
-        } catch (e) {
-            toast.error(ERRORS.GENERAL_PROFILE);
-        }
-    };
+                preferred_language: userData.preferred_language,
+                communication_preferences: userData.communication_preferences || initialCommunicationPreferences
+            };
 
-    const handlePolicyFileUpload = async (file) => {
+            const result = await saveUserProfile(profileData);
+            
+            setUserData(updateUserData(result.profile));
+            toast.success(SUCCESS_PROFILE);
+            setStep(2);
+        } catch (error) {
+            console.error('Error saving profile:', error);
+            toast.error(ERRORS.GENERAL_PROFILE);
+        } finally {
+            // Always clear loading state
+            setIsLoading(false);
+        }
+    }, [user, userData, saveUserProfile, updateUserData]);
+
+    const handlePolicyFileUpload = useCallback(async (file) => {
         setIsUploading(true);
         setUploadProgress(0);
 
         try {
             const userId = userData.userId || user?.id;
+            
             if (!userId) {
                 toast.error(ERRORS.MISSING_USER_ID);
-                setIsUploading(false);
                 return;
             }
-            // Send file and userId as FormData to backend
-            const formData = new FormData();
-            formData.append('file', file);
-            formData.append('user_id', userId);
-            // Simulate progress for now (replace with SSE/WebSocket for real-time updates)
+
             setUploadProgress(10);
-            // fetch file's data from policy
-            const response = await fetch(API_POLICY, {
-                method: 'POST',
-                body: formData
-            });
-            setUploadProgress(80);
-            const result = await response.json();
+            const result = await uploadPolicyFile(file, userId);
             setUploadProgress(100);
 
-            if (!response.ok || !result.success) {
-                toast.error(ERRORS.POLICY_SAVE + (result.message || ''));
-                setIsUploading(false);
-                return;
-            }
             setFullAnalysis(result.answer);
             setFileHash(result?.file_hash || "");
             setUploadedPolicyName(result?.file_name || file.name || "");
             setPolicyId(result?.policy_id || 0);
-            // Store onboarding messages for chat context if present
+            
             if (result.messages && Array.isArray(result.messages)) {
                 setInitialMessages(result.messages);
             } else {
                 setInitialMessages(null);
             }
+            
             setStep(2);
-            setIsUploading(false);
         } catch (error) {
+            console.error('Error uploading policy:', error);
             toast.error(ERRORS.GENERAL_POLICY);
+        } finally {
             setIsUploading(false);
         }
-    };
+    }, [user, userData.userId, uploadPolicyFile]);
 
-    // Handler to continue with existing policy
-    const handleContinueWithPolicy = async () => { // => setStep(2);
-        // If we already have questions from the last upload, use them
+    const handleContinueWithPolicy = useCallback(async () => {
         if (fullAnalysis && fullAnalysis.length > 0) {
             setStep(2);
             return;
         }
-        // Otherwise, try to fetch questions for the current user/policy
+
         try {
             const userId = userData.userId || user?.id;
+            
             if (!userId) {
                 toast.error(ERRORS.MISSING_USER_ID);
                 return;
             }
-            // Try to fetch the latest questions for this user from the backend
-            const params = new URLSearchParams({ user_id: userId, file_hash: fileHash });
-            const response = await fetch(`${API_POLICY}?${params.toString()}`);
-            const result = await response.json();
-            if (!response.ok || !result.success) {
-                toast.error(ERRORS.POLICY_SAVE + (result.message || ''));
-                return;
+
+            // First try to get policy by ID if we have one
+            if (policyId) {
+                try {
+                    const result = await fetchPolicyById(policyId);
+                    if (result.policy) {
+                        setFullAnalysis(result.policy.analysis || "No analysis found");
+                        setStep(2);
+                        return;
+                    }
+                } catch (error) {
+                    console.log('Failed to fetch policy by ID, falling back to user policies');
+                }
             }
-            setFullAnalysis(result.answer || "Opps.. no analysis found3");
-            setStep(2);
-        } catch (e) {
+
+            // Fallback: get all user policies
+            const result = await fetchUserPolicies(userId);
+            if (result.policies && result.policies.length > 0) {
+                const mostRecentPolicy = result.policies[0];
+                setFullAnalysis(mostRecentPolicy.analysis || "No analysis found");
+                setPolicyId(mostRecentPolicy.id);
+            } else {
+                setFullAnalysis("No analysis found");
+            }
+            setStep(3);
+        } catch (error) {
+            console.error('Error continuing with policy:', error);
             toast.error(ERRORS.GENERAL_POLICY);
         }
-    };
+    }, [user, userData.userId, fullAnalysis, policyId, fetchUserPolicies, fetchPolicyById]);
 
-    const handleProfessionalHelp = () => {
-        setStep(6);
-    };
+    const handleProfessionalHelp = useCallback(() => {
+        setStep(7);
+    }, []);
 
+    // Render loading state
+    if (isLoadingUser || !user || isInitializing) {
+        return (
+            <div className="flex flex-col items-center justify-center pt-16 pb-8 min-h-[80vh]">
+                <div className="w-full max-w-md sm:max-w-2xl md:max-w-4xl lg:max-w-5xl mx-auto px-2">
+                    <Card>
+                        <CardHeader className="text-center">
+                            <CardTitle className="text-2xl font-bold" style={{ color: '#63cf80ff' }}>
+                                {WIZARD_TITLE}
+                            </CardTitle>
+                            <CardDescription className="text-blue-500">
+                                {WIZARD_DESCRIPTION}
+                            </CardDescription>
+                        </CardHeader>
+                        <CardContent>
+                            <div className="flex flex-col items-center justify-center min-h-[40vh]">
+                                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mb-4"></div>
+                                <p className="text-gray-600 text-center">
+                                    {isLoadingUser ? 'טוען...' : !user ? 'מאמת משתמש...' : 'בודקים את הפרופיל שלך...'}
+                                </p>
+                                <div className="text-xs text-gray-400 mt-2">
+                                    Debug: isLoadingUser={String(isLoadingUser)}, user={user ? 'exists' : 'null'}, isInitializing={String(isInitializing)}
+                                </div>
+                            </div>
+                        </CardContent>
+                    </Card>
+                </div>
+            </div>
+        );
+    }
+
+    // Render main content
     return (
         <div className="flex flex-col items-center justify-center pt-16 pb-8 min-h-[80vh]">
             <div className="w-full max-w-md sm:max-w-2xl md:max-w-4xl lg:max-w-5xl mx-auto px-2">
                 <Card>
                     <CardHeader className="text-center">
-                        <CardTitle className="text-2xl font-bold" style={{ color: '#63cf80ff' }}>{WIZARD_TITLE}</CardTitle>
-                        <CardDescription className="text-blue-500">{WIZARD_DESCRIPTION}</CardDescription>
+                        <CardTitle className="text-2xl font-bold" style={{ color: '#63cf80ff' }}>
+                            {WIZARD_TITLE}
+                        </CardTitle>
+                        <CardDescription className="text-blue-500">
+                            {WIZARD_DESCRIPTION}
+                        </CardDescription>
                     </CardHeader>
                     <CardContent>
-                        <Progress value={step * 33} max={100} />
+                        <Progress value={step * 12.5} max={100} />
+                        <div className="text-xs text-gray-400 mb-2">
+                            Debug: Current step = {step}
+                        </div>
+                        
                         {step === 0 && (
+                            <div className="flex flex-col items-center justify-center min-h-[40vh]">
+                                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mb-4"></div>
+                                <p className="text-gray-600 text-center">
+                                    {!user ? 'מאמת משתמש...' : 'מאתחל את האשף...'}
+                                </p>
+                            </div>
+                        )}
+                        
+                        {step === 1 && (
                             <PersonalDetailsStep
                                 userData={userData}
                                 setUserData={setUserData}
@@ -423,60 +565,64 @@ export default function Wizard({ user }) {
                                 onBack={() => window.history.back()}
                             />
                         )}
-                        {step === 1 && (
+                        
+                        {step === 2 && (
                             <UploadStep
                                 isUploading={isUploading}
                                 onUpload={handlePolicyFileUpload}
                                 email={userData.email || user?.email}
                                 uploadProgress={uploadProgress}
-                                onBack={() => setStep(0)}
+                                onBack={() => setStep(1)}
                                 policyName={uploadedPolicyName}
                                 onContinueWithPolicy={handleContinueWithPolicy}
+                                userName={userData.full_name}
                             />
                         )}
-                        {step === 2 && (
+                        
+                        {step === 3 && (
                             <PolicyLoadedOptions
                                 results={results}
-                                userName={user.name || ''}
-                                onBack={() => setStep(1)}
-                                onGuidedFlow={() => { setIsGuidedChat(true); setStep(4); }}
-                                onFreeChat={() => { setIsGuidedChat(false); setStep(4); }}
+                                userName={userData.full_name || user.name || ''}
+                                onBack={() => setStep(2)}
+                                onGuidedFlow={() => { setIsGuidedChat(true); setStep(5); }}
+                                onFreeChat={() => { setIsGuidedChat(false); setStep(5); }}
+                                isReturningUser={isReturningUser}
                             />
                         )}
-                        {/* שלב 3 (SmartQuestionnaireStep) מבוטל – הכל עובר לצ'אט */}
-                        {step === 4 && (
+                        
+                        {step === 5 && (
                             <PolicyChatStep
-                                userName={user.name || ''}
-                                onBack={() => setStep(2)}
+                                userName={userData.full_name || user.name || ''}
+                                onBack={() => setStep(3)}
                                 userId={userData.userId}
                                 guided={isGuidedChat}
                                 answer={fullAnalysis}
                                 policyId={policyId}
                                 onShowResults={(refunds) => {
-                                    setRefunds(refunds); // assuming refunds is an array
-                                    setStep(5);
+                                    setRefunds(refunds);
+                                    setStep(6);
                                 }}
-                                //messages={initialMessages}
-                                //setResults={setResults}
+                                isReturningUser={isReturningUser}
                             />
                         )}
-                        {step === 5 && (
+                        
+                        {step === 6 && (
                             <ResultsStep
                                 results={refunds}
                                 userData={userData}
-                                onBack={() => setStep(2)}
-                                onRestart={() => setStep(0)}
+                                onBack={() => setStep(3)}
+                                onRestart={() => setStep(1)}
                                 claim={handleProfessionalHelp}
                             />
                         )}
-                        {step === 6 && (
+                        
+                        {step === 7 && (
                             <ClaimStep
                                 results={refunds}
                                 userData={userData}
-                                onBack={() => setStep(2)}
-                                onRestart={() => setStep(0)}
+                                onBack={() => setStep(3)}
+                                onRestart={() => setStep(1)}
                                 claim={handleProfessionalHelp}
-                            
                             />
                         )}
                     </CardContent>

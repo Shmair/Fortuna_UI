@@ -4,50 +4,219 @@ import { Button } from '../components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../components/ui/card';
 import { Input } from '../components/ui/input';
 import { Label } from '../components/ui/label';
-import { useToast } from "../components/ui/use-toast";
+import { toast } from "sonner";
 import ComprehensiveUserProfileForm from '../components/forms/ComprehensiveUserProfileForm';
+import { supabase } from '../utils/supabaseClient';
 
 import { createPageUrl } from '../utils';
-
+import { apiService } from '../services/apiService';
 import { PROFILE_ERRORS, SUCCESS_PROFILE } from '../constants/profile';
 
 
 export default function ProfilePage() {
     const [user, setUser] = useState(null);
-    const [userData, setUserData] = useState({});
+    const [userData, setUserData] = useState({
+        // Basic Information
+        full_name: '',
+        email: '',
+        phone_number: '',
+        national_id: '',
+        date_of_birth: '',
+        gender: '',
+        
+        // Family Information
+        children_ages: [],
+        is_pregnant: false,
+        planning_pregnancy: false,
+        marital_status: '',
+        spouse_name: '',
+        spouse_date_of_birth: '',
+        
+        // Health Information
+        is_smoker: false,
+        chronic_conditions: [],
+        medications: [],
+        disabilities: [],
+        
+        // Insurance Information
+        insurance_provider: '',
+        policy_number: '',
+        coverage_type: '',
+        
+        // Employment
+        employment_status: '',
+        employer_name: '',
+        income_level: '',
+        
+        // Preferences
+        preferred_language: 'he',
+        communication_preferences: {
+            email: true,
+            sms: false,
+            phone: false
+        }
+    });
     const [isLoading, setIsLoading] = useState(true);
-    const { toast } = useToast();
+    // toast is now imported directly from sonner
 
     useEffect(() => {
         const fetchUser = async () => {
             try {
-                const email = window.localStorage.getItem('user_email');
-                if (!email) {
+                // Get current user from Supabase
+                const { data: { user: currentUser }, error: authError } = await supabase.auth.getUser();
+                
+                if (authError || !currentUser) {
                     setUser(null);
                     setIsLoading(false);
                     toast.error(PROFILE_ERRORS.MISSING_EMAIL);
                     return;
                 }
-                // Fetch user profile from backend API
-                const res = await fetch(`/api/profile?email=${encodeURIComponent(email)}`);
-                const { data: currentUser, error } = await res.json();
-                if (error || !currentUser) {
-                    setUser(null);
-                    setIsLoading(false);
-                    toast.error(PROFILE_ERRORS.GENERAL_PROFILE);
-                    return;
+
+                // Fetch user profile from backend API using the user ID
+                const result = await apiService.getProfile(currentUser.id);
+                console.log('API Response:', result);
+                const { profile: profileData, success, error } = result;
+                
+                if (!success || !profileData) {
+                    // If no profile exists, create one with basic user info
+                    setUser({
+                        id: currentUser.id,
+                        email: currentUser.email,
+                        full_name: currentUser.user_metadata?.full_name || '',
+                        date_of_birth: '',
+                        gender: '',
+                        children_ages: [],
+                        is_pregnant: false,
+                        planning_pregnancy: false,
+                        is_smoker: false,
+                    });
+                    setUserData({
+                        // Basic Information
+                        full_name: currentUser.user_metadata?.full_name || '',
+                        email: currentUser.email || '',
+                        phone_number: '',
+                        national_id: '',
+                        date_of_birth: '',
+                        gender: '',
+                        
+                        // Family Information
+                        children_ages: [],
+                        is_pregnant: false,
+                        planning_pregnancy: false,
+                        marital_status: '',
+                        spouse_name: '',
+                        spouse_date_of_birth: '',
+                        
+                        // Health Information
+                        is_smoker: false,
+                        chronic_conditions: [],
+                        medications: [],
+                        disabilities: [],
+                        
+                        // Insurance Information
+                        insurance_provider: '',
+                        policy_number: '',
+                        coverage_type: '',
+                        
+                        // Employment
+                        employment_status: '',
+                        employer_name: '',
+                        income_level: '',
+                        
+                        // Preferences
+                        preferred_language: 'he',
+                        communication_preferences: {
+                            email: true,
+                            sms: false,
+                            phone: false
+                        }
+                    });
+                } else {
+                    console.log('Profile data received:', profileData);
+                    setUser(profileData);
+                    setUserData({
+                        // Basic Information
+                        full_name: profileData.full_name || '',
+                        email: profileData.email || '',
+                        phone_number: profileData.phone_number || '',
+                        national_id: profileData.national_id || '',
+                        date_of_birth: profileData.date_of_birth || '',
+                        gender: profileData.gender || '',
+                        
+                        // Family Information
+                        children_ages: Array.isArray(profileData.children_ages) ? profileData.children_ages : [],
+                        is_pregnant: profileData.is_pregnant || false,
+                        planning_pregnancy: profileData.planning_pregnancy || false,
+                        marital_status: profileData.marital_status || '',
+                        spouse_name: profileData.spouse_name || '',
+                        spouse_date_of_birth: profileData.spouse_date_of_birth || '',
+                        
+                        // Health Information
+                        is_smoker: profileData.is_smoker || false,
+                        chronic_conditions: Array.isArray(profileData.chronic_conditions) ? profileData.chronic_conditions : [],
+                        medications: Array.isArray(profileData.medications) ? profileData.medications : [],
+                        disabilities: Array.isArray(profileData.disabilities) ? profileData.disabilities : [],
+                        
+                        // Insurance Information
+                        insurance_provider: profileData.insurance_provider || '',
+                        policy_number: profileData.policy_number || '',
+                        coverage_type: profileData.coverage_type || '',
+                        
+                        // Employment
+                        employment_status: profileData.employment_status || '',
+                        employer_name: profileData.employer_name || '',
+                        income_level: profileData.income_level || '',
+                        
+                        // Preferences
+                        preferred_language: profileData.preferred_language || 'he',
+                        communication_preferences: profileData.communication_preferences || {
+                            email: true,
+                            sms: false,
+                            phone: false
+                        }
+                    });
+                    console.log('UserData set to:', {
+                        // Basic Information
+                        full_name: profileData.full_name || '',
+                        email: profileData.email || '',
+                        phone_number: profileData.phone_number || '',
+                        national_id: profileData.national_id || '',
+                        date_of_birth: profileData.date_of_birth || '',
+                        gender: profileData.gender || '',
+                        
+                        // Family Information
+                        children_ages: Array.isArray(profileData.children_ages) ? profileData.children_ages : [],
+                        is_pregnant: profileData.is_pregnant || false,
+                        planning_pregnancy: profileData.planning_pregnancy || false,
+                        marital_status: profileData.marital_status || '',
+                        spouse_name: profileData.spouse_name || '',
+                        spouse_date_of_birth: profileData.spouse_date_of_birth || '',
+                        
+                        // Health Information
+                        is_smoker: profileData.is_smoker || false,
+                        chronic_conditions: Array.isArray(profileData.chronic_conditions) ? profileData.chronic_conditions : [],
+                        medications: Array.isArray(profileData.medications) ? profileData.medications : [],
+                        disabilities: Array.isArray(profileData.disabilities) ? profileData.disabilities : [],
+                        
+                        // Insurance Information
+                        insurance_provider: profileData.insurance_provider || '',
+                        policy_number: profileData.policy_number || '',
+                        coverage_type: profileData.coverage_type || '',
+                        
+                        // Employment
+                        employment_status: profileData.employment_status || '',
+                        employer_name: profileData.employer_name || '',
+                        income_level: profileData.income_level || '',
+                        
+                        // Preferences
+                        preferred_language: profileData.preferred_language || 'he',
+                        communication_preferences: profileData.communication_preferences || {
+                            email: true,
+                            sms: false,
+                            phone: false
+                        }
+                    });
                 }
-                setUser(currentUser);
-                setUserData({
-                    full_name: currentUser.full_name || '',
-                    email: currentUser.email || '',
-                    date_of_birth: currentUser.date_of_birth || '',
-                    gender: currentUser.gender || '',
-                    children_ages: Array.isArray(currentUser.children_ages) ? currentUser.children_ages : [],
-                    is_pregnant: currentUser.is_pregnant || false,
-                    planning_pregnancy: currentUser.planning_pregnancy || false,
-                    is_smoker: currentUser.is_smoker || false,
-                });
             } catch (error) {
                 console.error("Failed to fetch user", error);
                 toast.error(PROFILE_ERRORS.GENERAL_PROFILE);
@@ -65,18 +234,24 @@ export default function ProfilePage() {
 
     const handleSubmit = async (e) => {
         e.preventDefault();
-        const { email, ...updatableData } = userData;
         try {
-            const res = await fetch('/api/profile', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ ...updatableData, email: userData.email })
+            // Get current user ID from Supabase
+            const { data: { user: currentUser } } = await supabase.auth.getUser();
+            if (!currentUser) {
+                toast.error('User not authenticated');
+                return;
+            }
+
+            const result = await apiService.saveProfile({ 
+                ...userData, 
+                userId: currentUser.id 
             });
-            const { error } = await res.json();
-            if (!error) {
+            if (result.success) {
                 toast.success(SUCCESS_PROFILE);
+                // Update local user state with the saved data
+                setUser(result.profile);
             } else {
-                toast.error(PROFILE_ERRORS.PROFILE_SAVE + (error.message || ''));
+                toast.error(PROFILE_ERRORS.PROFILE_SAVE + (result.message || ''));
             }
         } catch (error) {
             console.error("Failed to update user", error);
@@ -85,8 +260,14 @@ export default function ProfilePage() {
     };
 
     const handleLogout = async () => {
-        window.localStorage.removeItem('user_email');
-        window.location.href = createPageUrl('Home');
+        try {
+            await supabase.auth.signOut();
+            window.location.href = createPageUrl('Home');
+        } catch (error) {
+            console.error('Error signing out:', error);
+            // Still redirect even if signout fails
+            window.location.href = createPageUrl('Home');
+        }
     }
 
     if (isLoading) {
@@ -124,16 +305,7 @@ export default function ProfilePage() {
                 </CardHeader>
                 <CardContent>
                     <form onSubmit={handleSubmit} className="space-y-8">
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                            <div>
-                                <Label htmlFor="full_name" className="text-blue-700 font-semibold">שם מלא</Label>
-                                <Input id="full_name" value={userData.full_name || ''} onChange={handleInputChange} className="rounded-full border-blue-200 focus:border-blue-400 px-4 py-2" />
-                            </div>
-                            <div>
-                                <Label htmlFor="email" className="text-blue-700 font-semibold">אימייל</Label>
-                                <Input id="email" name="email" type="email" value={userData.email || ''} onChange={handleInputChange} required autoComplete="email" className="rounded-full border-blue-200 focus:border-blue-400 px-4 py-2" />
-                            </div>
-                        </div>
+
                         <ComprehensiveUserProfileForm userData={userData} setUserData={setUserData} showErrors={false} />
                         <div className="flex flex-col sm:flex-row gap-4 pt-6 justify-center">
                             <Button type="submit" className="w-full sm:w-auto bg-blue-400 hover:bg-blue-500 text-white rounded-full py-2 px-6 text-lg font-semibold shadow-md">שמור שינויים</Button>

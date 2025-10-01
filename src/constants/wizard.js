@@ -1,10 +1,9 @@
 export const WIZARD_TITLE = 'בדיקת החזר ביטוח';
 export const WIZARD_DESCRIPTION = 'מלא את הפרטים והעלה את הפוליסה שלך';
-export const API_BASE =  process.env.REACT_APP_API_BASE;
-export const API_PROFILE = API_BASE + '/api/profile';
-export const API_POLICY = API_BASE + '/api/policy';
 export const LOCALSTORAGE_EMAIL = 'user_email';
-export const CONTENT_TYPE_JSON = 'application/json';
+
+// Import API constants from dedicated file
+export { API_ENDPOINTS, HEADERS } from './api';
 
 export const ERRORS = {
     MISSING_EMAIL: "חסר אימייל: אנא הזן כתובת אימייל תקינה.",

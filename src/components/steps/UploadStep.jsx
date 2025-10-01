@@ -4,7 +4,7 @@ import BackButton from '../layout/BackButton';
 import { Button } from '../ui/button';
 import { Progress } from '../ui/progress';
 
-export default function UploadStep({ onUpload, isUploading, uploadProgress, onBack, policyName, onContinueWithPolicy }) {
+export default function UploadStep({ onUpload, isUploading, uploadProgress, onBack, policyName, onContinueWithPolicy, userName }) {debugger
     const [file, setFile] = React.useState(null);
     const [removed, setRemoved] = React.useState(false);
     const handleRemove = () => {
@@ -26,6 +26,13 @@ export default function UploadStep({ onUpload, isUploading, uploadProgress, onBa
     return (
         <div className="space-y-4 text-center">
             <h3 className="text-lg font-semibold">העלאת פוליסת ביטוח</h3>
+            {userName && (
+                <div className="bg-green-50 border border-green-200 rounded-lg p-3 mb-4">
+                    <p className="text-sm text-green-700">
+                        שלום {userName}! הפרופיל שלך מלא, דילגנו על שלב הפרטים האישיים.
+                    </p>
+                </div>
+            )}
             <p className="text-sm text-gray-500">ננתח את כל סעיפי הפוליסה כדי לבנות עבורך שאלון חכם.</p>
             {policyName && !removed ? (
                 <>

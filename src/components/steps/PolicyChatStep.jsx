@@ -4,7 +4,7 @@ import { POLICY_CHAT } from '../../constants/policyChat';
 import BackButton from '../layout/BackButton';
 
 import ResultsStep from './ResultsStep';
-export default function PolicyChatStep({ userName = '', onBack, userId, guided = false, answer, policyId, onShowResults }) {
+export default function PolicyChatStep({ userName = '', onBack, userId, guided = false, answer, policyId, onShowResults, isReturningUser }) {
 
   // Determine initial chat messages
   const getInitialMessages = () => {
@@ -71,6 +71,13 @@ export default function PolicyChatStep({ userName = '', onBack, userId, guided =
   }
 return (
   <div className="flex flex-col items-center justify-center mb-0">
+        {isReturningUser && userName && (
+            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6 max-w-md w-full">
+                <p className="text-sm text-blue-700 text-center">
+                    שלום {userName}! מצאנו את הפוליסה שלך במערכת, דילגנו על שלבי ההגדרה.
+                </p>
+            </div>
+        )}
         <h2 className="text-2xl font-bold mb-2 text-right w-full">{POLICY_CHAT.TITLE}</h2>
         <p className="text-gray-600 mb-6 text-right w-full">{POLICY_CHAT.DESCRIPTION}</p>
   <div className="bg-white rounded-xl shadow p-2 w-full max-w-7xl flex flex-col mb-0" style={{ minHeight: 900 }}>

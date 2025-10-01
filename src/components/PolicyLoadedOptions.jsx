@@ -1,9 +1,16 @@
 import { Button } from './ui/button';
 import BackButton from './layout/BackButton';
 
-export default function PolicyLoadedOptions({ onFreeChat, onGuidedFlow, onBack }) {
+export default function PolicyLoadedOptions({ onFreeChat, onGuidedFlow, onBack, userName, isReturningUser }) {
     return (
         <div className="flex flex-col items-center justify-center min-h-[40vh]">
+            {isReturningUser && userName && (
+                <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6 max-w-md">
+                    <p className="text-sm text-blue-700 text-center">
+                        שלום {userName}! מצאנו את הפוליסה שלך במערכת, דילגנו על שלבי ההגדרה.
+                    </p>
+                </div>
+            )}
             <h2 className="text-2xl font-bold mb-2 text-center">הפוליסה נטענה בהצלחה!</h2>
             <p className="text-gray-600 mb-8 text-center">איך תרצו להמשיך מכאן?</p>
             <div className="flex flex-row gap-8 items-center justify-center w-full max-w-3xl">

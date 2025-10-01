@@ -25,6 +25,7 @@ function App() {
   const [userName, setUserName] = useState("");
   const [userData, setUserData] = useState({});
   const [user, setUser] = useState(null);
+  const [isLoadingUser, setIsLoadingUser] = useState(true);
   
 
   // On mount, check for existing Supabase user/session
@@ -35,6 +36,7 @@ function App() {
         setUser(user);
         setUserName(user.user_metadata?.full_name || user.email || "");
       }
+      setIsLoadingUser(false);
     });
 
     // Listen for auth changes
@@ -99,7 +101,7 @@ function App() {
               <Route path="/auth/callback" element={<AuthCallback />} />
               <Route path="/dashboard" element={<Dashboard />} />
               <Route path="/profile" element={<ProfilePage />} />
-              <Route path="/wizard" element={<Wizard user={user} />} />
+              <Route path="/wizard" element={<Wizard user={user} isLoadingUser={isLoadingUser} />} />
               <Route path="/user-profile-form" element={<ComprehensiveUserProfileForm userData={userData} setUserData={setUserData} showErrors={false} />} />
             </Routes>
           </>
