@@ -8,6 +8,7 @@ import { Progress } from '../ui/progress';
 import UploadStep from './UploadStep';
 import PersonalDetailsStep from './PersonalDetailsStep';
 import ClaimStep from './ClaimStep';
+import { supabase } from '../../utils/supabaseClient';
 
 import {
     API_ENDPOINTS,
@@ -223,8 +224,17 @@ export default function Wizard({ user, isLoadingUser }) {
         formData.append('file', file);
         formData.append('user_id', userId);
         
+        // Get the current session token
+        const { data: { session } } = await supabase.auth.getSession();
+        if (!session?.access_token) {
+            throw new Error('No authentication token available');
+        }
+        
         const response = await fetch(API_ENDPOINTS.POLICY.UPLOAD, {
             method: 'POST',
+            headers: {
+                'Authorization': `Bearer ${session.access_token}`
+            },
             body: formData
         });
         
@@ -440,7 +450,7 @@ export default function Wizard({ user, isLoadingUser }) {
                 setInitialMessages(null);
             }
             
-            setStep(2);
+            setStep(3);
         } catch (error) {
             console.error('Error uploading policy:', error);
             toast.error(ERRORS.GENERAL_POLICY);
@@ -572,7 +582,15 @@ export default function Wizard({ user, isLoadingUser }) {
                                 onUpload={handlePolicyFileUpload}
                                 email={userData.email || user?.email}
                                 uploadProgress={uploadProgress}
-                                onBack={() => setStep(1)}
+                                onBack={() => {
+                                    // If user has a complete profile, go back to loading step instead of personal details
+                                    const profileComplete = isProfileComplete(userData);
+                                    if (profileComplete) {
+                                        setStep(0);
+                                    } else {
+                                        setStep(1);
+                                    }
+                                }}
                                 policyName={uploadedPolicyName}
                                 onContinueWithPolicy={handleContinueWithPolicy}
                                 userName={userData.full_name}

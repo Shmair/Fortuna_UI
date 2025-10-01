@@ -4,7 +4,7 @@ import BackButton from '../layout/BackButton';
 import { Button } from '../ui/button';
 import { Progress } from '../ui/progress';
 
-export default function UploadStep({ onUpload, isUploading, uploadProgress, onBack, policyName, onContinueWithPolicy, userName }) {debugger
+export default function UploadStep({ onUpload, isUploading, uploadProgress, onBack, policyName, onContinueWithPolicy, userName }) {
     const [file, setFile] = React.useState(null);
     const [removed, setRemoved] = React.useState(false);
     const handleRemove = () => {
