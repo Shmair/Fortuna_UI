@@ -421,7 +421,9 @@ export default function Wizard({ user, isLoadingUser }) {
             setStep(5);
         } catch (error) {
             console.error('Error uploading policy:', error);
-            toast.error(ERRORS.GENERAL_POLICY);
+            // Show the actual error message instead of generic one
+            const errorMessage = error.message || error.error || ERRORS.GENERAL_POLICY;
+            toast.error(`Upload failed: ${errorMessage}`);
             setIsProcessing(false);
         } finally {
             setIsUploading(false);
