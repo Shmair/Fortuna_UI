@@ -19,12 +19,14 @@ export default function PolicyChatStep({ userName = '', onBack, userId, guided =
   const [input, setInput] = useState('');
   const [showSummary, setShowSummary] = useState(false);
   const [answers, setAnswers] = useState({});
+  const [quickReplies, setQuickReplies] = useState([]);
 
-  const handleSend = async () => {
-    const userMessage = input.trim();
+  const handleSend = async (message = null) => {
+    const userMessage = message || input.trim();
     if (!userMessage) return;
     setMessages(msgs => [...msgs, { sender: 'user', text: userMessage }]);
     setInput('');
+    setQuickReplies([]); // Clear quick replies when user sends a message
 
     const payload = { userId, user_question: userMessage, policyId };
 
@@ -47,10 +49,19 @@ export default function PolicyChatStep({ userName = '', onBack, userId, guided =
         }
 
         setMessages(msgs => [...msgs, { sender: 'bot', text: botText }]);
+        
+        // Handle quick replies if present
+        if (typeof data.answer === 'object' && data.answer.quick_replies) {
+          setQuickReplies(data.answer.quick_replies);
+        }
       }
     } catch (err) {
       setMessages(msgs => [...msgs, { sender: 'bot', text: POLICY_CHAT.ERROR }]);
     }
+  };
+
+  const handleQuickReply = (reply) => {
+    handleSend(reply);
   };
 
   if (showSummary) {
@@ -85,6 +96,23 @@ return (
                         </div>
                     </div>
                 ))}
+                
+                {/* Quick Replies */}
+                {quickReplies.length > 0 && (
+                    <div className="mb-4 flex justify-start">
+                        <div className="flex flex-wrap gap-2 max-w-80%">
+                            {quickReplies.map((reply, idx) => (
+                                <button
+                                    key={idx}
+                                    onClick={() => handleQuickReply(reply)}
+                                    className="bg-blue-100 hover:bg-blue-200 text-blue-800 px-3 py-2 rounded-lg text-sm border border-blue-300 transition-colors duration-200"
+                                >
+                                    {reply}
+                                </button>
+                            ))}
+                        </div>
+                    </div>
+                )}
             </div>
             <div className="flex items-center gap-2">
                 <Button onClick={handleSend} className="px-3 py-2" style={{ background: '#222', color: '#fff' }}>
