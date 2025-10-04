@@ -1,6 +1,7 @@
 import { useEffect, useState, useCallback } from 'react';
 import { toast } from "sonner";
 import PolicyChatStep from './PolicyChatStep';
+import PolicyLoadedOptions from './PolicyLoadedOptions';
 import ResultsStep from './ResultsStep';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '../ui/card';
 import { Progress } from '../ui/progress';
@@ -76,7 +77,7 @@ const initialCommunicationPreferences = {
 export default function Wizard({ user, isLoadingUser }) {
     // State management
     const [step, setStep] = useState(0);
-    const [isGuidedChat, setIsGuidedChat] = useState(false);
+    const [chatMode, setChatMode] = useState('user'); // 'user' | 'assistant'
     const [isReturningUser, setIsReturningUser] = useState(false);
     const [userData, setUserData] = useState(initialUserData);
     const [fullAnalysis, setFullAnalysis] = useState([]);
@@ -95,6 +96,7 @@ export default function Wizard({ user, isLoadingUser }) {
         return "";
     });
     const [refunds, setRefunds] = useState({});
+    const [sessionId, setSessionId] = useState(null);
     const [initialMessages, setInitialMessages] = useState(null);
 
     // Utility functions
@@ -249,9 +251,9 @@ export default function Wizard({ user, isLoadingUser }) {
                                 setFullAnalysis(policyResult.policy.analysis || '');
                                 setPolicyId(policyResult.policy.id);
                                 setIsReturningUser(true);
-                                setIsGuidedChat(false);
+                                setChatMode('user');
                             
-                                await finishLoading(5)(); // Skip to chat step
+                                await finishLoading(4)(); // Go to options step before chat
                                 return;
                             }
                         }
@@ -266,9 +268,9 @@ export default function Wizard({ user, isLoadingUser }) {
                             setFullAnalysis(mostRecentPolicy.analysis || '');
                             setPolicyId(mostRecentPolicy.id);
                             setIsReturningUser(true);
-                            setIsGuidedChat(false);
+                            setChatMode('user');
                             
-                            await finishLoading(5)(); // Skip to chat step
+                            await finishLoading(4)(); // Go to options step before chat
                         } else {
                             console.log('No existing policies, going to upload step');
                             console.log('About to call finishLoading(2)');
@@ -415,10 +417,10 @@ export default function Wizard({ user, isLoadingUser }) {
                 setInitialMessages(null);
             }
             
-            // Move to chat step after processing
+            // Move to options step after processing
             await delay(1000);
             setIsProcessing(false);
-            setStep(5);
+            setStep(4);
         } catch (error) {
             console.error('Error uploading policy:', error);
             // Show the actual error message instead of generic one
@@ -591,14 +593,26 @@ export default function Wizard({ user, isLoadingUser }) {
                             </div>
                         )}
                         
+                        {step === 4 && (
+                            <PolicyLoadedOptions
+                                results={results}
+                                userName={userData.full_name || user.name || ''}
+                                onBack={() => setStep(2)}
+                                onGuidedFlow={async () => { setChatMode('assistant'); try { const r = await apiService.startChatSession({ userId: userData.userId, policyId, mode: 'assistant' }); setSessionId(r.sessionId); } catch {} setStep(5); }}
+                                onFreeChat={async () => { setChatMode('user'); try { const r = await apiService.startChatSession({ userId: userData.userId, policyId, mode: 'user' }); setSessionId(r.sessionId); } catch {} setStep(5); }}
+                                isReturningUser={isReturningUser}
+                            />
+                        )}
+
                         {step === 5 && (
                             <PolicyChatStep
                                 userName={userData.full_name || user.name || ''}
                                 onBack={() => setStep(2)}
                                 userId={userData.userId}
-                                guided={isGuidedChat}
+                                mode={chatMode}
                                 answer={fullAnalysis}
                                 policyId={policyId}
+                                sessionId={sessionId}
                                 onShowResults={(refunds) => {
                                     setRefunds(refunds);
                                     setStep(6);

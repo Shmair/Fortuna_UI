@@ -5,11 +5,11 @@ import BackButton from '../layout/BackButton';
 import { apiService } from '../../services/apiService';
 
 import ResultsStep from './ResultsStep';
-export default function PolicyChatStep({ userName = '', onBack, userId, guided = false, answer, policyId, onShowResults, isReturningUser }) {
+export default function PolicyChatStep({ userName = '', onBack, userId, mode = 'user', answer, policyId, onShowResults, isReturningUser, sessionId }) {
 
   // Determine initial chat messages
   const getInitialMessages = () => {
-    if (guided && typeof answer === 'string' && answer.trim().length > 0) {
+    if (mode === 'assistant' && typeof answer === 'string' && answer.trim().length > 0) {
       return [{ sender: 'bot', text: answer }];
     }
     return [{ sender: 'bot', text: POLICY_CHAT.BOT_GREETING(userName) }];
@@ -28,7 +28,7 @@ export default function PolicyChatStep({ userName = '', onBack, userId, guided =
     setInput('');
     setQuickReplies([]); // Clear quick replies when user sends a message
 
-    const payload = { userId, user_question: userMessage, policyId };
+    const payload = { userId, user_question: userMessage, policyId, sessionId };
 
     try {
       const data = await apiService.post(POLICY_CHAT.API_URL, payload);
@@ -50,8 +50,8 @@ export default function PolicyChatStep({ userName = '', onBack, userId, guided =
 
         setMessages(msgs => [...msgs, { sender: 'bot', text: botText }]);
         
-        // Handle quick replies if present
-        if (typeof data.answer === 'object' && data.answer.quick_replies) {
+        // Handle quick replies only in assistant mode
+        if (mode === 'assistant' && typeof data.answer === 'object' && data.answer.quick_replies) {
           setQuickReplies(data.answer.quick_replies);
         }
       }
@@ -97,8 +97,8 @@ return (
                     </div>
                 ))}
                 
-                {/* Quick Replies */}
-                {quickReplies.length > 0 && (
+                {/* Quick Replies (assistant mode only) */}
+                {mode === 'assistant' && quickReplies.length > 0 && (
                     <div className="mb-4 flex justify-start">
                         <div className="flex flex-wrap gap-2 max-w-80%">
                             {quickReplies.map((reply, idx) => (
@@ -121,14 +121,14 @@ return (
                 <input
                     type="text"
                     className="flex-1 rounded px-4 py-2 border border-gray-300 focus:outline-none"
-                    placeholder={guided ? 'הקלד תשובה...' : POLICY_CHAT.INPUT_PLACEHOLDER}
+                    placeholder={mode === 'assistant' ? 'הקלד תשובה...' : POLICY_CHAT.INPUT_PLACEHOLDER}
                     value={input}
                     onChange={e => setInput(e.target.value)}
                     onKeyDown={e => { if (e.key === 'Enter') handleSend(); }}
-                    // disabled={guided && currentQuestionIdx === null}
+                    // disabled when needed for assistant flow
                 />
             </div>
-            {guided && (
+            {mode === 'assistant' && (
                 <Button className="mt-4 w-full" variant="outline" onClick={() => setShowSummary(true)}>
                     הצג סיכום ביניים
                 </Button>

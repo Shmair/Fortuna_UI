@@ -1,4 +1,5 @@
 import { API_ENDPOINTS, HEADERS, API_ERRORS, REQUEST_CONFIG } from '../constants/api';
+import { POLICY_CHAT } from '../constants/policyChat';
 import { supabase } from '../utils/supabaseClient';
 
 /**
@@ -176,6 +177,10 @@ class ApiService {
 
   async deletePolicy(policyId) {
     return this.delete(API_ENDPOINTS.POLICY.DELETE(policyId));
+  }
+
+  async startChatSession({ userId, policyId, mode }) {
+    return this.post(POLICY_CHAT.START_SESSION_URL, { userId, policyId, mode });
   }
 }
 
