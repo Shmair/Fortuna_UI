@@ -7,7 +7,7 @@ import { supabase } from '../utils/supabaseClient';
  */
 class ApiService {
   constructor() {
-    this.baseURL = process.env.REACT_APP_API_BASE;
+    this.baseURL = process.env.REACT_APP_API_BASE || 'http://localhost:4000';
   }
 
   /**
@@ -56,6 +56,36 @@ class ApiService {
       clearTimeout(timeoutId);
 
       if (!response.ok) {
+        // Try to parse error response from backend
+        try {
+          const errorData = await response.json();
+          
+          // Check for Hebrew error messages first
+          if (errorData.hebrewError) {
+            throw new Error(errorData.hebrewError);
+          }
+          
+          if (errorData.message) {
+            throw new Error(errorData.message);
+          } else if (errorData.error) {
+            throw new Error(errorData.error);
+          }
+        } catch (parseError) {
+          // If we can't parse the error response, use generic error
+          console.warn('Could not parse error response:', parseError);
+        }
+        
+        // Provide more specific error messages based on status code
+        if (response.status === 400) {
+          throw new Error('שגיאה בהעלאת הקובץ: הקובץ אינו תקין או בפורמט לא נתמך');
+        } else if (response.status === 401) {
+          throw new Error('שגיאה בהעלאת הקובץ: נדרש להתחבר מחדש');
+        } else if (response.status === 413) {
+          throw new Error('שגיאה בהעלאת הקובץ: הקובץ גדול מדי');
+        } else if (response.status === 500) {
+          throw new Error('שגיאה בהעלאת הקובץ: בעיה בשרת, נסה שוב מאוחר יותר');
+        }
+        
         throw new Error(`HTTP ${response.status}: ${response.statusText}`);
       }
 
@@ -134,26 +164,26 @@ class ApiService {
 
   // Profile API methods
   async getProfile(userId) {
-    return this.get(API_ENDPOINTS.PROFILE.GET(userId));
+    return this.get(`${this.baseURL}/api/profile?user_id=${encodeURIComponent(userId)}`);
   }
 
   async saveProfile(profileData) {
-    return this.post(API_ENDPOINTS.PROFILE.POST, profileData);
+    return this.post(`${this.baseURL}/api/profile`, profileData);
   }
 
   async updateProfile(userId, profileData) {
-    return this.put(API_ENDPOINTS.PROFILE.PUT(userId), profileData);
+    return this.put(`${this.baseURL}/api/profile/${userId}`, profileData);
   }
 
   async deleteProfile(userId) {
-    return this.delete(API_ENDPOINTS.PROFILE.DELETE(userId));
+    return this.delete(`${this.baseURL}/api/profile/${userId}`);
   }
 
   // Policy API methods
   async uploadPolicy(formData) {
     // Get auth headers for FormData upload
     const authHeaders = await this.getAuthHeaders();
-    return this.request(API_ENDPOINTS.POLICY.UPLOAD, {
+    return this.request(`${this.baseURL}/api/policy`, {
       method: 'POST',
       headers: {
         'Authorization': authHeaders.Authorization
@@ -164,23 +194,23 @@ class ApiService {
   }
 
   async getPolicies(userId) {
-    return this.get(API_ENDPOINTS.POLICY.GET(userId));
+    return this.get(`${this.baseURL}/api/policy?user_id=${encodeURIComponent(userId)}`);
   }
 
   async getPolicyByHash(fileHash) {
-    return this.get(API_ENDPOINTS.POLICY.GET_BY_HASH(fileHash));
+    return this.get(`${this.baseURL}/api/policy?file_hash=${encodeURIComponent(fileHash)}`);
   }
 
   async getPolicy(policyId) {
-    return this.get(API_ENDPOINTS.POLICY.GET_BY_ID(policyId));
+    return this.get(`${this.baseURL}/api/policy/${policyId}`);
   }
 
   async deletePolicy(policyId) {
-    return this.delete(API_ENDPOINTS.POLICY.DELETE(policyId));
+    return this.delete(`${this.baseURL}/api/policy/${policyId}`);
   }
 
   async startChatSession({ userId, policyId, mode }) {
-    return this.post(POLICY_CHAT.START_SESSION_URL, { userId, policyId, mode });
+    return this.post(`${this.baseURL}/api/policy/session`, { userId, policyId, mode });
   }
 }
 

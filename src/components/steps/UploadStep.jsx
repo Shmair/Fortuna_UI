@@ -7,18 +7,40 @@ import { Progress } from '../ui/progress';
 export default function UploadStep({ onUpload, isUploading, uploadProgress, onBack, policyName, onContinueWithPolicy, userName, showBackButton = true }) {
     const [file, setFile] = React.useState(null);
     const [removed, setRemoved] = React.useState(false);
+    const [uploadError, setUploadError] = React.useState(null);
+    
     const handleRemove = () => {
         setRemoved(true);
+        setUploadError(null); // Clear error when removing file
     };
 
     const handleFileChange = async (e) => {
         const selectedFile = e.target.files[0];
         setFile(selectedFile);
+        setUploadError(null); // Clear any previous errors
+        
         if (selectedFile && onUpload) {
             try {
                 await onUpload(selectedFile);
             } catch (err) {
-                alert('שגיאה בהעלאת הקובץ: ' + err.message);
+                console.error('Upload error in UploadStep:', err);
+                
+                // Try to extract Hebrew error message from API response
+                let errorMessage = 'שגיאה בהעלאת הקובץ';
+                
+                if (err.message) {
+                    // Check if the error message contains Hebrew error details
+                    if (err.message.includes('שגיאה בהעלאת הקובץ')) {
+                        errorMessage = err.message;
+                    } else if (err.message.includes('HTTP 400')) {
+                        // For HTTP 400 errors, try to get more specific message
+                        errorMessage = 'שגיאה בהעלאת הקובץ: הקובץ אינו תקין או בפורמט לא נתמך';
+                    } else {
+                        errorMessage = `שגיאה בהעלאת הקובץ: ${err.message}`;
+                    }
+                }
+                
+                setUploadError(errorMessage);
             }
         }
     };
@@ -92,6 +114,13 @@ export default function UploadStep({ onUpload, isUploading, uploadProgress, onBa
                             אין לי ביטוח פרטי / המשך ללא העלאה
                         </a>
                     </div>
+                    {/* Display upload error */}
+                    {uploadError && (
+                        <div className="mt-4 p-3 bg-red-50 border border-red-200 rounded-lg">
+                            <p className="text-sm text-red-700 font-medium">שגיאה בהעלאת הקובץ:</p>
+                            <p className="text-sm text-red-600 mt-1">{uploadError}</p>
+                        </div>
+                    )}
                 </>
             )}
             {showBackButton && (
