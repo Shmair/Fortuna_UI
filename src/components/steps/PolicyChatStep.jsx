@@ -69,6 +69,26 @@ export default function PolicyChatStep({ userName = '', onBack, userId, mode = '
     const relevantRefunds = Array.isArray(answer)
       ? answer.filter(q => answers[q.service_name] && answers[q.service_name].toLowerCase() === 'כן')
       : [];
+    
+    // If no relevant refunds found, show a message
+    if (relevantRefunds.length === 0) {
+      return (
+        <div className="flex flex-col items-center justify-center min-h-[60vh] w-full">
+          <div className="bg-white rounded-xl shadow p-8 max-w-md w-full text-center">
+            <h2 className="text-2xl font-bold mb-4">אין החזרים זמינים כרגע</h2>
+            <p className="text-gray-600 mb-6">
+              לא זוהו החזרים רלוונטיים על סמך התשובות שסיפקת. 
+              נסה להמשיך בצ'אט או לחזור לשלב הקודם.
+            </p>
+            <div className="flex gap-4 justify-center">
+              <Button onClick={() => setShowSummary(false)}>חזור לצ'אט</Button>
+              {onBack && <Button variant="outline" onClick={onBack}>חזור לשלב הקודם</Button>}
+            </div>
+          </div>
+        </div>
+      );
+    }
+    
     return (
       <div className="flex flex-col items-center justify-center min-h-[60vh] w-full">
         <ResultsStep results={relevantRefunds} onRestart={() => { setShowSummary(false); }} onBack={onBack} />

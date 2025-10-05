@@ -103,9 +103,19 @@ export default function Wizard({ user, isLoadingUser }) {
     const delay = (ms) => new Promise(resolve => setTimeout(resolve, ms));
 
     const isProfileComplete = useCallback((profile) => {
-        return REQUIRED_PROFILE_FIELDS.every(field => 
-            profile[field] && profile[field].trim() !== ''
-        );
+        console.log('🔍 isProfileComplete called with profile:', profile);
+        
+        const result = REQUIRED_PROFILE_FIELDS.every(field => {
+            const value = profile[field];
+            // Convert to string and check if it's not empty
+            const stringValue = String(value || '');
+            const isValid = stringValue.trim() !== '';
+            console.log(`  Field ${field}: "${value}" -> ${isValid}`);
+            return isValid;
+        });
+        
+        console.log('🔍 isProfileComplete result:', result);
+        return result;
     }, []);
 
     const updateUserData = useCallback((profile) => {
@@ -162,6 +172,7 @@ export default function Wizard({ user, isLoadingUser }) {
 
     // API functions
     const fetchUserProfile = useCallback(async (userId) => {
+        console.log('🔍 fetchUserProfile called for userId:', userId);
         const result = await apiService.getProfile(userId);
         
         // Return null if no profile exists (user needs to create one)
@@ -235,6 +246,17 @@ export default function Wizard({ user, isLoadingUser }) {
 
                 // Check if profile is complete
                 const profileComplete = isProfileComplete(profile);
+                console.log('🔍 Profile completeness check:', {
+                    profileComplete,
+                    profile: {
+                        full_name: profile.full_name,
+                        phone_number: profile.phone_number,
+                        national_id: profile.national_id,
+                        date_of_birth: profile.date_of_birth,
+                        gender: profile.gender
+                    },
+                    requiredFields: REQUIRED_PROFILE_FIELDS
+                });
                 
                 if (profileComplete) {
                     console.log('Profile is complete, checking for existing policy');
@@ -282,6 +304,7 @@ export default function Wizard({ user, isLoadingUser }) {
                     }
                 } else {
                     console.log('Profile incomplete, setting step to 1');
+                    console.log('🔍 Profile incomplete - going to personal details step');
                     setIsLoading(false);
                     setIsInitializing(false);
                     setStep(1); // Go to personal details step for incomplete profiles
@@ -300,7 +323,7 @@ export default function Wizard({ user, isLoadingUser }) {
         initializeUser();
         
         return () => { isMounted = false; };
-    }, [user, fetchUserProfile, fetchUserPolicies, fetchPolicyById, updateUserData, isProfileComplete, finishLoading]);
+    }, [user?.id]); // Only depend on user?.id, not the functions
 
     // Event handlers
     const handleSavePersonalDetails = useCallback(async () => {
