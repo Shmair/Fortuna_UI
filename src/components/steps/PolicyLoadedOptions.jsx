@@ -11,7 +11,15 @@ export default function PolicyLoadedOptions({
     isReturningUser = false
 }) {
     return (
-        <div className="w-full flex flex-col items-center justify-center text-center space-y-4">
+        <div className="w-full flex flex-col items-center justify-center text-center space-y-6">
+            {/* UX-ID: progress_context - Step descriptions */}
+            <div className="space-y-2">
+                <h3 className="text-xl font-semibold text-gray-800">איך תרצו להמשיך?</h3>
+                <p className="text-sm text-gray-600">
+                    עכשיו אפשר לשאול שאלות על הפוליסה או לעבור על שאלון מודרך לזיהוי החזרים.
+                </p>
+            </div>
+            
             {userName && (
                 <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 w-full max-w-xl">
                     <p className="text-sm text-blue-700">

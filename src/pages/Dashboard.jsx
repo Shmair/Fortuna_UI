@@ -84,11 +84,46 @@ export default function Dashboard() {
             
             {submissions.length === 0 ? (
                 <Card>
-                    <CardContent className="p-6 flex flex-col items-center justify-center text-center">
-                        <AlertCircle className="w-12 h-12 text-gray-400 mb-4" />
-                        <h3 className="text-xl font-semibold">עדיין לא מצאנו לך החזרים</h3>
-                        <p className="text-gray-500 mt-2">עבור לאשף כדי להתחיל את תהליך הבדיקה.</p>
-                        <Button className="mt-4">התחילו עכשיו</Button>
+                    <CardContent className="p-8 flex flex-col items-center justify-center text-center">
+                        {/* UX-ID: empty_state_improvement - Better dashboard empty state */}
+                        <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mb-6">
+                            <FileText className="w-8 h-8 text-blue-600" />
+                        </div>
+                        <h3 className="text-2xl font-bold text-gray-800 mb-3">בואו נתחיל למצוא את ההחזרים שלכם!</h3>
+                        <p className="text-gray-600 mb-6 max-w-md">
+                            האשף החכם שלנו ינתח את הפוליסה שלכם ויעזור לכם לזהות החזרים פוטנציאליים 
+                            מפוליסת ביטוח הבריאות שלכם.
+                        </p>
+                        
+                        <div className="bg-green-50 border border-green-200 rounded-lg p-4 mb-6 max-w-lg">
+                            <h4 className="font-semibold text-green-800 mb-2">🎯 מה תקבלו:</h4>
+                            <ul className="text-sm text-green-700 text-right space-y-1">
+                                <li>• רשימה מותאמת של החזרים רלוונטיים</li>
+                                <li>• הסבר מפורט על כל החזר</li>
+                                <li>• רשימת מסמכים נדרשים</li>
+                                <li>• הנחיות להגשת התביעה</li>
+                            </ul>
+                        </div>
+                        
+                        <div className="flex flex-col sm:flex-row gap-3">
+                            <Button 
+                                className="px-8 py-3 font-bold text-base"
+                                onClick={() => window.location.href = '/wizard'}
+                            >
+                                התחילו עכשיו
+                            </Button>
+                            <Button 
+                                variant="outline" 
+                                className="px-8 py-3 font-bold text-base"
+                                onClick={() => window.location.href = '/'}
+                            >
+                                למידע נוסף
+                            </Button>
+                        </div>
+                        
+                        <p className="text-xs text-gray-500 mt-4">
+                            ⏱️ התהליך כולו לוקח כ-5 דקות
+                        </p>
                     </CardContent>
                 </Card>
             ) : (

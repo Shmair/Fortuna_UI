@@ -597,8 +597,21 @@ export default function Wizard({ user, isLoadingUser }) {
                             <div className="flex flex-col items-center justify-center min-h-[60vh] space-y-6">
                                 <div className="text-center">
                                     <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-blue-600 mx-auto mb-4"></div>
-                                    <h2 className="text-2xl font-bold mb-2">מעבדים את הפוליסה שלך</h2>
-                                    <p className="text-gray-600 mb-6">אנחנו מנתחים את הפוליסה כדי לזהות החזרים פוטנציאליים...</p>
+                                    <h2 className="text-2xl font-bold mb-2">מעבדים את הפוליסה שלכם</h2>
+                                    <p className="text-gray-600 mb-6">האשף החכם שלנו מנתח את הפוליסה כדי לזהות החזרים פוטנציאליים...</p>
+                                </div>
+                                
+                                {/* UX-ID: loading_expectations - Processing time expectations */}
+                                <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 max-w-lg w-full">
+                                    <div className="flex items-center justify-center mb-2">
+                                        <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center mr-3">
+                                            <span className="text-blue-600 text-sm">⏱️</span>
+                                        </div>
+                                        <h3 className="font-semibold text-blue-800">זמן עיבוד משוער: 2-3 דקות</h3>
+                                    </div>
+                                    <p className="text-sm text-blue-700 text-center">
+                                        אנחנו מנתחים את כל הסעיפים בפוליסה שלכם כדי לזהות החזרים רלוונטיים
+                                    </p>
                                 </div>
                                 
                                 <div className="w-full max-w-md">
@@ -609,8 +622,45 @@ export default function Wizard({ user, isLoadingUser }) {
                                     <Progress value={uploadProgress} className="h-3" />
                                 </div>
                                 
+                                {/* UX-ID: loading_expectations - Detailed progress steps */}
+                                <div className="bg-gray-50 rounded-lg p-4 max-w-lg w-full">
+                                    <h4 className="font-semibold text-gray-800 mb-3 text-center">מה קורה עכשיו?</h4>
+                                    <div className="space-y-2 text-sm">
+                                        <div className={`flex items-center ${uploadProgress >= 20 ? 'text-green-600' : 'text-gray-500'}`}>
+                                            <span className="w-4 h-4 rounded-full bg-current mr-3 flex items-center justify-center text-xs">
+                                                {uploadProgress >= 20 ? '✓' : '1'}
+                                            </span>
+                                            חילוץ טקסט מהפוליסה
+                                        </div>
+                                        <div className={`flex items-center ${uploadProgress >= 40 ? 'text-green-600' : 'text-gray-500'}`}>
+                                            <span className="w-4 h-4 rounded-full bg-current mr-3 flex items-center justify-center text-xs">
+                                                {uploadProgress >= 40 ? '✓' : '2'}
+                                            </span>
+                                            זיהוי שפה וניתוח תוכן
+                                        </div>
+                                        <div className={`flex items-center ${uploadProgress >= 60 ? 'text-green-600' : 'text-gray-500'}`}>
+                                            <span className="w-4 h-4 rounded-full bg-current mr-3 flex items-center justify-center text-xs">
+                                                {uploadProgress >= 60 ? '✓' : '3'}
+                                            </span>
+                                            חלוקה לקטעים וזיהוי סעיפים
+                                        </div>
+                                        <div className={`flex items-center ${uploadProgress >= 80 ? 'text-green-600' : 'text-gray-500'}`}>
+                                            <span className="w-4 h-4 rounded-full bg-current mr-3 flex items-center justify-center text-xs">
+                                                {uploadProgress >= 80 ? '✓' : '4'}
+                                            </span>
+                                            יצירת שאלון חכם
+                                        </div>
+                                        <div className={`flex items-center ${uploadProgress >= 100 ? 'text-green-600' : 'text-gray-500'}`}>
+                                            <span className="w-4 h-4 rounded-full bg-current mr-3 flex items-center justify-center text-xs">
+                                                {uploadProgress >= 100 ? '✓' : '5'}
+                                            </span>
+                                            סיום העיבוד
+                                        </div>
+                                    </div>
+                                </div>
+                                
                                 <div className="text-center text-sm text-gray-500 max-w-md">
-                                    <p>זה יכול לקחת כמה דקות. אנא המתן...</p>
+                                    <p>אנא המתנו בסבלנות - זה שווה את זה! 🎯</p>
                                 </div>
                             </div>
                         )}

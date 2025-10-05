@@ -107,6 +107,49 @@ return (
         )}
         <h2 className="text-2xl font-bold mb-2 text-right w-full">{POLICY_CHAT.TITLE}</h2>
         <p className="text-gray-600 mb-6 text-right w-full">{POLICY_CHAT.DESCRIPTION}</p>
+        
+        {/* UX-ID: chat_guidance - Chat examples and prompts */}
+        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6 max-w-4xl w-full">
+            <h4 className="font-semibold text-blue-800 mb-3">💡 דוגמאות לשאלות שתוכלו לשאול:</h4>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-sm mb-3">
+                <div className="space-y-1">
+                    <p className="text-blue-700">• "אילו טיפולי שיניים מכוסים?"</p>
+                    <p className="text-blue-700">• "מה אחוז הכיסוי לניתוחים?"</p>
+                    <p className="text-blue-700">• "האם יש החזר על משקפיים?"</p>
+                </div>
+                <div className="space-y-1">
+                    <p className="text-blue-700">• "מה תקרת ההחזר השנתית?"</p>
+                    <p className="text-blue-700">• "אילו בדיקות מומלצות?"</p>
+                    <p className="text-blue-700">• "האם יש כיסוי לטיפולים אלטרנטיביים?"</p>
+                </div>
+            </div>
+            <div className="flex flex-wrap gap-2">
+                <button
+                    onClick={() => handleSend("אילו טיפולי שיניים מכוסים בפוליסה?")}
+                    className="bg-blue-100 hover:bg-blue-200 text-blue-800 px-3 py-1 rounded-lg text-xs border border-blue-300 transition-colors duration-200"
+                >
+                    טיפולי שיניים
+                </button>
+                <button
+                    onClick={() => handleSend("מה אחוז הכיסוי לניתוחים?")}
+                    className="bg-blue-100 hover:bg-blue-200 text-blue-800 px-3 py-1 rounded-lg text-xs border border-blue-300 transition-colors duration-200"
+                >
+                    ניתוחים
+                </button>
+                <button
+                    onClick={() => handleSend("האם יש החזר על משקפיים?")}
+                    className="bg-blue-100 hover:bg-blue-200 text-blue-800 px-3 py-1 rounded-lg text-xs border border-blue-300 transition-colors duration-200"
+                >
+                    משקפיים
+                </button>
+                <button
+                    onClick={() => handleSend("מה תקרת ההחזר השנתית?")}
+                    className="bg-blue-100 hover:bg-blue-200 text-blue-800 px-3 py-1 rounded-lg text-xs border border-blue-300 transition-colors duration-200"
+                >
+                    תקרת החזר
+                </button>
+            </div>
+        </div>
   <div className="bg-white rounded-xl shadow p-2 w-full max-w-7xl flex flex-col mb-0" style={{ minHeight: 900 }}>
             <div className="flex-1 overflow-y-auto mb-4" style={{ maxHeight: 750 }}>
                 {messages.map((msg, idx) => (

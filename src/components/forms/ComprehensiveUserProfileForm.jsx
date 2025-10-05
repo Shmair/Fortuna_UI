@@ -64,6 +64,10 @@ export default function ComprehensiveUserProfileForm({ userData, setUserData, sh
         preferences: false
     });
 
+    // UX-ID: form_validation - Real-time validation state
+    const [fieldErrors, setFieldErrors] = useState({});
+    const [touchedFields, setTouchedFields] = useState({});
+
     const [newChildAge, setNewChildAge] = useState('');
     const [newCondition, setNewCondition] = useState('');
     const [newMedication, setNewMedication] = useState('');
@@ -78,18 +82,66 @@ export default function ComprehensiveUserProfileForm({ userData, setUserData, sh
         "national_id"
     ];
 
+    // UX-ID: form_validation - Enhanced validation with real-time feedback
     function getFieldError(field, value) {
-        if (REQUIRED_FIELDS.includes(field) && !value) {
+        if (REQUIRED_FIELDS.includes(field) && (!value || String(value).trim() === '')) {
             return "שדה חובה";
         }
+        
+        // Specific field validations
+        switch (field) {
+            case 'email':
+                if (value && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)) {
+                    return "כתובת אימייל לא תקינה";
+                }
+                break;
+            case 'phone_number':
+                if (value && !/^[\d\-\+\(\)\s]{10,15}$/.test(value)) {
+                    return "מספר טלפון לא תקין";
+                }
+                break;
+            case 'national_id':
+                if (value && !/^\d{9}$/.test(String(value))) {
+                    return "תעודת זהות חייבת להכיל 9 ספרות";
+                }
+                break;
+            case 'date_of_birth':
+                if (value && !/^\d{4}-\d{2}-\d{2}$/.test(value)) {
+                    return "תאריך לידה בפורמט YYYY-MM-DD";
+                }
+                break;
+        }
+        
         return null;
     }
 
-    const renderError = (field) => {
-        if (!showErrors) return null;
+    // UX-ID: form_validation - Real-time validation handler
+    const handleFieldChange = (field, value) => {
+        setUserData({ ...userData, [field]: value });
+        
+        // Mark field as touched
+        setTouchedFields(prev => ({ ...prev, [field]: true }));
+        
+        // Validate field
+        const error = getFieldError(field, value);
+        setFieldErrors(prev => ({ ...prev, [field]: error }));
+    };
+
+    const handleFieldBlur = (field) => {
+        setTouchedFields(prev => ({ ...prev, [field]: true }));
         const error = getFieldError(field, userData[field]);
-        return error ? (
-            <div className="text-red-500 text-xs mt-1">{error}</div>
+        setFieldErrors(prev => ({ ...prev, [field]: error }));
+    };
+
+    const renderError = (field) => {
+        const error = fieldErrors[field];
+        const isTouched = touchedFields[field];
+        const shouldShowError = showErrors || isTouched;
+        
+        return error && shouldShowError ? (
+            <div className="text-red-500 text-xs mt-1" role="alert" aria-live="polite">
+                {error}
+            </div>
         ) : null;
     };
 
@@ -188,7 +240,9 @@ export default function ComprehensiveUserProfileForm({ userData, setUserData, sh
                                     id="full_name"
                                     required
                                     value={userData.full_name || ''}
-                                    onChange={e => setUserData({ ...userData, full_name: e.target.value })}
+                                    onChange={e => handleFieldChange('full_name', e.target.value)}
+                                    onBlur={() => handleFieldBlur('full_name')}
+                                    aria-describedby={fieldErrors.full_name ? 'full_name-error' : undefined}
                                 />
                                 {renderError("full_name")}
                             </div>
@@ -199,7 +253,9 @@ export default function ComprehensiveUserProfileForm({ userData, setUserData, sh
                                     type="email"
                                     required
                                     value={userData.email || ''}
-                                    onChange={e => setUserData({ ...userData, email: e.target.value })}
+                                    onChange={e => handleFieldChange('email', e.target.value)}
+                                    onBlur={() => handleFieldBlur('email')}
+                                    aria-describedby={fieldErrors.email ? 'email-error' : undefined}
                                 />
                                 {renderError("email")}
                             </div>
@@ -210,7 +266,9 @@ export default function ComprehensiveUserProfileForm({ userData, setUserData, sh
                                     type="tel"
                                     required
                                     value={userData.phone_number || ''}
-                                    onChange={e => setUserData({ ...userData, phone_number: e.target.value })}
+                                    onChange={e => handleFieldChange('phone_number', e.target.value)}
+                                    onBlur={() => handleFieldBlur('phone_number')}
+                                    aria-describedby={fieldErrors.phone_number ? 'phone_number-error' : undefined}
                                 />
                                 {renderError("phone_number")}
                             </div>
@@ -220,7 +278,9 @@ export default function ComprehensiveUserProfileForm({ userData, setUserData, sh
                                     id="national_id"
                                     required
                                     value={userData.national_id || ''}
-                                    onChange={e => setUserData({ ...userData, national_id: e.target.value })}
+                                    onChange={e => handleFieldChange('national_id', e.target.value)}
+                                    onBlur={() => handleFieldBlur('national_id')}
+                                    aria-describedby={fieldErrors.national_id ? 'national_id-error' : undefined}
                                 />
                                 {renderError("national_id")}
                             </div>
@@ -231,7 +291,9 @@ export default function ComprehensiveUserProfileForm({ userData, setUserData, sh
                                     type="date"
                                     required
                                     value={userData.date_of_birth || ''}
-                                    onChange={e => setUserData({ ...userData, date_of_birth: e.target.value })}
+                                    onChange={e => handleFieldChange('date_of_birth', e.target.value)}
+                                    onBlur={() => handleFieldBlur('date_of_birth')}
+                                    aria-describedby={fieldErrors.date_of_birth ? 'date_of_birth-error' : undefined}
                                 />
                                 {renderError("date_of_birth")}
                             </div>
@@ -239,9 +301,10 @@ export default function ComprehensiveUserProfileForm({ userData, setUserData, sh
                                 <Label htmlFor="gender">מגדר *</Label>
                                 <Select
                                     value={userData.gender || ''}
-                                    onValueChange={value => setUserData({ ...userData, gender: value })}
+                                    onValueChange={value => handleFieldChange('gender', value)}
+                                    onOpenChange={(open) => !open && handleFieldBlur('gender')}
                                 >
-                                    <SelectTrigger>
+                                    <SelectTrigger aria-describedby={fieldErrors.gender ? 'gender-error' : undefined}>
                                         <SelectValue placeholder="בחרו מגדר" />
                                     </SelectTrigger>
                                     <SelectContent>

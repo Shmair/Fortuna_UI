@@ -46,8 +46,20 @@ export default function UploadStep({ onUpload, isUploading, uploadProgress, onBa
     };
 
     return (
-        <div className="space-y-4 text-center">
-            <h3 className="text-lg font-semibold">העלאת פוליסת ביטוח</h3>
+        <div className="space-y-6 text-center">
+            {/* UX-ID: progress_context - Step descriptions */}
+            <div className="space-y-2">
+                <h3 className="text-xl font-semibold text-gray-800">העלאת פוליסת ביטוח</h3>
+                <p className="text-sm text-gray-600">
+                    ננתח את כל סעיפי הפוליסה כדי לבנות עבורכם שאלון חכם ולזהות החזרים רלוונטיים.
+                </p>
+                <div className="bg-green-50 border border-green-200 rounded-lg p-3 mt-3">
+                    <p className="text-xs text-green-700">
+                        📄 <strong>תומך בקבצים:</strong> PDF, תמונות (JPG, PNG, GIF, WebP, BMP, TIFF)
+                    </p>
+                </div>
+            </div>
+            
             {userName && (
                 <div className="bg-green-50 border border-green-200 rounded-lg p-3 mb-4">
                     <p className="text-sm text-green-700">
@@ -55,7 +67,6 @@ export default function UploadStep({ onUpload, isUploading, uploadProgress, onBa
                     </p>
                 </div>
             )}
-            <p className="text-sm text-gray-500">ננתח את כל סעיפי הפוליסה כדי לבנות עבורך שאלון חכם.</p>
             {policyName && !removed ? (
                 <>
                     <div className="mt-6">

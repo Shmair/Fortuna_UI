@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Button } from '../ui/button';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '../ui/card';
 import { FileText } from 'lucide-react';
+import BackButton from '../layout/BackButton';
 
 export default function ClaimStep({ results = [], onBack, onSubmit }) {
   // Form state
@@ -96,7 +97,7 @@ export default function ClaimStep({ results = [], onBack, onSubmit }) {
       </div>
 
       <div className="flex flex-col md:flex-row gap-2 mt-4">
-        <Button type="button" variant="outline" className="flex-1" onClick={onBack}>חזור לתוצאות</Button>
+        <BackButton onClick={onBack} />
         <Button type="submit" className="flex-1 bg-green-500 hover:bg-green-600 text-white font-bold" onClick={handleSubmit}>אשר והגש תביעה</Button>
       </div>
     </div>
