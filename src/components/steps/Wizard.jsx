@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, useRef } from 'react';
 import { toast } from "sonner";
 import PolicyChatStep from './PolicyChatStep';
 import PolicyLoadedOptions from './PolicyLoadedOptions';
@@ -9,6 +9,7 @@ import UploadStep from './UploadStep';
 import PersonalDetailsStep from './PersonalDetailsStep';
 import ClaimStep from './ClaimStep';
 import { supabase } from '../../utils/supabaseClient';
+import StepNavigation from '../layout/StepNavigation';
 import { apiService } from '../../services/apiService';
 
 import {
@@ -98,6 +99,8 @@ export default function Wizard({ user, isLoadingUser }) {
     const [refunds, setRefunds] = useState({});
     const [sessionId, setSessionId] = useState(null);
     const [initialMessages, setInitialMessages] = useState(null);
+    const initialLoadRef = useRef(true);
+    const [showBypassNotice, setShowBypassNotice] = useState(false);
 
     // Utility functions
     const delay = (ms) => new Promise(resolve => setTimeout(resolve, ms));
@@ -259,6 +262,9 @@ export default function Wizard({ user, isLoadingUser }) {
                 });
                 
                 if (profileComplete) {
+                    if (initialLoadRef.current) {
+                        setShowBypassNotice(true);
+                    }
                     console.log('Profile is complete, checking for existing policy');
                     
                     try {
@@ -275,7 +281,7 @@ export default function Wizard({ user, isLoadingUser }) {
                                 setIsReturningUser(true);
                                 setChatMode('user');
                             
-                                await finishLoading(4)(); // Go to options step before chat
+                            await finishLoading(4)(); // Go to options step before chat
                                 return;
                             }
                         }
@@ -309,6 +315,7 @@ export default function Wizard({ user, isLoadingUser }) {
                     setIsInitializing(false);
                     setStep(1); // Go to personal details step for incomplete profiles
                 }
+                initialLoadRef.current = false;
             } catch (error) {
                 console.error('Error initializing user:', error);
                 if (isMounted) {
@@ -386,6 +393,7 @@ export default function Wizard({ user, isLoadingUser }) {
             
             setUserData(updateUserData(result.profile));
             toast.success(SUCCESS_PROFILE);
+            setShowBypassNotice(false);
             setStep(2);
         } catch (error) {
             console.error('Error saving profile:', error);
@@ -590,6 +598,7 @@ export default function Wizard({ user, isLoadingUser }) {
                                 onContinueWithPolicy={handleContinueWithPolicy}
                                 userName={userData.full_name}
                                 showBackButton={!isProfileComplete(userData)}
+                                showBypassNotice={showBypassNotice}
                             />
                         )}
                         
@@ -714,7 +723,23 @@ export default function Wizard({ user, isLoadingUser }) {
                         )}
                     </CardContent>
                     <CardFooter>
-                        {/* Navigation buttons or summary can go here */}
+                        <div className="w-full">
+                            <StepNavigation
+                                showBack={step === 2 ? !isProfileComplete(userData) : step > 1}
+                                onBack={() => {
+                                    if (step === 2) {
+                                        const complete = isProfileComplete(userData);
+                                        setStep(complete ? 0 : 1);
+                                    } else if (step > 2) {
+                                        setStep(step - 1);
+                                    } else {
+                                        window.history.back();
+                                    }
+                                }}
+                                stepTitle={null}
+                                stepDescription={null}
+                            />
+                        </div>
                     </CardFooter>
                 </Card>
             </div>

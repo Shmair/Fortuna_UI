@@ -4,7 +4,7 @@ import BackButton from '../layout/BackButton';
 import { Button } from '../ui/button';
 import { Progress } from '../ui/progress';
 
-export default function UploadStep({ onUpload, isUploading, uploadProgress, onBack, policyName, onContinueWithPolicy, userName, showBackButton = true }) {
+export default function UploadStep({ onUpload, isUploading, uploadProgress, onBack, policyName, onContinueWithPolicy, userName, showBackButton = true, showBypassNotice = false }) {
     const [file, setFile] = React.useState(null);
     const [removed, setRemoved] = React.useState(false);
     const [uploadError, setUploadError] = React.useState(null);
@@ -60,7 +60,7 @@ export default function UploadStep({ onUpload, isUploading, uploadProgress, onBa
                 </div>
             </div>
             
-            {userName && (
+            {userName && showBypassNotice && (
                 <div className="bg-green-50 border border-green-200 rounded-lg p-3 mb-4">
                     <p className="text-sm text-green-700">
                         שלום {userName}! הפרופיל שלך מלא, דילגנו על שלב הפרטים האישיים.
