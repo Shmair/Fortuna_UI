@@ -98,13 +98,14 @@ export default function UploadStep({ onUpload, isUploading, uploadProgress, onBa
                 </>
             ) : (
                 <>
-                    <div className="mt-6 flex justify-center">
+                    <div className="mt-6 flex justify-center" data-testid="upload-area">
                         <input
                             type="file"
                             accept=".pdf,image/*"
                             onChange={handleFileChange}
                             style={{ display: 'none' }}
                             id="file-upload-input"
+                            data-testid="file-input"
                         />
                         <Button
                             className="flex items-center justify-center gap-2 font-bold text-base px-6 py-3 rounded-lg shadow-none"
@@ -143,6 +144,9 @@ export default function UploadStep({ onUpload, isUploading, uploadProgress, onBa
                 <div className="mt-4">
                     <Progress value={typeof uploadProgress !== 'undefined' ? uploadProgress : 11} className="[&>div]:bg-green-600" />
                     <div className="text-xs text-gray-500 mt-1">{typeof uploadProgress !== 'undefined' ? uploadProgress : 10}%</div>
+                    {uploadProgress === 100 && (
+                        <div className="text-green-700 text-sm mt-1" data-testid="upload-success">העלאה הושלמה</div>
+                    )}
                 </div>
             )}
         </div>

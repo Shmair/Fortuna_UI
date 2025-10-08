@@ -162,6 +162,57 @@ class ApiService {
     }, requireAuth);
   }
 
+  // ----- Refund Flow (Cases, Candidates, Documents, Submission) -----
+  // Candidates API methods
+  async acceptCandidate(candidateId, payload = {}) {
+    return this.post(`${this.baseURL}/api/candidates/${candidateId}/accept`, payload);
+  }
+
+  async rejectCandidate(candidateId, payload = {}) {
+    return this.post(`${this.baseURL}/api/candidates/${candidateId}/reject`, payload);
+  }
+
+  // Cases API methods
+  async createCase(caseData) {
+    return this.post(`${this.baseURL}/api/cases`, caseData);
+  }
+
+  async getCase(caseId) {
+    return this.get(`${this.baseURL}/api/cases/${caseId}`);
+  }
+
+  async updateCase(caseId, data) {
+    return this.request(`${this.baseURL}/api/cases/${caseId}`, { method: 'PATCH', headers: HEADERS.JSON, body: JSON.stringify(data) });
+  }
+
+  // Documents API methods (Refunds View alignment)
+  async uploadCaseDocument(caseId, file) {
+    const authHeaders = await this.getAuthHeaders();
+    const formData = new FormData();
+    formData.append('file', file);
+    formData.append('case_id', caseId);
+    return this.request(`${this.baseURL}/api/documents/upload`, {
+      method: 'POST',
+      headers: { 'Authorization': authHeaders.Authorization },
+      body: formData
+    });
+  }
+
+  async listCaseDocuments(caseId, params = {}) {
+    const query = new URLSearchParams(params).toString();
+    const qs = query ? `?${query}` : '';
+    return this.get(`${this.baseURL}/api/documents/case/${caseId}${qs}`);
+  }
+
+  // Submission API methods
+  async checkSubmissionReady(caseId) {
+    return this.get(`${this.baseURL}/api/submission/${caseId}/ready`);
+  }
+
+  async submitCase(caseId) {
+    return this.post(`${this.baseURL}/api/submission/${caseId}/submit`, {});
+  }
+
   // Profile API methods
   async getProfile(userId) {
     return this.get(`${this.baseURL}/api/profile?user_id=${encodeURIComponent(userId)}`);

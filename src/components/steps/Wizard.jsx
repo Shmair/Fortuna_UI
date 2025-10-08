@@ -631,39 +631,27 @@ export default function Wizard({ user, isLoadingUser }) {
                                     <Progress value={uploadProgress} className="h-3" />
                                 </div>
                                 
-                                {/* UX-ID: loading_expectations - Detailed progress steps */}
+                                {/* UX-ID: loading_expectations - User-focused progress steps */}
                                 <div className="bg-gray-50 rounded-lg p-4 max-w-lg w-full">
-                                    <h4 className="font-semibold text-gray-800 mb-3 text-center">מה קורה עכשיו?</h4>
+                                    <h4 className="font-semibold text-gray-800 mb-3 text-center">אנחנו מנתחים את הפוליסה שלך...</h4>
                                     <div className="space-y-2 text-sm">
                                         <div className={`flex items-center ${uploadProgress >= 20 ? 'text-green-600' : 'text-gray-500'}`}>
                                             <span className="w-4 h-4 rounded-full bg-current mr-3 flex items-center justify-center text-xs">
-                                                {uploadProgress >= 20 ? '✓' : '1'}
+                                                {uploadProgress >= 20 ? '✓' : '📄'}
                                             </span>
-                                            חילוץ טקסט מהפוליסה
+                                            מנתח את הפוליסה שלך
                                         </div>
                                         <div className={`flex items-center ${uploadProgress >= 40 ? 'text-green-600' : 'text-gray-500'}`}>
                                             <span className="w-4 h-4 rounded-full bg-current mr-3 flex items-center justify-center text-xs">
-                                                {uploadProgress >= 40 ? '✓' : '2'}
+                                                {uploadProgress >= 40 ? '✓' : '🔍'}
                                             </span>
-                                            זיהוי שפה וניתוח תוכן
-                                        </div>
-                                        <div className={`flex items-center ${uploadProgress >= 60 ? 'text-green-600' : 'text-gray-500'}`}>
-                                            <span className="w-4 h-4 rounded-full bg-current mr-3 flex items-center justify-center text-xs">
-                                                {uploadProgress >= 60 ? '✓' : '3'}
-                                            </span>
-                                            חלוקה לקטעים וזיהוי סעיפים
-                                        </div>
-                                        <div className={`flex items-center ${uploadProgress >= 80 ? 'text-green-600' : 'text-gray-500'}`}>
-                                            <span className="w-4 h-4 rounded-full bg-current mr-3 flex items-center justify-center text-xs">
-                                                {uploadProgress >= 80 ? '✓' : '4'}
-                                            </span>
-                                            יצירת שאלון חכם
+                                            מזהה את הזכויות שלך
                                         </div>
                                         <div className={`flex items-center ${uploadProgress >= 100 ? 'text-green-600' : 'text-gray-500'}`}>
                                             <span className="w-4 h-4 rounded-full bg-current mr-3 flex items-center justify-center text-xs">
-                                                {uploadProgress >= 100 ? '✓' : '5'}
+                                                {uploadProgress >= 100 ? '✓' : '✅'}
                                             </span>
-                                            סיום העיבוד
+                                            מוכן לבדיקה!
                                         </div>
                                     </div>
                                 </div>
