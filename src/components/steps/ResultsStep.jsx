@@ -1,9 +1,11 @@
+import { useState } from 'react';
 import { Button } from '../ui/button';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '../ui/card';
 import { PartyPopper, FileCheck, AlertTriangle } from 'lucide-react';
 import BackButton from '../layout/BackButton';
 
-export default function ResultsStep({ results, onRestart, onBack, claim }) {
+export default function ResultsStep({ results, onRestart, onBack, claim, chatSummary }) {
+    const [showHistory, setShowHistory] = useState(false);
     // Calculate total refund
     const totalRefund = results.reduce((sum, r) => sum + (typeof r.amount === 'number' ? r.amount : 0), 0);
 
@@ -18,6 +20,24 @@ export default function ResultsStep({ results, onRestart, onBack, claim }) {
         <div>
             {results.length > 0 ? (
                 <div className="text-center">
+                    {/* Chat history toggle */}
+                    {Array.isArray(chatSummary) && chatSummary.length > 0 && (
+                        <div className="max-w-2xl mx-auto mt-4 mb-2 text-right">
+                            <Button variant="outline" className="w-full" onClick={() => setShowHistory(v => !v)}>
+                                {showHistory ? 'הסתר היסטוריית השיחה' : 'צפה בהיסטוריית השיחה'}
+                            </Button>
+                            {showHistory && (
+                                <div className="bg-gray-50 rounded-lg p-4 mt-2 border border-gray-200 max-h-64 overflow-y-auto">
+                                    <div className="text-sm font-semibold mb-2">סיכום מהשיחה</div>
+                                    <ul className="list-disc pr-5 text-sm text-gray-700 space-y-1">
+                                        {chatSummary.map((s, i) => (
+                                            <li key={i}>{s}</li>
+                                        ))}
+                                    </ul>
+                                </div>
+                            )}
+                        </div>
+                    )}
                     <PartyPopper className="w-16 h-16 text-green-500 mx-auto mb-4" />
                     <h2 className="text-2xl font-bold">מצאנו {results.length} החזרים פוטנציאליים!</h2>
 
@@ -86,7 +106,9 @@ export default function ResultsStep({ results, onRestart, onBack, claim }) {
             )}
             {onBack && (
                 <div className="mt-4 flex w-full">
-                        <BackButton onClick={onBack} />
+                    <Button variant="outline" onClick={onBack} className="mr-auto">
+                        חזור לצ'אט
+                    </Button>
                 </div>
             )}
         </div>

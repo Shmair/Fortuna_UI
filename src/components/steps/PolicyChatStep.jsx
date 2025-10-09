@@ -5,6 +5,7 @@ import BackButton from '../layout/BackButton';
 import { apiService } from '../../services/apiService';
 
 import ResultsStep from './ResultsStep';
+import StructuredMessage from '../chat/StructuredMessage';
 export default function PolicyChatStep({ userName = '', onBack, userId, mode = 'user', answer, policyId, onShowResults, isReturningUser, sessionId }) {
 
   // Determine initial chat messages
@@ -26,6 +27,7 @@ export default function PolicyChatStep({ userName = '', onBack, userId, mode = '
   const [clarifications, setClarifications] = useState([]);
   const [embeddingError, setEmbeddingError] = useState(null);
   const [isRetryingEmbedding, setIsRetryingEmbedding] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
 
   const normalizeBotText = (answerObjOrString) => {
     if (typeof answerObjOrString === 'string') return answerObjOrString;
@@ -44,8 +46,12 @@ export default function PolicyChatStep({ userName = '', onBack, userId, mode = '
   };
 
   const handleSend = async (message = null) => {
-    const userMessage = message || input.trim();
-    if (!userMessage) return;
+    // Guard against React synthetic events passed from onClick
+    const candidateMessage = (typeof message === 'string') ? message : null;
+    const userMessage = candidateMessage ? candidateMessage.trim() : input.trim();
+    if (!userMessage || isLoading) return;
+    
+    setIsLoading(true);
     setMessages(msgs => [...msgs, { sender: 'user', text: userMessage }]);
     setInput('');
     setQuickReplies([]); // Clear quick replies when user sends a message
@@ -59,17 +65,65 @@ export default function PolicyChatStep({ userName = '', onBack, userId, mode = '
         // Normalize any structured answer to a string for display in the transcript
         const botText = normalizeBotText(data.answer);
 
-        // Check for refunds_ready step
-        if (typeof data.answer === 'object' && data.answer.meta && data.answer.meta.step === 'refunds_ready') {
-          // Move to refunds step and pass the refunds data
-          setShowSummary(false); // just in case
-          setAnswers({}); // reset answers if needed
-          onShowResults(data.answer.refunds);
+        // Check for refunds_ready step or next_view='refunds'
+        if (typeof data.answer === 'object' && data.answer.meta && 
+            (data.answer.meta.step === 'refunds_ready' || data.answer.meta.next_view === 'refunds')) {
+          // Improved transition messaging before navigating to results
+          const refundsList = Array.isArray(data.answer.refunds) ? data.answer.refunds : [];
+          const count = refundsList.length;
+          const isComplete = data.answer.meta.step === 'refunds_ready';
+          const buttonText = isComplete ? 'תראו לי את ההחזרים' : 'תראו לי החזרים עד כה';
+          
+          setMessages(msgs => [...msgs, { 
+            sender: 'bot', 
+            text: isComplete 
+              ? `מצוין! זיהיתי ${count} החזרים פוטנציאליים. מעבר לתצוגת התוצאות...`
+              : `זיהיתי ${count} החזרים פוטנציאליים עד כה.`,
+            quickAction: buttonText
+          }]);
+          setShowSummary(false);
+          setAnswers({});
+          
+          if (isComplete) {
+            setTimeout(() => onShowResults(refundsList), 1200);
+          }
           return;
         }
 
         if (botText && typeof botText === 'string') {
-          setMessages(msgs => [...msgs, { sender: 'bot', text: botText }]);
+          // Strip external links and replace with refunds page CTAs
+          const cleanedText = botText
+            .replace(/https?:\/\/[^\s]+/g, '')
+            .replace(/\[([^\]]+)\]\([^)]+\)/g, '$1')
+            .replace(/להגיש תביעה|להגשת תביעה|הגשת תביעה|הגשה|טפסים|מסמכים נדרשים|צ'ק-ליסט|רשימת בדיקה/gi, '')
+            .trim();
+          
+          setMessages(msgs => [...msgs, { sender: 'bot', text: cleanedText }]);
+        }
+
+        // Push structured content when provided (but hide submission checklists)
+        if (typeof data.answer === 'object') {
+          const { content, coverage_info, required_documents, policy_section, important_notes, meta, quick_actions, message: msgText } = data.answer;
+          
+          // Filter out submission-related content for chat view
+          const filteredContent = content;
+          const filteredRequiredDocuments = required_documents;
+          const filteredImportantNotes = important_notes ? 
+            important_notes.replace(/להגיש תביעה|להגשת תביעה|הגשת תביעה|הגשה|טפסים|מסמכים נדרשים|צ'ק-ליסט|רשימת בדיקה/gi, '').trim() : 
+            important_notes;
+          
+          if (filteredContent || coverage_info || filteredRequiredDocuments || policy_section || filteredImportantNotes || meta || quick_actions) {
+            setMessages(msgs => [...msgs, { sender: 'bot', text: '', structured: {
+              message: msgText,
+              content: filteredContent,
+              coverage_info,
+              required_documents: filteredRequiredDocuments,
+              policy_section,
+              important_notes: filteredImportantNotes,
+              meta,
+              quick_actions
+            }}]);
+          }
         }
         
         // Handle quick replies only in assistant mode
@@ -94,6 +148,20 @@ export default function PolicyChatStep({ userName = '', onBack, userId, mode = '
           amount: detectedCandidate.amount ?? '',
           description: detectedCandidate.description ?? ''
         });
+
+        // Quick preview card message in chat (non-blocking)
+        setMessages(msgs => [
+          ...msgs,
+          { 
+            sender: 'bot', 
+            text: 'זוהתה מועמדות להחזר. להלן תצוגה מקדימה:',
+            preview: {
+              amount: detectedCandidate.amount,
+              description: detectedCandidate.description,
+              type: detectedCandidate.type
+            }
+          }
+        ]);
 
         // If confidence is low, propose generic clarifications
         if (typeof detectedCandidate.confidence === 'number' && detectedCandidate.confidence < 0.7) {
@@ -123,6 +191,8 @@ export default function PolicyChatStep({ userName = '', onBack, userId, mode = '
       }
       
       setMessages(msgs => [...msgs, { sender: 'bot', text: POLICY_CHAT.ERROR }]);
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -254,7 +324,57 @@ return (
                 {messages.map((msg, idx) => (
                     <div key={idx} className={`mb-2 flex ${msg.sender === 'user' ? 'justify-end' : 'justify-start'}`}>
                         <div className={`rounded-lg px-4 py-2 ${msg.sender === 'user' ? 'bg-gray-100 text-right' : 'bg-gray-50 text-right'}`} style={{ maxWidth: '80%' }}>
-                            {msg.text}
+                            {typeof msg.text === 'string' ? msg.text : null}
+                            {msg.sender !== 'user' && msg.structured && (
+                              <div className="mt-2">
+                                <StructuredMessage data={msg.structured} onAction={handleQuickReply} rtl={true} />
+                              </div>
+                            )}
+                            {msg.sender !== 'user' && msg.quickAction && (
+                              <div className="mt-2">
+                                <button
+                                  onClick={() => {
+                                    if (msg.quickAction === 'תראו לי החזרים עד כה' || msg.quickAction === 'תראו לי את ההחזרים') {
+                                      // Navigate to results view
+                                      const refundsList = Array.isArray(data?.answer?.refunds) ? data.answer.refunds : [];
+                                      onShowResults(refundsList);
+                                    } else {
+                                      handleQuickReply(msg.quickAction);
+                                    }
+                                  }}
+                                  className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors duration-200"
+                                >
+                                  {msg.quickAction}
+                                </button>
+                              </div>
+                            )}
+                            {msg.preview && (
+                              <div className="mt-2 bg-green-50 border border-green-200 rounded-lg p-3 text-right">
+                                <div className="flex justify-between items-center">
+                                  <span className="font-semibold text-green-900">החזר פוטנציאלי זוהה:</span>
+                                  <span className="text-green-700 font-bold">{msg.preview.amount} ₪</span>
+                                </div>
+                                {msg.preview.type && (
+                                  <div className="text-xs text-gray-600 mt-1">סוג: {msg.preview.type}</div>
+                                )}
+                                {msg.preview.description && (
+                                  <p className="text-sm text-gray-700 mt-1">{msg.preview.description}</p>
+                                )}
+                                <button 
+                                  className="mt-2 px-3 py-1 bg-green-600 hover:bg-green-700 text-white text-sm font-medium rounded-lg transition-colors duration-200"
+                                  onClick={() => {
+                                    // Add to candidate list for review
+                                    setCandidate(msg.preview);
+                                    setEditedCandidate({
+                                      amount: msg.preview.amount ?? '',
+                                      description: msg.preview.description ?? ''
+                                    });
+                                  }}
+                                >
+                                  הוסף לרשימה
+                                </button>
+                              </div>
+                            )}
                         </div>
                     </div>
                 ))}
@@ -402,18 +522,28 @@ return (
                 )}
             </div>
             <div className="flex items-center gap-2">
-                <Button onClick={handleSend} className="px-3 py-2" style={{ background: '#222', color: '#fff' }} data-testid="send-button">
-                    <span role="img" aria-label="send">✈️</span>
+                <Button 
+                    onClick={() => handleSend()} 
+                    className="px-3 py-2" 
+                    style={{ background: '#222', color: '#fff' }} 
+                    data-testid="send-button"
+                    disabled={isLoading}
+                >
+                    {isLoading ? (
+                        <span className="animate-spin">⏳</span>
+                    ) : (
+                        <span role="img" aria-label="send">✈️</span>
+                    )}
                 </Button>
                 <input
                     type="text"
                     className="flex-1 rounded px-4 py-2 border border-gray-300 focus:outline-none"
-                    placeholder={mode === 'assistant' ? 'הקלד תשובה...' : POLICY_CHAT.INPUT_PLACEHOLDER}
+                    placeholder={isLoading ? 'מעבד את השאלה...' : (mode === 'assistant' ? 'הקלד תשובה...' : POLICY_CHAT.INPUT_PLACEHOLDER)}
                     value={input}
                     onChange={e => setInput(e.target.value)}
-                    onKeyDown={e => { if (e.key === 'Enter') handleSend(); }}
+                    onKeyDown={e => { if (e.key === 'Enter' && !isLoading) handleSend(); }}
                     data-testid="chat-input"
-                    // disabled when needed for assistant flow
+                    disabled={isLoading}
                 />
             </div>
             {mode === 'assistant' && (

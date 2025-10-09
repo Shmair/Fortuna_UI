@@ -835,6 +835,7 @@ export default function Wizard({ user, isLoadingUser }) {
                                 onBack={() => setStep(5)}
                                 onRestart={() => setStep(1)}
                                 claim={handleProfessionalHelp}
+                                chatSummary={Array.isArray(fullAnalysis) ? fullAnalysis.map(a => a?.question || a?.text).filter(Boolean) : []}
                             />
                         )}
                         
