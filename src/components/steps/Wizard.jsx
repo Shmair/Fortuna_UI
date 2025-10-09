@@ -101,6 +101,9 @@ export default function Wizard({ user, isLoadingUser }) {
     const [initialMessages, setInitialMessages] = useState(null);
     const initialLoadRef = useRef(true);
     const [showBypassNotice, setShowBypassNotice] = useState(false);
+    const [embeddingError, setEmbeddingError] = useState(null);
+    const [retryCount, setRetryCount] = useState(0);
+    const [isRetrying, setIsRetrying] = useState(false);
 
     // Utility functions
     const delay = (ms) => new Promise(resolve => setTimeout(resolve, ms));
@@ -407,6 +410,7 @@ export default function Wizard({ user, isLoadingUser }) {
     const handlePolicyFileUpload = useCallback(async (file) => {
         setIsUploading(true);
         setUploadProgress(0);
+        setEmbeddingError(null); // Clear any previous embedding errors
 
         try {
             const userId = userData.userId || user?.id;
@@ -418,6 +422,17 @@ export default function Wizard({ user, isLoadingUser }) {
 
             setUploadProgress(10);
             const result = await uploadPolicyFile(file, userId);
+            
+            // Check for embedding failures in the response
+            if (result.embedding_status && result.embedding_status.has_failures) {
+                setEmbeddingError({
+                    type: 'embedding_failure',
+                    message: 'חלק מהטקסט לא עובד כראוי עם המערכת החכמה',
+                    details: result.embedding_status,
+                    canRetry: result.embedding_status.can_retry || false
+                });
+            }
+            
             setUploadProgress(100);
 
             // Show processing step
@@ -454,6 +469,21 @@ export default function Wizard({ user, isLoadingUser }) {
             setStep(4);
         } catch (error) {
             console.error('Error uploading policy:', error);
+            
+            // Check if this is an embedding-related error
+            if (error.message && (
+                error.message.includes('embedding') || 
+                error.message.includes('vector') ||
+                error.message.includes('Azure OpenAI')
+            )) {
+                setEmbeddingError({
+                    type: 'embedding_error',
+                    message: 'שגיאה בעיבוד הטקסט החכם',
+                    details: error.message,
+                    canRetry: true
+                });
+            }
+            
             // Don't show toast here - let UploadStep handle the error display
             // Re-throw the error so UploadStep can catch it
             throw error;
@@ -509,6 +539,38 @@ export default function Wizard({ user, isLoadingUser }) {
     const handleProfessionalHelp = useCallback(() => {
         setStep(7);
     }, []);
+
+    const handleRetryEmbedding = useCallback(async () => {
+        if (!policyId || !embeddingError?.canRetry) return;
+        
+        setIsRetrying(true);
+        setRetryCount(prev => prev + 1);
+        
+        try {
+            // Call backend to retry embedding generation
+            const result = await apiService.retryEmbeddings(policyId);
+            
+            if (result.success) {
+                setEmbeddingError(null);
+                toast.success('העיבוד החכם הושלם בהצלחה!');
+            } else {
+                setEmbeddingError(prev => ({
+                    ...prev,
+                    message: 'עדיין יש בעיות בעיבוד הטקסט',
+                    details: result.error || prev.details
+                }));
+            }
+        } catch (error) {
+            console.error('Retry embedding failed:', error);
+            setEmbeddingError(prev => ({
+                ...prev,
+                message: 'נכשל ניסיון העיבוד החוזר',
+                details: error.message
+            }));
+        } finally {
+            setIsRetrying(false);
+        }
+    }, [policyId, embeddingError?.canRetry]);
 
     // Render loading state
     if (isLoadingUser || !user || isInitializing) {
@@ -659,6 +721,67 @@ export default function Wizard({ user, isLoadingUser }) {
                                 <div className="text-center text-sm text-gray-500 max-w-md">
                                     <p>אנא המתנו בסבלנות - זה שווה את זה! 🎯</p>
                                 </div>
+                                
+                                {/* Embedding Failure Communication */}
+                                {embeddingError && (
+                                    <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 max-w-lg w-full">
+                                        <div className="flex items-start">
+                                            <div className="flex-shrink-0">
+                                                <span className="text-yellow-600 text-lg">⚠️</span>
+                                            </div>
+                                            <div className="mr-3 flex-1">
+                                                <h4 className="text-sm font-semibold text-yellow-800 mb-2">
+                                                    {embeddingError.message}
+                                                </h4>
+                                                <p className="text-sm text-yellow-700 mb-3">
+                                                    {embeddingError.type === 'embedding_failure' 
+                                                        ? 'חלק מהטקסט בפוליסה לא עובד כראוי עם המערכת החכמה. זה לא מונע מהמערכת לזהות החזרים, אבל חלק מהשאלות עלולות להיות פחות מדויקות.'
+                                                        : 'יש בעיה בעיבוד הטקסט החכם. זה יכול לקרות לפעמים עם קבצים מסוימים.'
+                                                    }
+                                                </p>
+                                                
+                                                {embeddingError.canRetry && (
+                                                    <div className="flex flex-col sm:flex-row gap-2">
+                                                        <button
+                                                            onClick={handleRetryEmbedding}
+                                                            disabled={isRetrying || retryCount >= 3}
+                                                            className="px-4 py-2 bg-yellow-600 hover:bg-yellow-700 disabled:bg-gray-400 text-white text-sm font-medium rounded-lg transition-colors duration-200"
+                                                        >
+                                                            {isRetrying ? 'מנסה שוב...' : 'נסה שוב'}
+                                                        </button>
+                                                        
+                                                        <button
+                                                            onClick={() => setEmbeddingError(null)}
+                                                            className="px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 text-sm font-medium rounded-lg transition-colors duration-200"
+                                                        >
+                                                            המשך בכל זאת
+                                                        </button>
+                                                    </div>
+                                                )}
+                                                
+                                                {retryCount >= 3 && (
+                                                    <p className="text-xs text-yellow-600 mt-2">
+                                                        הגעת למספר הניסיונות המקסימלי. ניתן להמשיך בכל זאת או לנסות עם קובץ אחר.
+                                                    </p>
+                                                )}
+                                                
+                                                {embeddingError.details && (
+                                                    <details className="mt-2">
+                                                        <summary className="text-xs text-yellow-600 cursor-pointer">
+                                                            פרטים טכניים
+                                                        </summary>
+                                                        <p className="text-xs text-yellow-600 mt-1 font-mono">
+                                                            {typeof embeddingError.details === 'string' 
+                                                                ? embeddingError.details 
+                                                                : JSON.stringify(embeddingError.details, null, 2)
+                                                            }
+                                                        </p>
+                                                    </details>
+                                                )}
+                                            </div>
+                                        </div>
+                                    </div>
+                                )}
                             </div>
                         )}
                         

@@ -24,6 +24,8 @@ export default function PolicyChatStep({ userName = '', onBack, userId, mode = '
   const [isEditingCandidate, setIsEditingCandidate] = useState(false);
   const [editedCandidate, setEditedCandidate] = useState({ amount: '', description: '' });
   const [clarifications, setClarifications] = useState([]);
+  const [embeddingError, setEmbeddingError] = useState(null);
+  const [isRetryingEmbedding, setIsRetryingEmbedding] = useState(false);
 
   const normalizeBotText = (answerObjOrString) => {
     if (typeof answerObjOrString === 'string') return answerObjOrString;
@@ -104,12 +106,61 @@ export default function PolicyChatStep({ userName = '', onBack, userId, mode = '
         }
       }
     } catch (err) {
+      console.error('Error sending message:', err);
+      
+      // Check if this is an embedding-related error
+      if (err.message && (
+        err.message.includes('embedding') || 
+        err.message.includes('vector') ||
+        err.message.includes('Azure OpenAI')
+      )) {
+        setEmbeddingError({
+          type: 'chat_embedding_error',
+          message: 'בעיה בעיבוד הטקסט החכם',
+          details: err.message,
+          canRetry: true
+        });
+      }
+      
       setMessages(msgs => [...msgs, { sender: 'bot', text: POLICY_CHAT.ERROR }]);
     }
   };
 
   const handleQuickReply = (reply) => {
     handleSend(reply);
+  };
+
+  const handleRetryEmbedding = async () => {
+    if (!policyId || !embeddingError?.canRetry) return;
+    
+    setIsRetryingEmbedding(true);
+    
+    try {
+      const result = await apiService.retryEmbeddings(policyId);
+      
+      if (result.success) {
+        setEmbeddingError(null);
+        setMessages(msgs => [...msgs, { 
+          sender: 'bot', 
+          text: 'העיבוד החכם הושלם בהצלחה! עכשיו אני יכול לעזור לך טוב יותר.' 
+        }]);
+      } else {
+        setEmbeddingError(prev => ({
+          ...prev,
+          message: 'עדיין יש בעיות בעיבוד הטקסט',
+          details: result.error || prev.details
+        }));
+      }
+    } catch (error) {
+      console.error('Retry embedding failed:', error);
+      setEmbeddingError(prev => ({
+        ...prev,
+        message: 'נכשל ניסיון העיבוד החוזר',
+        details: error.message
+      }));
+    } finally {
+      setIsRetryingEmbedding(false);
+    }
   };
 
   if (showSummary) {
@@ -369,6 +420,55 @@ return (
                 <Button className="mt-4 w-full" variant="outline" onClick={() => setShowSummary(true)}>
                     הצג סיכום ביניים
                 </Button>
+            )}
+            
+            {/* Embedding Error Communication */}
+            {embeddingError && (
+                <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mt-4">
+                    <div className="flex items-start">
+                        <div className="flex-shrink-0">
+                            <span className="text-yellow-600 text-lg">⚠️</span>
+                        </div>
+                        <div className="mr-3 flex-1">
+                            <h4 className="text-sm font-semibold text-yellow-800 mb-2">
+                                {embeddingError.message}
+                            </h4>
+                            <p className="text-sm text-yellow-700 mb-3">
+                                יש בעיה בעיבוד הטקסט החכם. זה יכול להשפיע על איכות התשובות שלי.
+                            </p>
+                            
+                            {embeddingError.canRetry && (
+                                <div className="flex flex-col sm:flex-row gap-2">
+                                    <button
+                                        onClick={handleRetryEmbedding}
+                                        disabled={isRetryingEmbedding}
+                                        className="px-4 py-2 bg-yellow-600 hover:bg-yellow-700 disabled:bg-gray-400 text-white text-sm font-medium rounded-lg transition-colors duration-200"
+                                    >
+                                        {isRetryingEmbedding ? 'מנסה שוב...' : 'נסה שוב'}
+                                    </button>
+                                    
+                                    <button
+                                        onClick={() => setEmbeddingError(null)}
+                                        className="px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 text-sm font-medium rounded-lg transition-colors duration-200"
+                                    >
+                                        המשך בכל זאת
+                                    </button>
+                                </div>
+                            )}
+                            
+                            {embeddingError.details && (
+                                <details className="mt-2">
+                                    <summary className="text-xs text-yellow-600 cursor-pointer">
+                                        פרטים טכניים
+                                    </summary>
+                                    <p className="text-xs text-yellow-600 mt-1 font-mono">
+                                        {embeddingError.details}
+                                    </p>
+                                </details>
+                            )}
+                        </div>
+                    </div>
+                </div>
             )}
         </div>
     </div>

@@ -213,6 +213,11 @@ class ApiService {
     return this.post(`${this.baseURL}/api/submission/${caseId}/submit`, {});
   }
 
+  // Embedding retry method
+  async retryEmbeddings(policyId) {
+    return this.post(`${this.baseURL}/api/policy/${policyId}/retry-embeddings`, {});
+  }
+
   // Profile API methods
   async getProfile(userId) {
     return this.get(`${this.baseURL}/api/profile?user_id=${encodeURIComponent(userId)}`);
