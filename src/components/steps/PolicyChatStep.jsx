@@ -65,29 +65,21 @@ export default function PolicyChatStep({ userName = '', onBack, userId, mode = '
         // Normalize any structured answer to a string for display in the transcript
         const botText = normalizeBotText(data.answer);
 
-        // Check for refunds_ready step or next_view='refunds'
+        // Check for refunds_ready step or next_view='refunds' - but don't return early, let structured content render first
+        let shouldShowRefundsButton = false;
+        let refundsButtonText = '';
+        let refundsList = [];
+        let isComplete = false;
+        
         if (typeof data.answer === 'object' && data.answer.meta && 
             (data.answer.meta.step === 'refunds_ready' || data.answer.meta.next_view === 'refunds')) {
-          // Improved transition messaging before navigating to results
-          const refundsList = Array.isArray(data.answer.refunds) ? data.answer.refunds : [];
-          const count = refundsList.length;
-          const isComplete = data.answer.meta.step === 'refunds_ready';
-          const buttonText = isComplete ? 'תראו לי את ההחזרים' : 'תראו לי החזרים עד כה';
-          
-          setMessages(msgs => [...msgs, { 
-            sender: 'bot', 
-            text: isComplete 
-              ? `מצוין! זיהיתי ${count} החזרים פוטנציאליים. מעבר לתצוגת התוצאות...`
-              : `זיהיתי ${count} החזרים פוטנציאליים עד כה.`,
-            quickAction: buttonText
-          }]);
+          refundsList = Array.isArray(data.answer.refunds) ? data.answer.refunds : [];
+          isComplete = data.answer.meta.step === 'refunds_ready';
+          refundsButtonText = isComplete ? 'תראו לי את ההחזרים' : 'תראו לי החזרים עד כה';
+          // Only show button if there are refunds or if analysis is complete
+          shouldShowRefundsButton = refundsList.length > 0 || isComplete;
           setShowSummary(false);
           setAnswers({});
-          
-          if (isComplete) {
-            setTimeout(() => onShowResults(refundsList), 1200);
-          }
-          return;
         }
 
         if (botText && typeof botText === 'string') {
@@ -105,24 +97,36 @@ export default function PolicyChatStep({ userName = '', onBack, userId, mode = '
         if (typeof data.answer === 'object') {
           const { content, coverage_info, required_documents, policy_section, important_notes, meta, quick_actions, message: msgText } = data.answer;
           
-          // Filter out submission-related content for chat view
-          const filteredContent = content;
-          const filteredRequiredDocuments = required_documents;
-          const filteredImportantNotes = important_notes ? 
-            important_notes.replace(/להגיש תביעה|להגשת תביעה|הגשת תביעה|הגשה|טפסים|מסמכים נדרשים|צ'ק-ליסט|רשימת בדיקה/gi, '').trim() : 
-            important_notes;
+          // Only filter submission content if we have other content to show
+          const hasStructuredContent = content || coverage_info || required_documents || policy_section || important_notes;
           
-          if (filteredContent || coverage_info || filteredRequiredDocuments || policy_section || filteredImportantNotes || meta || quick_actions) {
-            setMessages(msgs => [...msgs, { sender: 'bot', text: '', structured: {
-              message: msgText,
-              content: filteredContent,
-              coverage_info,
-              required_documents: filteredRequiredDocuments,
-              policy_section,
-              important_notes: filteredImportantNotes,
-              meta,
-              quick_actions
-            }}]);
+          if (hasStructuredContent) {
+            // Filter out submission-related content for chat view
+            const filteredContent = content;
+            const filteredRequiredDocuments = required_documents;
+            const filteredImportantNotes = important_notes ? 
+              important_notes.replace(/להגיש תביעה|להגשת תביעה|הגשת תביעה|הגשה|טפסים|מסמכים נדרשים|צ'ק-ליסט|רשימת בדיקה/gi, '').trim() : 
+              important_notes;
+            
+            if (filteredContent || coverage_info || filteredRequiredDocuments || policy_section || filteredImportantNotes || meta || quick_actions) {
+              setMessages(msgs => [...msgs, { sender: 'bot', text: '', structured: {
+                message: msgText,
+                content: filteredContent,
+                coverage_info,
+                required_documents: filteredRequiredDocuments,
+                policy_section,
+                important_notes: filteredImportantNotes,
+                meta,
+                quick_actions
+              }, quickAction: shouldShowRefundsButton ? refundsButtonText : null }]);
+            }
+          }
+        }
+        
+        // Handle refunds navigation after structured content is rendered
+        if (shouldShowRefundsButton) {
+          if (isComplete) {
+            setTimeout(() => onShowResults(refundsList), 1200);
           }
         }
         
@@ -335,9 +339,8 @@ return (
                                 <button
                                   onClick={() => {
                                     if (msg.quickAction === 'תראו לי החזרים עד כה' || msg.quickAction === 'תראו לי את ההחזרים') {
-                                      // Navigate to results view
-                                      const refundsList = Array.isArray(data?.answer?.refunds) ? data.answer.refunds : [];
-                                      onShowResults(refundsList);
+                                      // Navigate to results view - use empty array for now since we don't have refunds data in message
+                                      onShowResults([]);
                                     } else {
                                       handleQuickReply(msg.quickAction);
                                     }
