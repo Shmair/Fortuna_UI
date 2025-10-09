@@ -70,3 +70,4 @@ export default function StructuredMessage({ data = {}, onAction, rtl = true }) {
 }
 
 
+
