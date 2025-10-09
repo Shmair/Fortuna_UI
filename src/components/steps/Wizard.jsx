@@ -104,6 +104,7 @@ export default function Wizard({ user, isLoadingUser }) {
     const [embeddingError, setEmbeddingError] = useState(null);
     const [retryCount, setRetryCount] = useState(0);
     const [isRetrying, setIsRetrying] = useState(false);
+    const [embeddingBypassed, setEmbeddingBypassed] = useState(false);
 
     // Utility functions
     const delay = (ms) => new Promise(resolve => setTimeout(resolve, ms));
@@ -431,6 +432,7 @@ export default function Wizard({ user, isLoadingUser }) {
                     details: result.embedding_status,
                     canRetry: result.embedding_status.can_retry || false
                 });
+                setEmbeddingBypassed(false);
             }
             
             setUploadProgress(100);
@@ -463,10 +465,18 @@ export default function Wizard({ user, isLoadingUser }) {
                 setInitialMessages(null);
             }
             
-            // Move to options step after processing
+            // Move to options step only if no embedding error or user chose to continue
             await delay(1000);
-            setIsProcessing(false);
-            setStep(4);
+            if (!embeddingError && !result.embedding_status?.has_failures) {
+                setIsProcessing(false);
+                setStep(4);
+            } else if (embeddingBypassed) {
+                setIsProcessing(false);
+                setStep(4);
+            } else {
+                // Stay on processing step to show the embedding error UI and allow retry/continue
+                setIsProcessing(true);
+            }
         } catch (error) {
             console.error('Error uploading policy:', error);
             
@@ -751,7 +761,12 @@ export default function Wizard({ user, isLoadingUser }) {
                                                         </button>
                                                         
                                                         <button
-                                                            onClick={() => setEmbeddingError(null)}
+                                                            onClick={() => {
+                                                                setEmbeddingError(null);
+                                                                setEmbeddingBypassed(true);
+                                                                setIsProcessing(false);
+                                                                setStep(4);
+                                                            }}
                                                             className="px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 text-sm font-medium rounded-lg transition-colors duration-200"
                                                         >
                                                             המשך בכל זאת
