@@ -6,6 +6,8 @@ import { apiService } from '../../services/apiService';
 
 import ResultsStep from './ResultsStep';
 import StructuredMessage from '../chat/StructuredMessage';
+import InlineQuickReplies from '../chat/InlineQuickReplies';
+import { useConversationState } from '../../hooks/useConversationState';
 export default function PolicyChatStep({ userName = '', onBack, userId, mode = 'user', answer, policyId, onShowResults, isReturningUser, sessionId }) {
 
   // Determine initial chat messages
@@ -27,6 +29,8 @@ export default function PolicyChatStep({ userName = '', onBack, userId, mode = '
   const [clarifications, setClarifications] = useState([]);
   const [embeddingError, setEmbeddingError] = useState(null);
   const [isRetryingEmbedding, setIsRetryingEmbedding] = useState(false);
+  
+  const { state, addAnswer, resetState } = useConversationState(userId, policyId, sessionId);
   const [isLoading, setIsLoading] = useState(false);
 
   const normalizeBotText = (answerObjOrString) => {
@@ -62,6 +66,19 @@ export default function PolicyChatStep({ userName = '', onBack, userId, mode = '
       const data = await apiService.post(POLICY_CHAT.API_URL, payload);
 
       if (data && data.answer) {
+        // Check if this is a guided question - render as regular chat bubble with quick replies
+        if (data.answer.meta && data.answer.meta.step === 'collecting_info') {
+          const questionText = data.answer.message || data.answer.text || 'שאלה:';
+          const quickReplies = data.answer.quick_actions || [];
+          
+          setMessages(msgs => [...msgs, { 
+            sender: 'bot', 
+            text: questionText,
+            quickReplies: quickReplies
+          }]);
+          return;
+        }
+
         // Normalize any structured answer to a string for display in the transcript
         const botText = normalizeBotText(data.answer);
 
@@ -76,8 +93,8 @@ export default function PolicyChatStep({ userName = '', onBack, userId, mode = '
           refundsList = Array.isArray(data.answer.refunds) ? data.answer.refunds : [];
           isComplete = data.answer.meta.step === 'refunds_ready';
           refundsButtonText = isComplete ? 'תראו לי את ההחזרים' : 'תראו לי החזרים עד כה';
-          // Only show button if there are refunds or if analysis is complete
-          shouldShowRefundsButton = refundsList.length > 0 || isComplete;
+          // Show button only when explicitly requested by backend
+          shouldShowRefundsButton = data.answer.meta.show_refunds_button === true;
           setShowSummary(false);
           setAnswers({});
         }
@@ -123,11 +140,9 @@ export default function PolicyChatStep({ userName = '', onBack, userId, mode = '
           }
         }
         
-        // Handle refunds navigation after structured content is rendered
-        if (shouldShowRefundsButton) {
-          if (isComplete) {
-            setTimeout(() => onShowResults(refundsList), 1200);
-          }
+        // Handle auto-navigation (without button) after structured content is rendered
+        if (data.answer.meta && data.answer.meta.auto_navigate === true && isComplete) {
+          setTimeout(() => onShowResults(refundsList), 1200);
         }
         
         // Handle quick replies only in assistant mode
@@ -237,6 +252,7 @@ export default function PolicyChatStep({ userName = '', onBack, userId, mode = '
     }
   };
 
+
   if (showSummary) {
     // Filter answer to those answered 'כן' (or true)
     const relevantRefunds = Array.isArray(answer)
@@ -286,23 +302,17 @@ return (
             <h4 className="font-semibold text-blue-800 mb-3">💡 דוגמאות לשאלות שתוכלו לשאול:</h4>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-sm mb-3">
                 <div className="space-y-1">
-                    <p className="text-blue-700">• "אילו טיפולי שיניים מכוסים?"</p>
                     <p className="text-blue-700">• "מה אחוז הכיסוי לניתוחים?"</p>
-                    <p className="text-blue-700">• "האם יש החזר על משקפיים?"</p>
+                    <p className="text-blue-700">• "אילו בדיקות מכוסות בפוליסה?"</p>
+                    <p className="text-blue-700">• "האם יש כיסוי לטיפולים אלטרנטיביים?"</p>
                 </div>
                 <div className="space-y-1">
                     <p className="text-blue-700">• "מה תקרת ההחזר השנתית?"</p>
-                    <p className="text-blue-700">• "אילו בדיקות מומלצות?"</p>
-                    <p className="text-blue-700">• "האם יש כיסוי לטיפולים אלטרנטיביים?"</p>
+                    <p className="text-blue-700">• "אילו תרופות מכוסות?"</p>
+                    <p className="text-blue-700">• "האם יש כיסוי לטיפולי פיזיותרפיה?"</p>
                 </div>
             </div>
             <div className="flex flex-wrap gap-2">
-                <button
-                    onClick={() => handleSend("אילו טיפולי שיניים מכוסים בפוליסה?")}
-                    className="bg-blue-100 hover:bg-blue-200 text-blue-800 px-3 py-1 rounded-lg text-xs border border-blue-300 transition-colors duration-200"
-                >
-                    טיפולי שיניים
-                </button>
                 <button
                     onClick={() => handleSend("מה אחוז הכיסוי לניתוחים?")}
                     className="bg-blue-100 hover:bg-blue-200 text-blue-800 px-3 py-1 rounded-lg text-xs border border-blue-300 transition-colors duration-200"
@@ -310,10 +320,16 @@ return (
                     ניתוחים
                 </button>
                 <button
-                    onClick={() => handleSend("האם יש החזר על משקפיים?")}
+                    onClick={() => handleSend("אילו בדיקות מכוסות בפוליסה?")}
                     className="bg-blue-100 hover:bg-blue-200 text-blue-800 px-3 py-1 rounded-lg text-xs border border-blue-300 transition-colors duration-200"
                 >
-                    משקפיים
+                    בדיקות
+                </button>
+                <button
+                    onClick={() => handleSend("אילו תרופות מכוסות?")}
+                    className="bg-blue-100 hover:bg-blue-200 text-blue-800 px-3 py-1 rounded-lg text-xs border border-blue-300 transition-colors duration-200"
+                >
+                    תרופות
                 </button>
                 <button
                     onClick={() => handleSend("מה תקרת ההחזר השנתית?")}
@@ -328,29 +344,38 @@ return (
                 {messages.map((msg, idx) => (
                     <div key={idx} className={`mb-2 flex ${msg.sender === 'user' ? 'justify-end' : 'justify-start'}`}>
                         <div className={`rounded-lg px-4 py-2 ${msg.sender === 'user' ? 'bg-gray-100 text-right' : 'bg-gray-50 text-right'}`} style={{ maxWidth: '80%' }}>
-                            {typeof msg.text === 'string' ? msg.text : null}
-                            {msg.sender !== 'user' && msg.structured && (
-                              <div className="mt-2">
-                                <StructuredMessage data={msg.structured} onAction={handleQuickReply} rtl={true} />
-                              </div>
-                            )}
-                            {msg.sender !== 'user' && msg.quickAction && (
-                              <div className="mt-2">
-                                <button
-                                  onClick={() => {
-                                    if (msg.quickAction === 'תראו לי החזרים עד כה' || msg.quickAction === 'תראו לי את ההחזרים') {
-                                      // Navigate to results view - use empty array for now since we don't have refunds data in message
-                                      onShowResults([]);
-                                    } else {
-                                      handleQuickReply(msg.quickAction);
-                                    }
-                                  }}
-                                  className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors duration-200"
-                                >
-                                  {msg.quickAction}
-                                </button>
-                              </div>
-                            )}
+                            <>
+                              {typeof msg.text === 'string' ? msg.text : null}
+                              {msg.sender !== 'user' && msg.structured && (
+                                <div className="mt-2">
+                                  <StructuredMessage data={msg.structured} onAction={handleQuickReply} rtl={true} />
+                                </div>
+                              )}
+                              {msg.sender !== 'user' && msg.quickAction && (
+                                <div className="mt-2">
+                                  <button
+                                    onClick={() => {
+                                      if (msg.quickAction === 'תראו לי החזרים עד כה' || msg.quickAction === 'תראו לי את ההחזרים') {
+                                        // Navigate to results view - use empty array for now since we don't have refunds data in message
+                                        onShowResults([]);
+                                      } else {
+                                        handleQuickReply(msg.quickAction);
+                                      }
+                                    }}
+                                    className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors duration-200"
+                                  >
+                                    {msg.quickAction}
+                                  </button>
+                                </div>
+                              )}
+                              {msg.sender !== 'user' && msg.quickReplies && msg.quickReplies.length > 0 && (
+                                <InlineQuickReplies
+                                  replies={msg.quickReplies}
+                                  onSelect={handleSend}
+                                  disabled={isLoading}
+                                />
+                              )}
+                            </>
                             {msg.preview && (
                               <div className="mt-2 bg-green-50 border border-green-200 rounded-lg p-3 text-right">
                                 <div className="flex justify-between items-center">
@@ -520,33 +545,33 @@ return (
                           >בטל</button>
                         </>
                       )}
+                        </div>
                     </div>
-                  </div>
                 )}
             </div>
             <div className="flex items-center gap-2">
-                <Button 
-                    onClick={() => handleSend()} 
-                    className="px-3 py-2" 
-                    style={{ background: '#222', color: '#fff' }} 
-                    data-testid="send-button"
-                    disabled={isLoading}
-                >
-                    {isLoading ? (
-                        <span className="animate-spin">⏳</span>
-                    ) : (
-                        <span role="img" aria-label="send">✈️</span>
-                    )}
+                  <Button 
+                      onClick={() => handleSend()} 
+                      className="px-3 py-2" 
+                      style={{ background: '#222', color: '#fff' }} 
+                      data-testid="send-button"
+                      disabled={isLoading}
+                  >
+                      {isLoading ? (
+                          <span className="animate-spin">⏳</span>
+                      ) : (
+                    <span role="img" aria-label="send">✈️</span>
+                      )}
                 </Button>
                 <input
                     type="text"
                     className="flex-1 rounded px-4 py-2 border border-gray-300 focus:outline-none"
-                    placeholder={isLoading ? 'מעבד את השאלה...' : (mode === 'assistant' ? 'הקלד תשובה...' : POLICY_CHAT.INPUT_PLACEHOLDER)}
+                      placeholder={isLoading ? 'מעבד את השאלה...' : (mode === 'assistant' ? 'הקלד תשובה...' : POLICY_CHAT.INPUT_PLACEHOLDER)}
                     value={input}
                     onChange={e => setInput(e.target.value)}
-                    onKeyDown={e => { if (e.key === 'Enter' && !isLoading) handleSend(); }}
-                    data-testid="chat-input"
-                    disabled={isLoading}
+                      onKeyDown={e => { if (e.key === 'Enter' && !isLoading) handleSend(); }}
+                      data-testid="chat-input"
+                      disabled={isLoading}
                 />
             </div>
             {mode === 'assistant' && (
@@ -600,9 +625,9 @@ return (
                                 </details>
                             )}
                         </div>
-                    </div>
-                </div>
-            )}
+        </div>
+            </div>
+        )}
         </div>
     </div>
 );

@@ -218,6 +218,19 @@ class ApiService {
     return this.post(`${this.baseURL}/api/policy/${policyId}/retry-embeddings`, {});
   }
 
+  // Conversation state methods
+  async getConversationState(sessionId) {
+    return this.get(`${this.baseURL}/api/conversation-state/${sessionId}`);
+  }
+
+  async saveConversationState(data) {
+    return this.post(`${this.baseURL}/api/conversation-state`, data);
+  }
+
+  async resetConversationState(sessionId) {
+    return this.delete(`${this.baseURL}/api/conversation-state/${sessionId}`);
+  }
+
   // Profile API methods
   async getProfile(userId) {
     return this.get(`${this.baseURL}/api/profile?user_id=${encodeURIComponent(userId)}`);
