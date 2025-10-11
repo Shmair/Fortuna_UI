@@ -1,6 +1,8 @@
 import ConfidenceBadge from './ConfidenceBadge';
 import SourceInfo from './SourceInfo';
+import SourceChip from './SourceChip';
 import QuickActions from './QuickActions';
+import InlineQuickReplies from './InlineQuickReplies';
 
 export default function StructuredMessage({ data = {}, onAction, rtl = true }) {
   const {
@@ -11,27 +13,76 @@ export default function StructuredMessage({ data = {}, onAction, rtl = true }) {
     policy_section,
     important_notes,
     meta = {},
-    quick_actions
+    quick_replies,
+    quick_actions,
+    contextual_actions = []
   } = data;
 
   const summary = content.summary || message;
   const details = content.details;
 
+  // Grouped sections for readability per Issue #50
+  const coveredItems = content.covered || content.includes || null; // מכוסה
+  const conditions = content.conditions || null; // תנאים
+  const exclusions = content.exclusions || content.not_covered || null; // חריגים
+
   return (
     <div className={`text-sm ${rtl ? 'text-right' : ''}`}>
       {summary && (
-        <div className="mb-2 text-gray-800">{summary}</div>
+        <ul className="mb-2 text-gray-800 list-disc pr-5">
+          {(Array.isArray(summary) ? summary : [summary]).filter(Boolean).map((line, i) => (
+            <li key={i} className="leading-6">{line}</li>
+          ))}
+        </ul>
       )}
 
       <div className="flex items-center gap-2 justify-end mb-2">
         <ConfidenceBadge confidence={meta.confidence} />
-        <SourceInfo source={meta.source} policySection={meta.policy_section || policy_section} />
+        <SourceChip source={meta.source} policySection={meta.policy_section || policy_section} />
       </div>
 
       {details && (
         <details open={false} className="bg-gray-50 border border-gray-200 rounded-lg p-3 mb-2">
           <summary className="cursor-pointer text-gray-700 font-medium">פרטים</summary>
           <div className="mt-2 text-gray-700 whitespace-pre-wrap">{details}</div>
+        </details>
+      )}
+
+      {(coveredItems || conditions || exclusions) && (
+        <details open={false} className="bg-gray-50 border border-gray-200 rounded-lg p-3 mb-2">
+          <summary className="cursor-pointer text-gray-700 font-medium">פירוט</summary>
+          <div className="mt-2 space-y-3">
+            {coveredItems && (
+              <div>
+                <div className="font-semibold text-gray-800 mb-1">מכוסה</div>
+                <ul className="list-disc pr-5 text-gray-700">
+                  {(Array.isArray(coveredItems) ? coveredItems : [coveredItems]).filter(Boolean).map((item, i) => (
+                    <li key={`cov-${i}`}>{item}</li>
+                  ))}
+                </ul>
+              </div>
+            )}
+            {conditions && (
+              <div>
+                <div className="font-semibold text-gray-800 mb-1">תנאים</div>
+                <ul className="list-disc pr-5 text-gray-700">
+                  {(Array.isArray(conditions) ? conditions : [conditions]).filter(Boolean).map((item, i) => (
+                    <li key={`cond-${i}`}>{item}</li>
+                  ))}
+                </ul>
+              </div>
+            )}
+            {exclusions && (
+              <div>
+                <div className="font-semibold text-gray-800 mb-1">חריגים</div>
+                <ul className="list-disc pr-5 text-gray-700">
+                  {(Array.isArray(exclusions) ? exclusions : [exclusions]).filter(Boolean).map((item, i) => (
+                    <li key={`exc-${i}`}>{item}</li>
+                  ))}
+                </ul>
+              </div>
+            )}
+          </div>
         </details>
       )}
 
@@ -62,8 +113,28 @@ export default function StructuredMessage({ data = {}, onAction, rtl = true }) {
         </div>
       )}
 
-      {Array.isArray(quick_actions) && quick_actions.length > 0 && (
-        <QuickActions actions={quick_actions} onAction={onAction} />
+      {/* Contextual actions */}
+      {contextual_actions.length > 0 && (
+        <div className="mt-3">
+          <div className="text-xs text-gray-500 mb-2">פעולות זמינות:</div>
+          <div className="flex flex-wrap gap-2">
+            {contextual_actions.map((action, idx) => (
+              <button
+                key={idx}
+                onClick={() => onAction && onAction(action)}
+                className="px-3 py-1.5 text-sm font-medium rounded-lg border border-blue-300 text-blue-700 hover:bg-blue-50 hover:border-blue-400 focus:bg-blue-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-1 transition-all duration-200"
+                aria-label={`בצע פעולה: ${action}`}
+              >
+                {action}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Quick replies */}
+      {Array.isArray(quick_replies) && quick_replies.length > 0 && (
+        <InlineQuickReplies replies={quick_replies} onSelect={onAction} />
       )}
     </div>
   );
