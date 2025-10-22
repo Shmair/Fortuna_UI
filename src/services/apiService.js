@@ -252,13 +252,15 @@ class ApiService {
   async uploadPolicy(formData) {
     // Get auth headers for FormData upload
     const authHeaders = await this.getAuthHeaders();
-    return this.request(`${this.baseURL}/api/policy`, {
+    return this.request(`${this.baseURL}/api/policy/upload`, {
       method: 'POST',
       headers: {
         'Authorization': authHeaders.Authorization
         // Let browser set Content-Type for FormData
       },
-      body: formData
+      body: formData,
+      // Upload + server-side processing can be long; override default timeout
+      timeout: Math.max(REQUEST_CONFIG.TIMEOUT, 120000)
     });
   }
 
@@ -280,6 +282,25 @@ class ApiService {
 
   async startChatSession({ userId, policyId, mode }) {
     return this.post(`${this.baseURL}/api/policy/session`, { userId, policyId, mode });
+  }
+
+  // Chat message (new primary endpoint)
+  async sendChatMessage({ userId, policyId, user_question, sessionId }) {
+    return this.post(`${this.baseURL}/api/policy/chat`, { userId, policyId, user_question, sessionId });
+  }
+
+  // Coverage, health and metrics
+  async getPolicyCoverage(policyId, userId) {
+    const qs = new URLSearchParams({ userId }).toString();
+    return this.get(`${this.baseURL}/api/policy/${policyId}/coverage?${qs}`);
+  }
+
+  async getLLMHealth() {
+    return this.get(`${this.baseURL}/api/policy/health`);
+  }
+
+  async getLLMMetrics() {
+    return this.get(`${this.baseURL}/api/policy/metrics`);
   }
 }
 

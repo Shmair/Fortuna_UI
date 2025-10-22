@@ -13,24 +13,95 @@ export default function StructuredMessage({ data = {}, onAction, rtl = true }) {
     policy_section,
     important_notes,
     meta = {},
+    next_actions,
+    timeline,
     quick_replies,
     quick_actions,
     contextual_actions = []
   } = data;
+  // Guided questions inline rendering
+  const questions = Array.isArray(data.questions) ? data.questions : [];
 
-  const summary = content.summary || message;
-  const details = content.details;
+  const rawSummary = content.summary ?? message;
+  const rawDetails = content.details;
+
+  const toLines = (value) => {
+    if (!value) return [];
+    if (typeof value === 'string') return [value];
+    if (Array.isArray(value)) return value.filter(v => typeof v === 'string');
+    if (typeof value === 'object') {
+      // Attempt to use string values of the object
+      return Object.values(value).filter(v => typeof v === 'string');
+    }
+    return [];
+  };
+
+  const summaryLines = toLines(rawSummary);
+  const detailsText = (() => {
+    if (!rawDetails) return '';
+    if (typeof rawDetails === 'string') return rawDetails;
+    if (Array.isArray(rawDetails)) {
+      const onlyStrings = rawDetails.filter(v => typeof v === 'string');
+      return onlyStrings.join('\n');
+    }
+    if (typeof rawDetails === 'object') {
+      try {
+        return JSON.stringify(rawDetails);
+      } catch {
+        return '';
+      }
+    }
+    return '';
+  })();
 
   // Grouped sections for readability per Issue #50
-  const coveredItems = content.covered || content.includes || null; // מכוסה
-  const conditions = content.conditions || null; // תנאים
-  const exclusions = content.exclusions || content.not_covered || null; // חריגים
+  const toList = (value) => {
+    if (!value) return [];
+    if (Array.isArray(value)) return value.filter(v => typeof v === 'string');
+    if (typeof value === 'string') return [value];
+    if (typeof value === 'object') return Object.values(value).filter(v => typeof v === 'string');
+    return [];
+  };
+
+  const coveredItems = toList(content.covered || content.includes); // מכוסה
+  const conditions = toList(content.conditions); // תנאים
+  const exclusions = toList(content.exclusions || content.not_covered); // חריגים
+
+  // Normalize coverage_info for safe rendering
+  const coverageLines = (() => {
+    if (!coverage_info) return [];
+    if (typeof coverage_info === 'string') return [coverage_info];
+    if (Array.isArray(coverage_info)) return coverage_info.filter(v => typeof v === 'string');
+    if (typeof coverage_info === 'object') {
+      return Object.entries(coverage_info)
+        .map(([key, val]) => {
+          // Translate English keys to Hebrew
+          const hebrewKey = {
+            'covered': 'מכוסה',
+            'not_covered': 'לא מכוסה', 
+            'conditions': 'תנאים',
+            'percentage': 'אחוז כיסוי',
+            'max_amount': 'סכום מקסימלי',
+            'co_payment': 'השתתפות עצמית',
+            'valid_until': 'תקף עד'
+          }[key] || key;
+          
+          // Handle arrays properly
+          if (Array.isArray(val)) {
+            return `${hebrewKey}: ${val.join(', ')}`;
+          }
+          
+          return `${hebrewKey}: ${typeof val === 'object' ? JSON.stringify(val) : String(val)}`;
+        });
+    }
+    return [];
+  })();
 
   return (
     <div className={`text-sm ${rtl ? 'text-right' : ''}`}>
-      {summary && (
+      {summaryLines.length > 0 && (
         <ul className="mb-2 text-gray-800 list-disc pr-5">
-          {(Array.isArray(summary) ? summary : [summary]).filter(Boolean).map((line, i) => (
+          {summaryLines.map((line, i) => (
             <li key={i} className="leading-6">{line}</li>
           ))}
         </ul>
@@ -41,42 +112,49 @@ export default function StructuredMessage({ data = {}, onAction, rtl = true }) {
         <SourceChip source={meta.source} policySection={meta.policy_section || policy_section} />
       </div>
 
-      {details && (
+      {typeof timeline === 'string' && timeline.trim().length > 0 && (
+        <div className="mb-2 text-gray-700">
+          <div className="font-semibold text-gray-900 mb-1">לוחות זמנים</div>
+          <div className="text-sm whitespace-pre-line">{timeline}</div>
+        </div>
+      )}
+
+      {detailsText && (
         <details open={false} className="bg-gray-50 border border-gray-200 rounded-lg p-3 mb-2">
           <summary className="cursor-pointer text-gray-700 font-medium">פרטים</summary>
-          <div className="mt-2 text-gray-700 whitespace-pre-wrap">{details}</div>
+          <div className="mt-2 text-gray-700 whitespace-pre-wrap">{detailsText}</div>
         </details>
       )}
 
-      {(coveredItems || conditions || exclusions) && (
+      {Boolean(coveredItems.length || conditions.length || exclusions.length) && (
         <details open={false} className="bg-gray-50 border border-gray-200 rounded-lg p-3 mb-2">
           <summary className="cursor-pointer text-gray-700 font-medium">פירוט</summary>
           <div className="mt-2 space-y-3">
-            {coveredItems && (
+            {coveredItems.length > 0 && (
               <div>
                 <div className="font-semibold text-gray-800 mb-1">מכוסה</div>
                 <ul className="list-disc pr-5 text-gray-700">
-                  {(Array.isArray(coveredItems) ? coveredItems : [coveredItems]).filter(Boolean).map((item, i) => (
+                  {coveredItems.map((item, i) => (
                     <li key={`cov-${i}`}>{item}</li>
                   ))}
                 </ul>
               </div>
             )}
-            {conditions && (
+            {conditions.length > 0 && (
               <div>
                 <div className="font-semibold text-gray-800 mb-1">תנאים</div>
                 <ul className="list-disc pr-5 text-gray-700">
-                  {(Array.isArray(conditions) ? conditions : [conditions]).filter(Boolean).map((item, i) => (
+                  {conditions.map((item, i) => (
                     <li key={`cond-${i}`}>{item}</li>
                   ))}
                 </ul>
               </div>
             )}
-            {exclusions && (
+            {exclusions.length > 0 && (
               <div>
                 <div className="font-semibold text-gray-800 mb-1">חריגים</div>
                 <ul className="list-disc pr-5 text-gray-700">
-                  {(Array.isArray(exclusions) ? exclusions : [exclusions]).filter(Boolean).map((item, i) => (
+                  {exclusions.map((item, i) => (
                     <li key={`exc-${i}`}>{item}</li>
                   ))}
                 </ul>
@@ -86,12 +164,63 @@ export default function StructuredMessage({ data = {}, onAction, rtl = true }) {
         </details>
       )}
 
-      {(coverage_info || required_documents) && (
+      {questions.length > 0 && (
+        <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 mb-2">
+          {questions.map((q, i) => (
+            <div key={`q-${i}`} className="mb-3 last:mb-0">
+              <div className="flex items-center gap-2 mb-1">
+                <span className="font-medium text-blue-900">{q.text}</span>
+                {/* {q.required && <span className="text-xs text-blue-700 bg-blue-100 px-1 rounded">חובה</span>} */}
+              </div>
+              {(q.microcopy || q.helper_text) && (
+                <p className="text-sm text-blue-700 mb-2">{q.microcopy || q.helper_text}</p>
+              )}
+              {q.type === 'date' ? (
+                <div className="flex items-center gap-2">
+                  <input
+                    type="date"
+                    onChange={(e) => {
+                      if (e.target.value && onAction) {
+                        onAction(e.target.value);
+                      }
+                    }}
+                    className="px-2 py-1 text-sm border border-blue-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    dir="ltr"
+                  />
+                  <span className="text-xs text-blue-600">בחר תאריך</span>
+                </div>
+              ) : (Array.isArray(q.quickReplies) && q.quickReplies.length > 0) || (Array.isArray(q.options) && q.options.length > 0) ? (
+                <div className="flex flex-wrap gap-1">
+                  {(q.quickReplies || q.options).map((reply, idx) => (
+                    <button
+                      key={idx}
+                      onClick={() => onAction && onAction(reply)}
+                      className="px-2 py-1 text-xs bg-blue-100 hover:bg-blue-200 text-blue-800 rounded border border-blue-300 transition-colors duration-200"
+                    >
+                      {reply}
+                    </button>
+                  ))}
+                </div>
+              ) : q.type === 'open_text' ? (
+                <div className="text-sm text-blue-600 italic">
+                  השתמש בשדה הקלט למטה כדי לענות על השאלה
+                </div>
+              ) : null}
+            </div>
+          ))}
+        </div>
+      )}
+
+      {(coverageLines.length > 0 || required_documents) && (
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-2">
-          {coverage_info && (
+          {coverageLines.length > 0 && (
             <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
               <div className="font-semibold text-blue-900 mb-1">כיסוי</div>
-              <div className="text-blue-900 text-sm whitespace-pre-wrap">{coverage_info}</div>
+              <ul className="text-blue-900 text-sm list-disc pr-5">
+                {coverageLines.map((line, i) => (
+                  <li key={`covline-${i}`}>{line}</li>
+                ))}
+              </ul>
             </div>
           )}
           {required_documents && (
@@ -110,6 +239,17 @@ export default function StructuredMessage({ data = {}, onAction, rtl = true }) {
       {important_notes && (
         <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3 mb-2 text-yellow-900 text-sm">
           {important_notes}
+        </div>
+      )}
+
+      {Array.isArray(next_actions) && next_actions.length > 0 && (
+        <div className="bg-gray-50 border border-gray-200 rounded-lg p-3 mb-2">
+          <div className="font-semibold text-gray-800 mb-1">הצעדים הבאים</div>
+          <ul className="list-disc pr-5 text-gray-700 text-sm">
+            {next_actions.map((a, i) => (
+              <li key={`na-${i}`}>{a}</li>
+            ))}
+          </ul>
         </div>
       )}
 

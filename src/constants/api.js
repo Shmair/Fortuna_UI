@@ -81,7 +81,7 @@ export const API_SUCCESS = {
 
 // Request Configuration
 export const REQUEST_CONFIG = {
-  TIMEOUT: 10000, // 10 seconds
-  RETRY_ATTEMPTS: 3,
-  RETRY_DELAY: 1000 // 1 second
+  TIMEOUT: 20000, // 20 seconds to accommodate upstream LLM
+  RETRY_ATTEMPTS: 2,
+  RETRY_DELAY: 1200 // 1.2 seconds (basic backoff)
 };

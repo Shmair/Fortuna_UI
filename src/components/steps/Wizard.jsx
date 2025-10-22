@@ -277,16 +277,19 @@ export default function Wizard({ user, isLoadingUser }) {
                             console.log('Found insurance_policy_id in profile, fetching policy by ID');
                             const policyResult = await fetchPolicyById(profile.insurance_policy_id);
                             
-                            if (policyResult.policy) {
+                        if (policyResult.policy) {
                                 console.log('Found existing policy by ID, skipping to chat step');
                                 setUploadedPolicyName(policyResult.policy.file_name);
                                 setFullAnalysis(policyResult.policy.analysis || '');
                                 setPolicyId(policyResult.policy.id);
                                 setIsReturningUser(true);
-                                setChatMode('user');
-                            
-                            await finishLoading(4)(); // Go to options step before chat
-                                return;
+                            setChatMode('user');
+                            try {
+                                const r = await apiService.startChatSession({ userId, policyId: policyResult.policy.id, mode: 'user' });
+                                setSessionId(r.sessionId);
+                            } catch {}
+                            await finishLoading(5)(); // Go straight to chat
+                            return;
                             }
                         }
                         
@@ -301,8 +304,11 @@ export default function Wizard({ user, isLoadingUser }) {
                             setPolicyId(mostRecentPolicy.id);
                             setIsReturningUser(true);
                             setChatMode('user');
-                            
-                            await finishLoading(4)(); // Go to options step before chat
+                            try {
+                                const r = await apiService.startChatSession({ userId, policyId: mostRecentPolicy.id, mode: 'user' });
+                                setSessionId(r.sessionId);
+                            } catch {}
+                            await finishLoading(5)(); // Go straight to chat
                         } else {
                             console.log('No existing policies, going to upload step');
                             console.log('About to call finishLoading(2)');
@@ -469,10 +475,18 @@ export default function Wizard({ user, isLoadingUser }) {
             await delay(1000);
             if (!embeddingError && !result.embedding_status?.has_failures) {
                 setIsProcessing(false);
-                setStep(4);
+                try {
+                    const r = await apiService.startChatSession({ userId: userData.userId, policyId, mode: 'user' });
+                    setSessionId(r.sessionId);
+                } catch {}
+                setStep(5);
             } else if (embeddingBypassed) {
                 setIsProcessing(false);
-                setStep(4);
+                try {
+                    const r = await apiService.startChatSession({ userId: userData.userId, policyId, mode: 'user' });
+                    setSessionId(r.sessionId);
+                } catch {}
+                setStep(5);
             } else {
                 // Stay on processing step to show the embedding error UI and allow retry/continue
                 setIsProcessing(true);

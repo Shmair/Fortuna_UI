@@ -13,8 +13,8 @@ export default function ContextualBotResponse({
 }) {
   return (
     <div className={`text-sm ${rtl ? 'text-right' : ''}`}>
-      {/* Message text */}
-      {message && (
+      {/* Message text - only if no structured content or if structured doesn't have a message */}
+      {message && !structured && (
         <div className="mb-2 text-gray-800">{message}</div>
       )}
 

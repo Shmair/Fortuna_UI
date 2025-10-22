@@ -48,6 +48,7 @@ export default function PolicyChatStep({
   const [embeddingError, setEmbeddingError] = useState(null);
   const [isRetryingEmbedding, setIsRetryingEmbedding] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [lastUserMessage, setLastUserMessage] = useState('');
   
   const { state, addAnswer, resetState } = useConversationState(userId, policyId, sessionId);
 
@@ -62,6 +63,8 @@ export default function PolicyChatStep({
   function normalizeBotText(answerObjOrString) {
     if (typeof answerObjOrString === 'string') return answerObjOrString;
     if (answerObjOrString && typeof answerObjOrString === 'object') {
+      // New backend shape: top-level string under key 'answer'
+      if (typeof answerObjOrString.answer === 'string') return answerObjOrString.answer;
       if (typeof answerObjOrString.message === 'string') return answerObjOrString.message;
       if (typeof answerObjOrString.content === 'string') return answerObjOrString.content;
       if (Array.isArray(answerObjOrString.content)) return answerObjOrString.content.filter(Boolean).join('\n');
@@ -85,24 +88,27 @@ export default function PolicyChatStep({
 
   function filterSubmissionContent(content) {
     if (!content) return content;
+    if (typeof content !== 'string') return content;
     return content.replace(/להגיש תביעה|להגשת תביעה|הגשת תביעה|הגשה|טפסים|מסמכים נדרשים|צ'ק-ליסט|רשימת בדיקה/gi, '').trim();
   }
 
   // Event handlers
-  async function handleSend(message = null) {
+  async function handleSend(message = null, displayTextOverride = null) {
     // Guard against React synthetic events passed from onClick
     const candidateMessage = (typeof message === 'string') ? message : null;
     const userMessage = candidateMessage ? candidateMessage.trim() : input.trim();
     if (!userMessage || isLoading) return;
     
     setIsLoading(true);
-    setMessages(msgs => [...msgs, { sender: 'user', text: userMessage }]);
+    setLastUserMessage(userMessage);
+    // If a display override is provided (e.g., for dates), show that while keeping the payload unchanged
+    setMessages(msgs => [...msgs, { sender: 'user', text: displayTextOverride || userMessage }]);
     setInput('');
 
     const payload = { userId, user_question: userMessage, policyId, sessionId };
 
     try {
-      const data = await apiService.post(POLICY_CHAT.API_URL, payload);
+      const data = await apiService.sendChatMessage(payload);
       await processBotResponse(data);
     } catch (err) {
       console.error('Error sending message:', err);
@@ -113,6 +119,31 @@ export default function PolicyChatStep({
   }
 
   async function processBotResponse(data) {
+    // Handle response structure where questions are at root level
+    if (data?.type === 'questions' && Array.isArray(data.questions)) {
+      const questionText = data.reasoning || 'שאלה:';
+      const questions = data.questions;
+      
+      setMessages(msgs => [...msgs, { 
+        sender: 'bot', 
+        text: questionText,
+        structured: {
+          questions: questions,
+          meta: {
+            narrowingMode: data.narrowingMode,
+            currentSections: data.currentSectionsLength,
+            iteration: data.iteration,
+            intent: data.intent,
+            section: data.section,
+            sessionId: data.sessionId,
+            narrowingState: data.narrowingState
+          }
+        }
+      }]);
+      return;
+    }
+
+    // Handle legacy response structure with answer property
     if (!data?.answer) return;
 
     // Handle guided questions - render as regular chat bubble with quick replies
@@ -132,15 +163,18 @@ export default function PolicyChatStep({
     const botText = normalizeBotText(data.answer);
     const refundsInfo = extractRefundsInfo(data.answer);
     
-    // Add bot text message if available
-    if (botText && typeof botText === 'string') {
-      const cleanedText = cleanBotText(botText);
-      setMessages(msgs => [...msgs, { sender: 'bot', text: cleanedText }]);
-    }
-
-    // Add structured content if available
+    // Add structured content if available (this will include the message text)
     if (typeof data.answer === 'object') {
       addStructuredMessage(data.answer, refundsInfo);
+    } else if (botText && typeof botText === 'string') {
+      // Only add plain text message if there's no structured content
+      const cleanedText = cleanBotText(botText);
+      const isFallbackTimeout = /timeout|שגיאה/i.test(cleanedText);
+      setMessages(msgs => [...msgs, { 
+        sender: 'bot', 
+        text: cleanedText,
+        quickReplies: isFallbackTimeout ? ['נסה שוב'] : undefined
+      }]);
     }
     
     // Handle auto-navigation
@@ -194,13 +228,17 @@ export default function PolicyChatStep({
       quick_replies, 
       quick_actions, 
       contextual_actions,
-      message: msgText 
+      message: msgText,
+      answer: answerText, // new field name for primary text
+      next_actions,
+      timeline
     } = answer;
     
-    const hasStructuredContent = content || coverage_info || required_documents || policy_section || important_notes;
+    const hasStructuredContent = content || coverage_info || required_documents || policy_section || important_notes || next_actions || timeline;
     const hasActions = contextual_actions || quick_replies || quick_actions;
+    const hasQuestions = Array.isArray(answer.questions) && answer.questions.length > 0;
     
-    if (hasStructuredContent || hasActions) {
+    if (hasStructuredContent || hasActions || hasQuestions) {
       const filteredContent = content;
       const filteredRequiredDocuments = required_documents;
       const filteredImportantNotes = filterSubmissionContent(important_notes);
@@ -209,7 +247,7 @@ export default function PolicyChatStep({
         sender: 'bot', 
         text: '', 
         structured: {
-          message: msgText,
+          message: msgText || answerText,
           content: filteredContent,
           coverage_info,
           required_documents: filteredRequiredDocuments,
@@ -217,7 +255,10 @@ export default function PolicyChatStep({
           important_notes: filteredImportantNotes,
           meta,
           quick_replies: quick_replies || quick_actions,
-          contextual_actions: contextual_actions || []
+          questions: Array.isArray(answer.questions) ? answer.questions : undefined,
+          contextual_actions: contextual_actions || [],
+          next_actions: Array.isArray(next_actions) ? next_actions : undefined,
+          timeline: typeof timeline === 'string' ? timeline : undefined
         }, 
         quickAction: refundsInfo.shouldShowRefundsButton ? refundsInfo.refundsButtonText : null 
       }]);
@@ -260,6 +301,15 @@ export default function PolicyChatStep({
   }
 
   function handleApiError(err) {
+    // Prefer server-provided message if available
+    const serverMessage = (err && (
+      err.response?.data?.message ||
+      err.response?.data?.error ||
+      err.data?.message ||
+      err.data?.error ||
+      err.message
+    )) || '';
+
     // Check if this is an embedding-related error
     if (err.message && (
       err.message.includes('embedding') || 
@@ -274,10 +324,36 @@ export default function PolicyChatStep({
       });
     }
     
-    setMessages(msgs => [...msgs, { sender: 'bot', text: POLICY_CHAT.ERROR }]);
+    // Handle timeouts with a retry chip
+    if ((err.message && /timeout|זמן/.test(err.message)) || (typeof serverMessage === 'string' && /timeout|זמן/i.test(serverMessage))) {
+      setMessages(msgs => [...msgs, { 
+        sender: 'bot', 
+        text: 'הבקשה ארכה יותר מדי זמן, נסה שוב.',
+        quickReplies: ['נסה שוב']
+      }]);
+      return;
+    }
+
+    // Show specific server message if present, otherwise generic
+    const friendly = typeof serverMessage === 'string' && serverMessage.trim().length > 0
+      ? serverMessage
+      : POLICY_CHAT.ERROR;
+    setMessages(msgs => [...msgs, { sender: 'bot', text: friendly, quickReplies: ['נסה שוב'] }]);
   }
 
   function handleQuickReply(reply) {
+    if (reply === 'נסה שוב' && lastUserMessage) {
+      handleSend(lastUserMessage);
+      return;
+    }
+    // If the reply looks like a date (YYYY-MM-DD), echo as DD/MM/YYYY to the user
+    const isIsoDate = typeof reply === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(reply);
+    if (isIsoDate) {
+      const [y, m, d] = reply.split('-');
+      const display = `${d}/${m}/${y}`;
+      handleSend(reply, display);
+      return;
+    }
     handleSend(reply);
   }
 
