@@ -460,10 +460,13 @@ export default function Wizard({ user, isLoadingUser }) {
             await delay(500);
             setUploadProgress(100);
 
+            // Extract from nested policy object per new API response
+            const uploadedPolicy = result?.policy;
+            const newPolicyId = uploadedPolicy?.id || 0;
             setFullAnalysis(result.answer);
-            setFileHash(result?.file_hash || "");
-            setUploadedPolicyName(result?.file_name || file.name || "");
-            setPolicyId(result?.policy_id || 0);
+            setFileHash(uploadedPolicy?.file_hash || "");
+            setUploadedPolicyName(uploadedPolicy?.file_name || file.name || "");
+            setPolicyId(newPolicyId);
             
             if (result.messages && Array.isArray(result.messages)) {
                 setInitialMessages(result.messages);
@@ -476,14 +479,14 @@ export default function Wizard({ user, isLoadingUser }) {
             if (!embeddingError && !result.embedding_status?.has_failures) {
                 setIsProcessing(false);
                 try {
-                    const r = await apiService.startChatSession({ userId: userData.userId, policyId, mode: 'user' });
+                    const r = await apiService.startChatSession({ userId: userData.userId, policyId: newPolicyId, mode: 'user' });
                     setSessionId(r.sessionId);
                 } catch {}
                 setStep(5);
             } else if (embeddingBypassed) {
                 setIsProcessing(false);
                 try {
-                    const r = await apiService.startChatSession({ userId: userData.userId, policyId, mode: 'user' });
+                    const r = await apiService.startChatSession({ userId: userData.userId, policyId: newPolicyId, mode: 'user' });
                     setSessionId(r.sessionId);
                 } catch {}
                 setStep(5);
