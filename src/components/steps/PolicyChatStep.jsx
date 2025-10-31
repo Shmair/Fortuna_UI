@@ -119,6 +119,72 @@ export default function PolicyChatStep({
   }
 
   async function processBotResponse(data) {
+    // Handle explicit message envelope with nested data
+    if (data && data.type === 'message' && data.data && typeof data.data.message === 'string') {
+      setMessages(msgs => [...msgs, {
+        sender: 'bot',
+        text: '',
+        structured: {
+          message: data.data.message,
+          suggestions: Array.isArray(data.data.suggestions) ? data.data.suggestions : undefined,
+          meta: {
+            intent: data.data.intent || data.intent,
+            reason: data.data.reason || data.reason,
+            errorMessage: data.data.errorMessage || data.errorMessage,
+            timestamp: data.timestamp,
+            processingTime: data.processingTime,
+            overallHealth: data.llmMetrics?.overallHealth
+          }
+        }
+      }]);
+      return;
+    }
+
+    // Handle fallback/system guidance shape with message + suggestions
+    if (data && typeof data.message === 'string' && Array.isArray(data.suggestions)) {
+      setMessages(msgs => [...msgs, {
+        sender: 'bot',
+        text: '',
+        structured: {
+          message: data.message,
+          suggestions: data.suggestions,
+          meta: {
+            intent: data.intent,
+            reason: data.reason,
+            errorMessage: data.errorMessage
+          }
+        }
+      }]);
+      return;
+    }
+
+    // Handle root-level structured response (type: 'response')
+    if (data && (data.type === 'response' || typeof data.message === 'string')) {
+      const structuredAnswer = {
+        message: data.message,
+        coverage_info: data.coverage_info,
+        required_documents: data.required_documents,
+        important_notes: data.important_notes,
+        next_actions: data.next_actions,
+        policy_section: data.policy_section,
+        content: data.content,
+        timeline: data.timeline,
+        meta: {
+          confidence: data.confidence,
+          reasoning: data.reasoning,
+          intent: data.intent,
+          section: data.section,
+          sessionId: data.sessionId,
+          narrowingMode: data.narrowingMode,
+          currentSectionsLength: data.currentSectionsLength
+        }
+      };
+
+      const refundsInfo = extractRefundsInfo(structuredAnswer);
+      addStructuredMessage(structuredAnswer, refundsInfo);
+      return;
+    }
+
     // Handle response structure where questions are at root level
     if (data?.type === 'questions' && Array.isArray(data.questions)) {
       const questionText = data.reasoning || 'שאלה:';
@@ -231,7 +297,8 @@ export default function PolicyChatStep({
       message: msgText,
       answer: answerText, // new field name for primary text
       next_actions,
-      timeline
+      timeline,
+      suggestions
     } = answer;
     
     const hasStructuredContent = content || coverage_info || required_documents || policy_section || important_notes || next_actions || timeline;
@@ -258,7 +325,8 @@ export default function PolicyChatStep({
           questions: Array.isArray(answer.questions) ? answer.questions : undefined,
           contextual_actions: contextual_actions || [],
           next_actions: Array.isArray(next_actions) ? next_actions : undefined,
-          timeline: typeof timeline === 'string' ? timeline : undefined
+          timeline: typeof timeline === 'string' ? timeline : undefined,
+          suggestions: Array.isArray(suggestions) ? suggestions : undefined
         }, 
         quickAction: refundsInfo.shouldShowRefundsButton ? refundsInfo.refundsButtonText : null 
       }]);

@@ -17,7 +17,8 @@ export default function StructuredMessage({ data = {}, onAction, rtl = true }) {
     timeline,
     quick_replies,
     quick_actions,
-    contextual_actions = []
+    contextual_actions = [],
+    suggestions = []
   } = data;
   // Guided questions inline rendering
   const questions = Array.isArray(data.questions) ? data.questions : [];
@@ -112,6 +113,22 @@ export default function StructuredMessage({ data = {}, onAction, rtl = true }) {
         <SourceChip source={meta.source} policySection={meta.policy_section || policy_section} />
       </div>
 
+      {(meta?.intent || meta?.reason || meta?.reasoning || meta?.errorMessage) && (
+        <div className="text-xs text-gray-500 mb-2 space-y-0.5">
+          {meta?.intent && <div>כוונה: {meta.intent}</div>}
+          {meta?.reason && <div>סיבה: {meta.reason}</div>}
+          {meta?.reasoning && (
+            <div className="text-gray-600 whitespace-pre-wrap">נימוק: {meta.reasoning}</div>
+          )}
+          {meta?.errorMessage && (
+            <details>
+              <summary className="cursor-pointer">פרטים טכניים</summary>
+              <div className="mt-1 whitespace-pre-wrap">{meta.errorMessage}</div>
+            </details>
+          )}
+        </div>
+      )}
+
       {typeof timeline === 'string' && timeline.trim().length > 0 && (
         <div className="mb-2 text-gray-700">
           <div className="font-semibold text-gray-900 mb-1">לוחות זמנים</div>
@@ -124,6 +141,23 @@ export default function StructuredMessage({ data = {}, onAction, rtl = true }) {
           <summary className="cursor-pointer text-gray-700 font-medium">פרטים</summary>
           <div className="mt-2 text-gray-700 whitespace-pre-wrap">{detailsText}</div>
         </details>
+      )}
+
+      {Array.isArray(suggestions) && suggestions.length > 0 && (
+        <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 mb-2">
+          <div className="font-semibold text-blue-900 mb-1">נסו לשאול:</div>
+          <div className="flex flex-wrap gap-2">
+            {suggestions.map((s, i) => (
+              <button
+                key={`sg-${i}`}
+                onClick={() => onAction && onAction(s)}
+                className="px-3 py-1.5 text-sm bg-blue-100 hover:bg-blue-200 text-blue-800 rounded border border-blue-300 transition-colors duration-200"
+              >
+                {s}
+              </button>
+            ))}
+          </div>
+        </div>
       )}
 
       {Boolean(coveredItems.length || conditions.length || exclusions.length) && (
