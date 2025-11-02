@@ -38,17 +38,13 @@ const InlineQuickReplies = ({
             onClick={() => handleReplyClick(reply)}
             disabled={disabled}
             className={`
-              px-3 py-1.5 text-sm font-medium rounded-full border transition-all duration-200
+              px-4 py-2 text-sm font-medium rounded-xl border-2 transition-all duration-200 shadow-sm
               ${disabled 
-                ? 'border-gray-300 text-gray-400 cursor-not-allowed' 
-                : 'border-green-300 text-green-700 hover:bg-green-50 hover:border-green-400 focus:bg-green-50 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-1'
+                ? 'border-gray-300 text-gray-400 cursor-not-allowed bg-gray-50' 
+                : 'border-green-300 bg-white text-green-700 hover:bg-green-50 hover:border-green-400 hover:shadow-md hover:scale-105 focus:bg-green-50 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-1'
               }
             `}
             aria-label={`בחר: ${reply}`}
-            style={{ 
-              minHeight: '28px',
-              maxHeight: '32px'
-            }}
           >
             {reply}
           </button>
@@ -60,17 +56,13 @@ const InlineQuickReplies = ({
             onClick={handleOverflowToggle}
             disabled={disabled}
             className={`
-              px-3 py-1.5 text-sm font-medium rounded-full border transition-all duration-200
+              px-4 py-2 text-sm font-medium rounded-xl border-2 transition-all duration-200 shadow-sm
               ${disabled 
-                ? 'border-gray-300 text-gray-400 cursor-not-allowed' 
-                : 'border-blue-300 text-blue-700 hover:bg-blue-50 hover:border-blue-400 focus:bg-blue-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-1'
+                ? 'border-gray-300 text-gray-400 cursor-not-allowed bg-gray-50' 
+                : 'border-blue-300 bg-white text-blue-700 hover:bg-blue-50 hover:border-blue-400 hover:shadow-md hover:scale-105 focus:bg-blue-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-1'
               }
             `}
             aria-label={`עוד ${overflowReplies.length} תשובות`}
-            style={{ 
-              minHeight: '28px',
-              maxHeight: '32px'
-            }}
           >
             עוד…
           </button>
@@ -86,17 +78,13 @@ const InlineQuickReplies = ({
               onClick={() => handleReplyClick(reply)}
               disabled={disabled}
               className={`
-                px-3 py-1.5 text-sm font-medium rounded-full border transition-all duration-200
+                px-4 py-2 text-sm font-medium rounded-xl border-2 transition-all duration-200 shadow-sm
                 ${disabled 
-                  ? 'border-gray-300 text-gray-400 cursor-not-allowed' 
-                  : 'border-green-300 text-green-700 hover:bg-green-50 hover:border-green-400 focus:bg-green-50 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-1'
+                  ? 'border-gray-300 text-gray-400 cursor-not-allowed bg-gray-50' 
+                  : 'border-green-300 bg-white text-green-700 hover:bg-green-50 hover:border-green-400 hover:shadow-md hover:scale-105 focus:bg-green-50 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-1'
                 }
               `}
               aria-label={`בחר: ${reply}`}
-              style={{ 
-                minHeight: '28px',
-                maxHeight: '32px'
-              }}
             >
               {reply}
             </button>

@@ -169,6 +169,8 @@ export default function PolicyChatStep({
         policy_section: data.policy_section,
         content: data.content,
         timeline: data.timeline,
+        relevant_sections: data.relevant_sections,
+        co_payment: data.co_payment,
         meta: {
           confidence: data.confidence,
           reasoning: data.reasoning,
@@ -217,11 +219,11 @@ export default function PolicyChatStep({
       const questionText = data.answer.message || data.answer.text || 'שאלה:';
       const quickReplies = data.answer.quick_replies || data.answer.quick_actions || [];
       
-      setMessages(msgs => [...msgs, { 
-        sender: 'bot', 
+          setMessages(msgs => [...msgs, { 
+            sender: 'bot', 
         text: questionText,
         quickReplies: quickReplies
-      }]);
+          }]);
           return;
         }
 
@@ -285,12 +287,12 @@ export default function PolicyChatStep({
 
   function addStructuredMessage(answer, refundsInfo) {
     const { 
-      content, 
-      coverage_info, 
-      required_documents, 
-      policy_section, 
-      important_notes, 
-      meta, 
+              content,
+              coverage_info,
+              required_documents,
+              policy_section,
+              important_notes,
+              meta,
       quick_replies, 
       quick_actions, 
       contextual_actions,
@@ -298,7 +300,9 @@ export default function PolicyChatStep({
       answer: answerText, // new field name for primary text
       next_actions,
       timeline,
-      suggestions
+      suggestions,
+      relevant_sections,
+      co_payment
     } = answer;
     
     const hasStructuredContent = content || coverage_info || required_documents || policy_section || important_notes || next_actions || timeline;
@@ -320,6 +324,8 @@ export default function PolicyChatStep({
           required_documents: filteredRequiredDocuments,
           policy_section,
           important_notes: filteredImportantNotes,
+          relevant_sections,
+          co_payment,
           meta,
           quick_replies: quick_replies || quick_actions,
           questions: Array.isArray(answer.questions) ? answer.questions : undefined,
@@ -337,36 +343,36 @@ export default function PolicyChatStep({
     const detectedCandidate = data.candidate || (data.answer?.candidate);
     if (!data.candidate_generated || !detectedCandidate) return;
 
-    setCandidate(detectedCandidate);
-    setEditedCandidate({
-      amount: detectedCandidate.amount ?? '',
-      description: detectedCandidate.description ?? ''
-    });
+        setCandidate(detectedCandidate);
+        setEditedCandidate({
+          amount: detectedCandidate.amount ?? '',
+          description: detectedCandidate.description ?? ''
+        });
 
     // Add preview message
-    setMessages(msgs => [
-      ...msgs,
-      { 
-        sender: 'bot', 
-        text: 'זוהתה מועמדות להחזר. להלן תצוגה מקדימה:',
-        preview: {
-          amount: detectedCandidate.amount,
-          description: detectedCandidate.description,
-          type: detectedCandidate.type
-        }
-      }
-    ]);
+        setMessages(msgs => [
+          ...msgs,
+          { 
+            sender: 'bot', 
+            text: 'זוהתה מועמדות להחזר. להלן תצוגה מקדימה:',
+            preview: {
+              amount: detectedCandidate.amount,
+              description: detectedCandidate.description,
+              type: detectedCandidate.type
+            }
+          }
+        ]);
 
     // Add clarifications for low confidence
-    if (typeof detectedCandidate.confidence === 'number' && detectedCandidate.confidence < 0.7) {
-      setClarifications(prev => prev.length ? prev : [
-        'זה החזר עבור תרופות?',
-        'זה החזר עבור ניתוח?',
-        'האם הסכום שזיהינו נכון?',
-        'הוסף פירוט קצר על ההחזר'
-      ]);
-    }
-  }
+        if (typeof detectedCandidate.confidence === 'number' && detectedCandidate.confidence < 0.7) {
+          setClarifications(prev => prev.length ? prev : [
+            'זה החזר עבור תרופות?',
+            'זה החזר עבור ניתוח?',
+            'האם הסכום שזיהינו נכון?',
+            'הוסף פירוט קצר על ההחזר'
+          ]);
+        }
+      }
 
   function handleApiError(err) {
     // Prefer server-provided message if available
@@ -377,21 +383,21 @@ export default function PolicyChatStep({
       err.data?.error ||
       err.message
     )) || '';
-
-    // Check if this is an embedding-related error
-    if (err.message && (
-      err.message.includes('embedding') || 
-      err.message.includes('vector') ||
-      err.message.includes('Azure OpenAI')
-    )) {
-      setEmbeddingError({
-        type: 'chat_embedding_error',
-        message: 'בעיה בעיבוד הטקסט החכם',
-        details: err.message,
-        canRetry: true
-      });
-    }
-    
+      
+      // Check if this is an embedding-related error
+      if (err.message && (
+        err.message.includes('embedding') || 
+        err.message.includes('vector') ||
+        err.message.includes('Azure OpenAI')
+      )) {
+        setEmbeddingError({
+          type: 'chat_embedding_error',
+          message: 'בעיה בעיבוד הטקסט החכם',
+          details: err.message,
+          canRetry: true
+        });
+      }
+      
     // Handle timeouts with a retry chip
     if ((err.message && /timeout|זמן/.test(err.message)) || (typeof serverMessage === 'string' && /timeout|זמן/i.test(serverMessage))) {
       setMessages(msgs => [...msgs, { 
@@ -492,29 +498,38 @@ export default function PolicyChatStep({
 
   function renderChatGuidance() {
 return (
-        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6 max-w-4xl w-full">
-            <h4 className="font-semibold text-blue-800 mb-3">💡 דוגמאות לשאלות שתוכלו לשאול:</h4>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-sm mb-3">
-                <div className="space-y-1">
+        <div className="bg-gradient-to-br from-blue-50 via-blue-50/50 to-white border-2 border-blue-200 rounded-2xl p-5 mb-6 max-w-4xl w-full shadow-sm">
+            <div className="flex items-center gap-2 mb-4">
+              <span className="text-2xl">💡</span>
+              <h4 className="font-bold text-blue-900 text-lg">דוגמאות לשאלות שתוכלו לשאול:</h4>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm mb-4">
+                <div className="space-y-2">
             {CHAT_EXAMPLES.slice(0, 3).map((example, idx) => (
-              <p key={idx} className="text-blue-700">• "{example.text}"</p>
+              <div key={idx} className="flex items-start gap-2 text-blue-800">
+                <span className="text-blue-500 mt-1">•</span>
+                <p className="leading-5">"{example.text}"</p>
+              </div>
             ))}
                 </div>
-                <div className="space-y-1">
+                <div className="space-y-2">
             {CHAT_EXAMPLES.slice(3).map((example, idx) => (
-              <p key={idx} className="text-blue-700">• "{example.text}"</p>
+              <div key={idx} className="flex items-start gap-2 text-blue-800">
+                <span className="text-blue-500 mt-1">•</span>
+                <p className="leading-5">"{example.text}"</p>
+              </div>
             ))}
                 </div>
             </div>
-            <div className="flex flex-wrap gap-2">
+            <div className="flex flex-wrap gap-2 pt-3 border-t border-blue-200">
           {CHAT_QUICK_ACTIONS.map((item, idx) => (
                 <button
               key={idx}
               onClick={() => handleSend(item.text)}
-                    className="bg-blue-100 hover:bg-blue-200 text-blue-800 px-3 py-1 rounded-lg text-xs border border-blue-300 transition-colors duration-200"
+                    className="bg-white hover:bg-blue-100 text-blue-800 px-4 py-2 rounded-xl text-sm border-2 border-blue-300 transition-all duration-200 shadow-sm hover:shadow-md font-medium hover:scale-105"
                 >
               {item.label}
-            </button>
+                </button>
           ))}
         </div>
       </div>
@@ -522,11 +537,30 @@ return (
   }
 
   function renderMessage(msg, idx) {
+    // If bot message has structured content, don't wrap it in a bubble
+    const hasStructuredContent = msg.structured && (
+      msg.structured.coverage_info || 
+      msg.structured.required_documents || 
+      msg.structured.next_actions ||
+      msg.structured.questions ||
+      msg.structured.content ||
+      msg.structured.suggestions
+    );
+
     return (
-      <div key={idx} className={`mb-2 flex ${msg.sender === 'user' ? 'justify-end' : 'justify-start'}`}>
-        <div className={`rounded-lg px-4 py-2 ${msg.sender === 'user' ? 'bg-gray-100 text-right' : 'bg-gray-50 text-right'}`} style={{ maxWidth: '80%' }}>
+      <div key={idx} className={`mb-4 flex ${msg.sender === 'user' ? 'justify-end' : 'justify-start'}`}>
+        <div 
+          className={`rounded-2xl px-5 py-3 text-right shadow-sm ${
+            msg.sender === 'user' 
+              ? 'bg-gradient-to-l from-blue-500 to-blue-600 text-white' 
+              : hasStructuredContent
+              ? 'text-gray-900' // No background/border for structured content
+              : 'bg-white border border-gray-200 text-gray-900'
+          }`} 
+          style={{ maxWidth: '85%', minWidth: msg.sender === 'user' ? 'auto' : '200px' }}
+        >
           {msg.sender === 'user' ? (
-            typeof msg.text === 'string' ? msg.text : null
+            <div className="text-[15px] leading-6">{typeof msg.text === 'string' ? msg.text : null}</div>
           ) : (
             <ContextualBotResponse
               message={msg.text}
@@ -540,8 +574,8 @@ return (
           )}
           
           {msg.sender !== 'user' && msg.quickAction && (
-            <div className="mt-2">
-              <button
+            <div className={`mt-3 pt-3 ${hasStructuredContent ? '' : 'border-t border-gray-200'}`}>
+                <button
                 onClick={() => {
                   if (msg.quickAction === 'תראו לי החזרים עד כה' || msg.quickAction === 'תראו לי את ההחזרים') {
                     onShowResults([]);
@@ -549,10 +583,10 @@ return (
                     handleQuickReply(msg.quickAction);
                   }
                 }}
-                className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors duration-200"
+                className="w-full bg-gradient-to-l from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white px-4 py-2.5 rounded-xl text-sm font-semibold transition-all duration-200 shadow-sm hover:shadow-md"
               >
                 {msg.quickAction}
-              </button>
+                </button>
             </div>
           )}
           
@@ -564,30 +598,32 @@ return (
 
   function renderRefundPreview(preview) {
     return (
-      <div className="mt-2 bg-green-50 border border-green-200 rounded-lg p-3 text-right">
-        <div className="flex justify-between items-center">
-          <span className="font-semibold text-green-900">החזר פוטנציאלי זוהה:</span>
-          <span className="text-green-700 font-bold">{preview.amount} ₪</span>
+      <div className="mt-3 bg-gradient-to-br from-green-50 via-green-50/50 to-white border-2 border-green-300 rounded-xl p-4 text-right shadow-md">
+        <div className="flex justify-between items-center mb-2">
+          <span className="font-bold text-green-900 text-sm">החזר פוטנציאלי זוהה:</span>
+          <span className="text-green-700 font-bold text-lg">{preview.amount} ₪</span>
         </div>
         {preview.type && (
-          <div className="text-xs text-gray-600 mt-1">סוג: {preview.type}</div>
-        )}
+          <div className="text-xs text-gray-600 mb-2 bg-white/60 rounded-md px-2 py-1 inline-block">
+            סוג: {preview.type}
+                              </div>
+                            )}
         {preview.description && (
-          <p className="text-sm text-gray-700 mt-1">{preview.description}</p>
-        )}
-        <button 
-          className="mt-2 px-3 py-1 bg-green-600 hover:bg-green-700 text-white text-sm font-medium rounded-lg transition-colors duration-200"
-          onClick={() => {
+          <p className="text-sm text-gray-700 mt-2 mb-3 leading-5">{preview.description}</p>
+                                )}
+                                <button 
+          className="w-full mt-2 px-4 py-2 bg-gradient-to-l from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 text-white text-sm font-semibold rounded-lg transition-all duration-200 shadow-sm hover:shadow-md"
+                                  onClick={() => {
             setCandidate(preview);
-            setEditedCandidate({
+                                    setEditedCandidate({
               amount: preview.amount ?? '',
               description: preview.description ?? ''
-            });
-          }}
-        >
-          הוסף לרשימה
-        </button>
-      </div>
+                                    });
+                                  }}
+                                >
+                                  הוסף לרשימה
+                                </button>
+                              </div>
     );
   }
 
@@ -595,115 +631,115 @@ return (
     if (!candidate) return null;
 
     return (
-      <div className="mt-4 border rounded-lg p-4 bg-yellow-50 border-yellow-200" data-testid="refund-candidate-panel">
-        <div className="flex items-center justify-between mb-2">
-          <div className="text-right">
-            <div className="text-sm text-gray-700">זוהתה מועמדות להחזר</div>
-            <div className="text-xl font-bold">{candidate.type}</div>
-          </div>
-          <div className="text-sm text-gray-600" data-testid="candidate-confidence">
-            {Math.round((candidate.confidence ?? 0) * 100)}%
-          </div>
-        </div>
+                  <div className="mt-4 border rounded-lg p-4 bg-yellow-50 border-yellow-200" data-testid="refund-candidate-panel">
+                    <div className="flex items-center justify-between mb-2">
+                      <div className="text-right">
+                        <div className="text-sm text-gray-700">זוהתה מועמדות להחזר</div>
+                        <div className="text-xl font-bold">{candidate.type}</div>
+                      </div>
+                      <div className="text-sm text-gray-600" data-testid="candidate-confidence">
+                        {Math.round((candidate.confidence ?? 0) * 100)}%
+                      </div>
+                    </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-3 items-end">
-          <div className="text-right">
-            <label className="text-sm text-gray-600">סכום</label>
-            <input
-              data-testid="candidate-amount-input"
-              type="number"
-              className="w-full rounded px-3 py-2 border border-gray-300"
-              value={isEditingCandidate ? editedCandidate.amount : (candidate.amount ?? '')}
-              onChange={e => setEditedCandidate(prev => ({ ...prev, amount: Number(e.target.value) }))}
-              disabled={!isEditingCandidate}
-            />
-          </div>
-          <div className="text-right">
-            <label className="text-sm text-gray-600">תיאור</label>
-            <input
-              data-testid="candidate-description-input"
-              type="text"
-              className="w-full rounded px-3 py-2 border border-gray-300"
-              value={isEditingCandidate ? editedCandidate.description : (candidate.description ?? '')}
-              onChange={e => setEditedCandidate(prev => ({ ...prev, description: e.target.value }))}
-              disabled={!isEditingCandidate}
-            />
-          </div>
-        </div>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3 items-end">
+                      <div className="text-right">
+                        <label className="text-sm text-gray-600">סכום</label>
+                        <input
+                          data-testid="candidate-amount-input"
+                          type="number"
+                          className="w-full rounded px-3 py-2 border border-gray-300"
+                          value={isEditingCandidate ? editedCandidate.amount : (candidate.amount ?? '')}
+                          onChange={e => setEditedCandidate(prev => ({ ...prev, amount: Number(e.target.value) }))}
+                          disabled={!isEditingCandidate}
+                        />
+                      </div>
+                      <div className="text-right">
+                        <label className="text-sm text-gray-600">תיאור</label>
+                        <input
+                          data-testid="candidate-description-input"
+                          type="text"
+                          className="w-full rounded px-3 py-2 border border-gray-300"
+                          value={isEditingCandidate ? editedCandidate.description : (candidate.description ?? '')}
+                          onChange={e => setEditedCandidate(prev => ({ ...prev, description: e.target.value }))}
+                          disabled={!isEditingCandidate}
+                        />
+                      </div>
+                    </div>
 
-        <div className="flex flex-wrap gap-2 justify-end mt-3">
-          {!isEditingCandidate ? (
-            <>
-              <button
-                data-testid="edit-candidate-button"
-                className="px-3 py-2 border rounded"
-                onClick={() => setIsEditingCandidate(true)}
+                    <div className="flex flex-wrap gap-2 justify-end mt-3">
+                      {!isEditingCandidate ? (
+                        <>
+                          <button
+                            data-testid="edit-candidate-button"
+                            className="px-3 py-2 border rounded"
+                            onClick={() => setIsEditingCandidate(true)}
               >
                 עריכה
               </button>
-              <button
-                data-testid="reject-candidate-button"
-                className="px-3 py-2 border rounded text-red-700 border-red-300"
-                onClick={async () => {
-                  try {
-                    await apiService.rejectCandidate(candidate.id, { reason: 'user_rejected' });
-                    setCandidate(null);
-                  } catch (_) {
-                    setCandidate(null);
-                  }
-                }}
+                          <button
+                            data-testid="reject-candidate-button"
+                            className="px-3 py-2 border rounded text-red-700 border-red-300"
+                            onClick={async () => {
+                              try {
+                                await apiService.rejectCandidate(candidate.id, { reason: 'user_rejected' });
+                                setCandidate(null);
+                              } catch (_) {
+                                setCandidate(null);
+                              }
+                            }}
               >
                 דחייה
               </button>
-              <button
-                data-testid="accept-candidate-button"
-                className="px-3 py-2 rounded text-white"
-                style={{ background: '#222' }}
-                onClick={async () => {
-                  try {
-                    const accepted = await apiService.acceptCandidate(candidate.id, { user_id: userId, additional_details: {} });
-                    setMessages(msgs => [...msgs, { sender: 'bot', text: `נוצר תיק החזר #${accepted.id}` }]);
-                    setCandidate(null);
+                          <button
+                            data-testid="accept-candidate-button"
+                            className="px-3 py-2 rounded text-white"
+                            style={{ background: '#222' }}
+                            onClick={async () => {
+                              try {
+                                const accepted = await apiService.acceptCandidate(candidate.id, { user_id: userId, additional_details: {} });
+                                setMessages(msgs => [...msgs, { sender: 'bot', text: `נוצר תיק החזר #${accepted.id}` }]);
+                                setCandidate(null);
                     // Create notification for E2E tests
-                    const note = document.createElement('div');
-                    note.setAttribute('data-testid', 'case-created-notification');
-                    note.textContent = 'נוצר תיק החזר בהצלחה';
-                    const list = document.querySelector('[data-testid="message-list"]');
-                    if (list) list.appendChild(note);
-                  } catch (_) {
-                    setCandidate(null);
-                  }
-                }}
+                                const note = document.createElement('div');
+                                note.setAttribute('data-testid', 'case-created-notification');
+                                note.textContent = 'נוצר תיק החזר בהצלחה';
+                                const list = document.querySelector('[data-testid="message-list"]');
+                                if (list) list.appendChild(note);
+                              } catch (_) {
+                                setCandidate(null);
+                              }
+                            }}
               >
                 אישור
               </button>
-            </>
-          ) : (
-            <>
-              <button
-                data-testid="save-candidate-button"
-                className="px-3 py-2 rounded text-white"
-                style={{ background: '#222' }}
-                onClick={() => {
-                  setIsEditingCandidate(false);
-                  setCandidate(prev => ({ ...prev, amount: editedCandidate.amount, description: editedCandidate.description }));
-                }}
+                        </>
+                      ) : (
+                        <>
+                          <button
+                            data-testid="save-candidate-button"
+                            className="px-3 py-2 rounded text-white"
+                            style={{ background: '#222' }}
+                            onClick={() => {
+                              setIsEditingCandidate(false);
+                              setCandidate(prev => ({ ...prev, amount: editedCandidate.amount, description: editedCandidate.description }));
+                            }}
               >
                 שמירת שינויים
                 </button>
-                <button
-                className="px-3 py-2 border rounded"
-                onClick={() => {
-                  setIsEditingCandidate(false);
-                  setEditedCandidate({ amount: candidate.amount ?? '', description: candidate.description ?? '' });
-                }}
+                          <button
+                            className="px-3 py-2 border rounded"
+                            onClick={() => {
+                              setIsEditingCandidate(false);
+                              setEditedCandidate({ amount: candidate.amount ?? '', description: candidate.description ?? '' });
+                            }}
               >
                 בטל
                 </button>
-            </>
-          )}
-        </div>
-      </div>
+                        </>
+                      )}
+                    </div>
+                  </div>
     );
   }
 
@@ -711,50 +747,50 @@ return (
     if (!embeddingError) return null;
 
     return (
-      <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mt-4">
-        <div className="flex items-start">
-          <div className="flex-shrink-0">
-            <span className="text-yellow-600 text-lg">⚠️</span>
-          </div>
-          <div className="mr-3 flex-1">
-            <h4 className="text-sm font-semibold text-yellow-800 mb-2">
-              {embeddingError.message}
-            </h4>
-            <p className="text-sm text-yellow-700 mb-3">
-              יש בעיה בעיבוד הטקסט החכם. זה יכול להשפיע על איכות התשובות שלי.
-            </p>
-            
-            {embeddingError.canRetry && (
-              <div className="flex flex-col sm:flex-row gap-2">
-                <button
-                  onClick={handleRetryEmbedding}
-                  disabled={isRetryingEmbedding}
-                  className="px-4 py-2 bg-yellow-600 hover:bg-yellow-700 disabled:bg-gray-400 text-white text-sm font-medium rounded-lg transition-colors duration-200"
-                >
-                  {isRetryingEmbedding ? 'מנסה שוב...' : 'נסה שוב'}
-                </button>
-                <button
-                  onClick={() => setEmbeddingError(null)}
-                  className="px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 text-sm font-medium rounded-lg transition-colors duration-200"
-                >
-                  המשך בכל זאת
-                </button>
-              </div>
-            )}
-            
-            {embeddingError.details && (
-              <details className="mt-2">
-                <summary className="text-xs text-yellow-600 cursor-pointer">
-                  פרטים טכניים
-                </summary>
-                <p className="text-xs text-yellow-600 mt-1 font-mono">
-                  {embeddingError.details}
-                </p>
-              </details>
-            )}
-            </div>
-        </div>
+                <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mt-4">
+                    <div className="flex items-start">
+                        <div className="flex-shrink-0">
+                            <span className="text-yellow-600 text-lg">⚠️</span>
                         </div>
+                        <div className="mr-3 flex-1">
+                            <h4 className="text-sm font-semibold text-yellow-800 mb-2">
+                                {embeddingError.message}
+                            </h4>
+                            <p className="text-sm text-yellow-700 mb-3">
+                                יש בעיה בעיבוד הטקסט החכם. זה יכול להשפיע על איכות התשובות שלי.
+                            </p>
+                            
+                            {embeddingError.canRetry && (
+                                <div className="flex flex-col sm:flex-row gap-2">
+                                    <button
+                                        onClick={handleRetryEmbedding}
+                                        disabled={isRetryingEmbedding}
+                                        className="px-4 py-2 bg-yellow-600 hover:bg-yellow-700 disabled:bg-gray-400 text-white text-sm font-medium rounded-lg transition-colors duration-200"
+                                    >
+                                        {isRetryingEmbedding ? 'מנסה שוב...' : 'נסה שוב'}
+                                    </button>
+                                    <button
+                                        onClick={() => setEmbeddingError(null)}
+                                        className="px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 text-sm font-medium rounded-lg transition-colors duration-200"
+                                    >
+                                        המשך בכל זאת
+                                    </button>
+                                </div>
+                            )}
+                            
+                            {embeddingError.details && (
+                                <details className="mt-2">
+                                    <summary className="text-xs text-yellow-600 cursor-pointer">
+                                        פרטים טכניים
+                                    </summary>
+                                    <p className="text-xs text-yellow-600 mt-1 font-mono">
+                                        {embeddingError.details}
+                                    </p>
+                                </details>
+                            )}
+                        </div>
+                    </div>
+                </div>
     );
   }
 
@@ -778,8 +814,8 @@ return (
       
       {renderChatGuidance()}
       
-      <div className="bg-white rounded-xl shadow p-2 w-full max-w-7xl flex flex-col mb-0" style={{ minHeight: 900 }}>
-        <div className="flex-1 overflow-y-auto mb-4" style={{ maxHeight: 750 }} data-testid="message-list">
+      <div className="bg-white rounded-2xl shadow-lg border border-gray-100 p-4 w-full max-w-7xl flex flex-col mb-0" style={{ minHeight: 900 }}>
+        <div className="flex-1 overflow-y-auto mb-4 px-2" style={{ maxHeight: 750 }} data-testid="message-list">
           {messages.map((msg, idx) => renderMessage(msg, idx))}
           
 
@@ -791,7 +827,7 @@ return (
                                 <button
                                     key={idx}
                     onClick={() => handleQuickReply(typeof c === 'string' ? c : (c.prompt || ''))}
-                    className="bg-yellow-100 hover:bg-yellow-200 text-yellow-900 px-3 py-2 rounded-lg text-sm border border-yellow-300 transition-colors duration-200"
+                    className="bg-gradient-to-l from-yellow-100 to-yellow-50 hover:from-yellow-200 hover:to-yellow-100 text-yellow-900 px-4 py-2 rounded-xl text-sm border-2 border-yellow-300 transition-all duration-200 shadow-sm hover:shadow-md font-medium"
                     data-testid="clarification-button"
                                 >
                     {typeof c === 'string' ? c : (c.label || c.prompt)}
@@ -804,23 +840,23 @@ return (
           {renderCandidatePanel()}
             </div>
         
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-3 bg-gray-50 rounded-xl p-2 border border-gray-200">
           <Button 
             onClick={() => handleSend()} 
-            className="px-3 py-2" 
-            style={{ background: '#222', color: '#fff' }} 
+            className="px-4 py-2.5 rounded-xl shadow-sm hover:shadow-md transition-all duration-200" 
+            style={{ background: isLoading ? '#94a3b8' : '#2563eb', color: '#fff' }} 
             data-testid="send-button"
             disabled={isLoading}
           >
             {isLoading ? (
               <span className="animate-spin">⏳</span>
             ) : (
-                    <span role="img" aria-label="send">✈️</span>
+                    <span role="img" aria-label="send" className="text-lg">✈️</span>
             )}
                 </Button>
                 <input
                     type="text"
-                    className="flex-1 rounded px-4 py-2 border border-gray-300 focus:outline-none"
+                    className="flex-1 rounded-lg px-4 py-2.5 border-2 border-gray-200 focus:outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-100 transition-all bg-white text-gray-900 placeholder-gray-500"
             placeholder={isLoading ? 'מעבד את השאלה...' : (mode === 'assistant' ? 'הקלד תשובה...' : POLICY_CHAT.INPUT_PLACEHOLDER)}
                     value={input}
                     onChange={e => setInput(e.target.value)}
@@ -837,7 +873,7 @@ return (
             )}
         
         {renderEmbeddingError()}
-            </div>
+        </div>
     </div>
 );
 }
