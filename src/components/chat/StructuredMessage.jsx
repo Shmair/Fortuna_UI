@@ -19,11 +19,17 @@ export default function StructuredMessage({ data = {}, onAction, rtl = true }) {
     quick_replies,
     contextual_actions = [],
     suggestions = [],
+    follow_up_questions = [],
     relevant_sections,
     co_payment
   } = data;
   // Guided questions inline rendering
   const questions = Array.isArray(data.questions) ? data.questions : [];
+  
+  // Use follow_up_questions if available, otherwise fallback to suggestions
+  const followUpQuestionsToShow = Array.isArray(follow_up_questions) && follow_up_questions.length > 0 
+    ? follow_up_questions 
+    : (Array.isArray(suggestions) && suggestions.length > 0 ? suggestions : []);
 
   const rawSummary = content.summary ?? message;
   const rawDetails = content.details;
@@ -40,6 +46,11 @@ export default function StructuredMessage({ data = {}, onAction, rtl = true }) {
   };
 
   const summaryLines = toLines(rawSummary);
+  
+  // For initial_response, show message as formatted text (with line breaks) instead of list
+  const isInitialResponse = Array.isArray(follow_up_questions) && follow_up_questions.length > 0;
+  const shouldShowAsText = isInitialResponse && message && typeof message === 'string';
+  
   const detailsText = (() => {
     if (!rawDetails) return '';
     if (typeof rawDetails === 'string') return rawDetails;
@@ -80,7 +91,7 @@ export default function StructuredMessage({ data = {}, onAction, rtl = true }) {
       const notCovered = toList(coverage_info.not_covered || coverage_info.exclusions);
       const conditions = toList(coverage_info.conditions);
       const other = Object.entries(coverage_info)
-        .filter(([key]) => !['covered', 'not_covered', 'exclusions', 'conditions'].includes(key))
+        .filter(([key]) => !['covered', 'not_covered', 'exclusions', 'conditions', 'co_payment'].includes(key))
         .map(([key, val]) => {
           const hebrewKey = {
             'percentage': 'אחוז כיסוי',
@@ -104,7 +115,11 @@ export default function StructuredMessage({ data = {}, onAction, rtl = true }) {
   return (
     <div className={`text-sm ${rtl ? 'text-right' : ''}`}>
       {/* Main message text */}
-      {summaryLines.length > 0 && (
+      {shouldShowAsText && message ? (
+        <div className="mb-4">
+          <div className="text-gray-800 leading-7 text-[15px] whitespace-pre-line">{message}</div>
+        </div>
+      ) : summaryLines.length > 0 && (
         <div className="mb-4">
           <ul className="text-gray-800 list-disc pr-5 space-y-1.5">
             {summaryLines.map((line, i) => (
@@ -125,8 +140,8 @@ export default function StructuredMessage({ data = {}, onAction, rtl = true }) {
         )}
       </div>
 
-      {/* Reasoning details - collapsible */}
-      {meta?.reasoning && (
+      {/* Reasoning details - collapsible (only show if no relevant sections) */}
+      {meta?.reasoning && (!Array.isArray(relevant_sections) || relevant_sections.length === 0) && (
         <details className="mb-3 bg-gray-50 border border-gray-200 rounded-lg overflow-hidden">
           <summary className="cursor-pointer px-3 py-2 text-xs text-gray-600 hover:bg-gray-100 transition-colors">
             <span className="font-medium">פרטי נימוק</span>
@@ -167,7 +182,27 @@ export default function StructuredMessage({ data = {}, onAction, rtl = true }) {
         </details>
       )}
 
-      {Array.isArray(suggestions) && suggestions.length > 0 && (
+      {Array.isArray(follow_up_questions) && follow_up_questions.length > 0 && (
+        <div className="mb-3">
+          <div className="flex items-center gap-2 mb-2">
+            <Sparkles className="w-4 h-4 text-gray-600" />
+            <div className="font-semibold text-gray-900 text-sm">תרצה לבדוק:</div>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            {follow_up_questions.map((q, i) => (
+              <button
+                key={`followup-${i}`}
+                onClick={() => onAction && onAction(q)}
+                className="px-4 py-2 text-sm bg-blue-50 hover:bg-blue-100 text-blue-800 rounded-lg border border-blue-200 transition-all duration-200 hover:shadow-sm hover:scale-105 font-medium"
+              >
+                {q}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {Array.isArray(suggestions) && suggestions.length > 0 && !follow_up_questions && (
         <div className="mb-3">
           <div className="flex items-center gap-2 mb-2">
             <Sparkles className="w-4 h-4 text-gray-600" />

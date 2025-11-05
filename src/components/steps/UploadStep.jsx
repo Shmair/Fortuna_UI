@@ -55,7 +55,7 @@ export default function UploadStep({ onUpload, isUploading, uploadProgress, onBa
                 </p>
                 <div className="bg-green-50 border border-green-200 rounded-lg p-3 mt-3">
                     <p className="text-xs text-green-700">
-                        📄 <strong>תומך בקבצים:</strong> PDF, תמונות (JPG, PNG, GIF, WebP, BMP, TIFF)
+                        📄 <strong>תומך בקבצי:</strong> PDF
                     </p>
                 </div>
             </div>
@@ -112,7 +112,7 @@ export default function UploadStep({ onUpload, isUploading, uploadProgress, onBa
                             disabled={isUploading}
                             onClick={() => document.getElementById('file-upload-input').click()}
                         >
-                            <span className="w-full text-center">העלאת קובץ (PDF או תמונה)</span>
+                            <span className="w-full text-center">העלאת קובץ (PDF)</span>
                             <Upload className="ml-2 h-4 w-4" />
                         </Button>
                     </div>

@@ -140,6 +140,25 @@ export default function PolicyChatStep({
       return;
     }
 
+    // Handle initial_response with follow-up questions - CHECK THIS FIRST before generic response
+    if (data?.type === 'initial_response' && data.message && Array.isArray(data.follow_up_questions)) {
+      const structuredAnswer = {
+        message: data.message,
+        follow_up_questions: data.follow_up_questions,
+        relevant_sections: data.relevant_sections,
+        meta: {
+          intent: data.intent,
+          section: data.section,
+          sessionId: data.sessionId,
+          currentSectionsLength: data.currentSectionsLength
+        }
+      };
+
+      const refundsInfo = extractRefundsInfo(structuredAnswer);
+      addStructuredMessage(structuredAnswer, refundsInfo);
+      return;
+    }
+
     // Handle fallback/system guidance shape with message + suggestions
     if (data && typeof data.message === 'string' && Array.isArray(data.suggestions)) {
       setMessages(msgs => [...msgs, {
@@ -171,6 +190,7 @@ export default function PolicyChatStep({
         timeline: data.timeline,
         relevant_sections: data.relevant_sections,
         co_payment: data.co_payment,
+        follow_up_questions: data.follow_up_questions, // Add follow-up questions
         meta: {
           confidence: data.confidence,
           reasoning: data.reasoning,
@@ -302,14 +322,16 @@ export default function PolicyChatStep({
       timeline,
       suggestions,
       relevant_sections,
+      follow_up_questions,
       co_payment
     } = answer;
     
-    const hasStructuredContent = content || coverage_info || required_documents || policy_section || important_notes || next_actions || timeline;
+    const hasStructuredContent = content || coverage_info || required_documents || policy_section || important_notes || next_actions || timeline || msgText || answerText;
     const hasActions = contextual_actions || quick_replies || quick_actions;
     const hasQuestions = Array.isArray(answer.questions) && answer.questions.length > 0;
+    const hasFollowUpQuestions = Array.isArray(follow_up_questions) && follow_up_questions.length > 0;
     
-    if (hasStructuredContent || hasActions || hasQuestions) {
+    if (hasStructuredContent || hasActions || hasQuestions || hasFollowUpQuestions) {
       const filteredContent = content;
       const filteredRequiredDocuments = required_documents;
       const filteredImportantNotes = filterSubmissionContent(important_notes);
@@ -329,6 +351,7 @@ export default function PolicyChatStep({
           meta,
           quick_replies: quick_replies || quick_actions,
           questions: Array.isArray(answer.questions) ? answer.questions : undefined,
+          follow_up_questions: Array.isArray(follow_up_questions) ? follow_up_questions : undefined,
           contextual_actions: contextual_actions || [],
           next_actions: Array.isArray(next_actions) ? next_actions : undefined,
           timeline: typeof timeline === 'string' ? timeline : undefined,
