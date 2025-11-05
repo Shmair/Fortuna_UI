@@ -54,9 +54,6 @@ export default function PolicyChatStep({
 
   // Helper functions
   function getInitialMessages() {
-    if (typeof answer === 'string' && answer.trim().length > 0) {
-      return [{ sender: 'bot', text: answer }];
-    }
     return [{ sender: 'bot', text: POLICY_CHAT.BOT_GREETING(userName) }];
   }
 
@@ -105,7 +102,7 @@ export default function PolicyChatStep({
     setMessages(msgs => [...msgs, { sender: 'user', text: displayTextOverride || userMessage }]);
     setInput('');
 
-    const payload = { userId, user_question: userMessage, policyId, sessionId: currentSessionId };
+    const payload = { userId, userQuestion: userMessage, policyId, sessionId: currentSessionId };
 
     try {
       const data = await apiService.sendChatMessage(payload);

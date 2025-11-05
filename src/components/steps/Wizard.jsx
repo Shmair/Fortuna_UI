@@ -185,8 +185,9 @@ export default function Wizard({ user, isLoadingUser }) {
         return result.profile || null;
     }, []);
 
-    const fetchUserPolicies = useCallback(async (userId) => {
-        const result = await apiService.getPolicies(userId);
+    const fetchUserPolicies = useCallback(async () => {
+        // userId comes from auth token, no need to pass it
+        const result = await apiService.getPolicies();
         return result;
     }, []);
 
@@ -208,7 +209,7 @@ export default function Wizard({ user, isLoadingUser }) {
     const uploadPolicyFile = useCallback(async (file, userId) => {
         const formData = new FormData();
         formData.append('file', file);
-        formData.append('user_id', userId);
+        formData.append('userId', userId);
         
         const result = await apiService.uploadPolicy(formData);
         return result;
@@ -289,7 +290,7 @@ export default function Wizard({ user, isLoadingUser }) {
                         }
                         
                         // Fallback: check for any policies by user ID
-                        const policyResult = await fetchUserPolicies(userId);
+                        const policyResult = await fetchUserPolicies();
                         
                         if (policyResult.policies && policyResult.policies.length > 0) {
                             console.log('Found existing policies, using the most recent one');
@@ -533,7 +534,7 @@ export default function Wizard({ user, isLoadingUser }) {
             }
 
             // Fallback: get all user policies
-            const result = await fetchUserPolicies(userId);
+            const result = await fetchUserPolicies();
             if (result.policies && result.policies.length > 0) {
                 const mostRecentPolicy = result.policies[0];
                 setFullAnalysis(mostRecentPolicy.analysis || "No analysis found");
@@ -807,7 +808,6 @@ export default function Wizard({ user, isLoadingUser }) {
                                 results={results}
                                 userName={userData.full_name || user.name || ''}
                                 onBack={() => setStep(2)}
-                                onGuidedFlow={async () => { setSessionId(null); setStep(5); }}
                                 onFreeChat={async () => { setSessionId(null); setStep(5); }}
                                 isReturningUser={isReturningUser}
                             />

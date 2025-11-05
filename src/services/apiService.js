@@ -265,7 +265,7 @@ class ApiService {
   }
 
   async getPolicies(userId) {
-    return this.get(`${this.baseURL}/api/policy?user_id=${encodeURIComponent(userId)}`);
+    return this.get(`${this.baseURL}/api/policy`);
   }
 
   async getPolicyByHash(fileHash) {
@@ -281,8 +281,8 @@ class ApiService {
   }
 
   // Chat message (new primary endpoint)
-  async sendChatMessage({ userId, policyId, user_question, sessionId }) {
-    return this.post(`${this.baseURL}/api/policy/chat`, { userId, policyId, user_question, sessionId });
+  async sendChatMessage({ userId, policyId, userQuestion, sessionId }) {
+    return this.post(`${this.baseURL}/api/policy/chat`, { userId, policyId, userQuestion, sessionId });
   }
 
   // Coverage, health and metrics
