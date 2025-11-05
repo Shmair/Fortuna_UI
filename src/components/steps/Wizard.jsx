@@ -78,7 +78,6 @@ const initialCommunicationPreferences = {
 export default function Wizard({ user, isLoadingUser }) {
     // State management
     const [step, setStep] = useState(0);
-    const [chatMode, setChatMode] = useState('user'); // 'user' | 'assistant'
     const [isReturningUser, setIsReturningUser] = useState(false);
     const [userData, setUserData] = useState(initialUserData);
     const [fullAnalysis, setFullAnalysis] = useState([]);
@@ -283,11 +282,7 @@ export default function Wizard({ user, isLoadingUser }) {
                                 setFullAnalysis(policyResult.policy.analysis || '');
                                 setPolicyId(policyResult.policy.id);
                                 setIsReturningUser(true);
-                            setChatMode('user');
-                            try {
-                                const r = await apiService.startChatSession({ userId, policyId: policyResult.policy.id, mode: 'user' });
-                                setSessionId(r.sessionId);
-                            } catch {}
+                            setSessionId(null); // Session will be auto-created on first message
                             await finishLoading(5)(); // Go straight to chat
                             return;
                             }
@@ -303,11 +298,7 @@ export default function Wizard({ user, isLoadingUser }) {
                             setFullAnalysis(mostRecentPolicy.analysis || '');
                             setPolicyId(mostRecentPolicy.id);
                             setIsReturningUser(true);
-                            setChatMode('user');
-                            try {
-                                const r = await apiService.startChatSession({ userId, policyId: mostRecentPolicy.id, mode: 'user' });
-                                setSessionId(r.sessionId);
-                            } catch {}
+                            setSessionId(null); // Session will be auto-created on first message
                             await finishLoading(5)(); // Go straight to chat
                         } else {
                             console.log('No existing policies, going to upload step');
@@ -478,17 +469,11 @@ export default function Wizard({ user, isLoadingUser }) {
             await delay(1000);
             if (!embeddingError && !result.embedding_status?.has_failures) {
                 setIsProcessing(false);
-                try {
-                    const r = await apiService.startChatSession({ userId: userData.userId, policyId: newPolicyId, mode: 'user' });
-                    setSessionId(r.sessionId);
-                } catch {}
+                setSessionId(null); // Session will be auto-created on first message
                 setStep(5);
             } else if (embeddingBypassed) {
                 setIsProcessing(false);
-                try {
-                    const r = await apiService.startChatSession({ userId: userData.userId, policyId: newPolicyId, mode: 'user' });
-                    setSessionId(r.sessionId);
-                } catch {}
+                setSessionId(null); // Session will be auto-created on first message
                 setStep(5);
             } else {
                 // Stay on processing step to show the embedding error UI and allow retry/continue
@@ -822,8 +807,8 @@ export default function Wizard({ user, isLoadingUser }) {
                                 results={results}
                                 userName={userData.full_name || user.name || ''}
                                 onBack={() => setStep(2)}
-                                onGuidedFlow={async () => { setChatMode('assistant'); try { const r = await apiService.startChatSession({ userId: userData.userId, policyId, mode: 'assistant' }); setSessionId(r.sessionId); } catch {} setStep(5); }}
-                                onFreeChat={async () => { setChatMode('user'); try { const r = await apiService.startChatSession({ userId: userData.userId, policyId, mode: 'user' }); setSessionId(r.sessionId); } catch {} setStep(5); }}
+                                onGuidedFlow={async () => { setSessionId(null); setStep(5); }}
+                                onFreeChat={async () => { setSessionId(null); setStep(5); }}
                                 isReturningUser={isReturningUser}
                             />
                         )}
@@ -833,7 +818,6 @@ export default function Wizard({ user, isLoadingUser }) {
                                 userName={userData.full_name || user.name || ''}
                                 onBack={() => setStep(2)}
                                 userId={userData.userId}
-                                mode={chatMode}
                                 answer={fullAnalysis}
                                 policyId={policyId}
                                 sessionId={sessionId}

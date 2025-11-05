@@ -280,10 +280,6 @@ class ApiService {
     return this.delete(`${this.baseURL}/api/policy/${policyId}`);
   }
 
-  async startChatSession({ userId, policyId, mode }) {
-    return this.post(`${this.baseURL}/api/policy/session`, { userId, policyId, mode });
-  }
-
   // Chat message (new primary endpoint)
   async sendChatMessage({ userId, policyId, user_question, sessionId }) {
     return this.post(`${this.baseURL}/api/policy/chat`, { userId, policyId, user_question, sessionId });

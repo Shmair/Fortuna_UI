@@ -1,5 +1,4 @@
 import { useState } from 'react';
-import { FcGoogle } from 'react-icons/fc';
 import { supabase } from '../../utils/supabaseClient';
 
 export default function LoginCard({ onLogin, onGoogle, onSignup, onForgot }) {

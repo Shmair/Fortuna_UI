@@ -29,7 +29,6 @@ export default function PolicyChatStep({
   userName = '', 
   onBack, 
   userId, 
-  mode = 'user', 
   answer, 
   policyId, 
   onShowResults, 
@@ -49,12 +48,13 @@ export default function PolicyChatStep({
   const [isRetryingEmbedding, setIsRetryingEmbedding] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [lastUserMessage, setLastUserMessage] = useState('');
+  const [currentSessionId, setCurrentSessionId] = useState(sessionId); // Use local state, auto-update from response
   
-  const { state, addAnswer, resetState } = useConversationState(userId, policyId, sessionId);
+  const { state, addAnswer, resetState } = useConversationState(userId, policyId, currentSessionId);
 
   // Helper functions
   function getInitialMessages() {
-    if (mode === 'assistant' && typeof answer === 'string' && answer.trim().length > 0) {
+    if (typeof answer === 'string' && answer.trim().length > 0) {
       return [{ sender: 'bot', text: answer }];
     }
     return [{ sender: 'bot', text: POLICY_CHAT.BOT_GREETING(userName) }];
@@ -105,10 +105,14 @@ export default function PolicyChatStep({
     setMessages(msgs => [...msgs, { sender: 'user', text: displayTextOverride || userMessage }]);
     setInput('');
 
-    const payload = { userId, user_question: userMessage, policyId, sessionId };
+    const payload = { userId, user_question: userMessage, policyId, sessionId: currentSessionId };
 
     try {
       const data = await apiService.sendChatMessage(payload);
+      // Capture sessionId from response if auto-created
+      if (data.sessionId && !currentSessionId) {
+        setCurrentSessionId(data.sessionId);
+      }
       await processBotResponse(data);
     } catch (err) {
       console.error('Error sending message:', err);
@@ -880,7 +884,7 @@ return (
                 <input
                     type="text"
                     className="flex-1 rounded-lg px-4 py-2.5 border-2 border-gray-200 focus:outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-100 transition-all bg-white text-gray-900 placeholder-gray-500"
-            placeholder={isLoading ? 'מעבד את השאלה...' : (mode === 'assistant' ? 'הקלד תשובה...' : POLICY_CHAT.INPUT_PLACEHOLDER)}
+            placeholder={isLoading ? 'מעבד את השאלה...' : POLICY_CHAT.INPUT_PLACEHOLDER}
                     value={input}
                     onChange={e => setInput(e.target.value)}
             onKeyDown={e => { if (e.key === 'Enter' && !isLoading) handleSend(); }}
@@ -888,12 +892,6 @@ return (
             disabled={isLoading}
                 />
             </div>
-        
-            {mode === 'assistant' && (
-                <Button className="mt-4 w-full" variant="outline" onClick={() => setShowSummary(true)}>
-                    הצג סיכום ביניים
-                </Button>
-            )}
         
         {renderEmbeddingError()}
         </div>
