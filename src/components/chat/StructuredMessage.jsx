@@ -25,10 +25,10 @@ export default function StructuredMessage({ data = {}, onAction, rtl = true }) {
   } = data;
   // Guided questions inline rendering
   const questions = Array.isArray(data.questions) ? data.questions : [];
-  
+
   // Use follow_up_questions if available, otherwise fallback to suggestions
-  const followUpQuestionsToShow = Array.isArray(follow_up_questions) && follow_up_questions.length > 0 
-    ? follow_up_questions 
+  const followUpQuestionsToShow = Array.isArray(follow_up_questions) && follow_up_questions.length > 0
+    ? follow_up_questions
     : (Array.isArray(suggestions) && suggestions.length > 0 ? suggestions : []);
 
   const rawSummary = content.summary ?? message;
@@ -46,11 +46,11 @@ export default function StructuredMessage({ data = {}, onAction, rtl = true }) {
   };
 
   const summaryLines = toLines(rawSummary);
-  
+
   // For initial_response, show message as formatted text (with line breaks) instead of list
   const isInitialResponse = Array.isArray(follow_up_questions) && follow_up_questions.length > 0;
   const shouldShowAsText = isInitialResponse && message && typeof message === 'string';
-  
+
   const detailsText = (() => {
     if (!rawDetails) return '';
     if (typeof rawDetails === 'string') return rawDetails;
@@ -99,14 +99,14 @@ export default function StructuredMessage({ data = {}, onAction, rtl = true }) {
             'co_payment': 'השתתפות עצמית',
             'valid_until': 'תקף עד'
           }[key] || key;
-          
+
           if (Array.isArray(val)) {
             return `${hebrewKey}: ${val.join(', ')}`;
           }
-          
+
           return `${hebrewKey}: ${typeof val === 'object' ? JSON.stringify(val) : String(val)}`;
         });
-      
+
       return { covered, not_covered: notCovered, conditions, other };
     }
     return { covered: [], not_covered: [], conditions: [], other: [] };
@@ -335,15 +335,16 @@ export default function StructuredMessage({ data = {}, onAction, rtl = true }) {
         </div>
       )}
 
-      {((coverageData.covered.length > 0 || coverageData.not_covered.length > 0 || coverageData.conditions.length > 0 || coverageData.other.length > 0) || required_documents) && (
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-4">
+      {/* Coverage preview section temporarily removed */}
+      {/* {((coverageData.covered.length > 0 || coverageData.not_covered.length > 0 || coverageData.conditions.length > 0 || coverageData.other.length > 0) || required_documents) && (
+        <>
           {(coverageData.covered.length > 0 || coverageData.not_covered.length > 0 || coverageData.conditions.length > 0 || coverageData.other.length > 0) && (
             <div className="rounded-lg p-3 border-r-2 border-blue-300">
               <div className="flex items-center gap-2 mb-3 pr-1">
                 <Shield className="w-4 h-4 text-blue-600" />
                 <div className="font-semibold text-gray-900 text-sm">כיסוי</div>
               </div>
-              
+
               <div className="space-y-3">
                 {coverageData.covered.length > 0 && (
                   <div>
@@ -363,7 +364,7 @@ export default function StructuredMessage({ data = {}, onAction, rtl = true }) {
                     </ul>
                   </div>
                 )}
-                
+
                 {coverageData.not_covered.length > 0 && (
                   <div>
                     <div className="flex items-center gap-2 mb-2">
@@ -382,7 +383,7 @@ export default function StructuredMessage({ data = {}, onAction, rtl = true }) {
                     </ul>
                   </div>
                 )}
-                
+
                 {coverageData.conditions.length > 0 && (
                   <div>
                     <div className="flex items-center gap-2 mb-2">
@@ -401,7 +402,7 @@ export default function StructuredMessage({ data = {}, onAction, rtl = true }) {
                     </ul>
                   </div>
                 )}
-                
+
                 {coverageData.other.length > 0 && (
                   <ul className="text-gray-700 text-sm list-none space-y-1.5 pr-2">
                     {coverageData.other.map((line, i) => (
@@ -415,7 +416,7 @@ export default function StructuredMessage({ data = {}, onAction, rtl = true }) {
               </div>
             </div>
           )}
-          
+
           {(required_documents || co_payment || (typeof coverage_info === 'object' && coverage_info?.co_payment)) && (
             <div className="rounded-lg p-3 border-r-2 border-amber-300">
               {required_documents && (
@@ -424,7 +425,7 @@ export default function StructuredMessage({ data = {}, onAction, rtl = true }) {
                     <FileText className="w-4 h-4 text-amber-600" />
                     <div className="font-semibold text-gray-900 text-sm">מסמכים נדרשים</div>
                   </div>
-                  
+
                   <ul className="text-gray-700 text-sm list-none space-y-1.5 pr-2 mb-3">
                     {(Array.isArray(required_documents) ? required_documents : [required_documents]).filter(Boolean).map((doc, i) => (
                       <li key={i} className="flex items-start gap-2">
@@ -435,7 +436,7 @@ export default function StructuredMessage({ data = {}, onAction, rtl = true }) {
                   </ul>
                 </>
               )}
-              
+
               {(co_payment || (typeof coverage_info === 'object' && coverage_info?.co_payment)) && (
                 <div className={required_documents ? 'pt-3 border-t border-amber-200' : ''}>
                   <div className="flex items-center gap-2 mb-2 pr-1">
@@ -451,8 +452,8 @@ export default function StructuredMessage({ data = {}, onAction, rtl = true }) {
               )}
             </div>
           )}
-        </div>
-      )}
+        </>
+      )} */}
 
       {important_notes && (
         <div className="mb-4 rounded-lg p-3 border-r-2 border-yellow-400">
@@ -463,7 +464,8 @@ export default function StructuredMessage({ data = {}, onAction, rtl = true }) {
         </div>
       )}
 
-      {Array.isArray(next_actions) && next_actions.length > 0 && (
+      {/* Next Steps section temporarily removed */}
+      {/* {Array.isArray(next_actions) && next_actions.length > 0 && (
         <div className="mb-4 rounded-lg p-3 border-r-2 border-green-400">
           <div className="flex items-center gap-2 mb-2">
             <ListChecks className="w-4 h-4 text-green-600" />
@@ -480,9 +482,10 @@ export default function StructuredMessage({ data = {}, onAction, rtl = true }) {
             ))}
           </ol>
         </div>
-      )}
+      )} */}
 
-      {Array.isArray(relevant_sections) && relevant_sections.length > 0 && (
+      {/* Relevant Policy Sections temporarily removed */}
+      {/* {Array.isArray(relevant_sections) && relevant_sections.length > 0 && (
         <div className="mb-4 rounded-lg p-3 border-r-2 border-indigo-300">
           <div className="flex items-center gap-2 mb-2">
             <BookOpen className="w-4 h-4 text-indigo-600" />
@@ -504,7 +507,7 @@ export default function StructuredMessage({ data = {}, onAction, rtl = true }) {
             ))}
           </ul>
         </div>
-      )}
+      )} */}
 
       {/* Contextual actions */}
       {contextual_actions.length > 0 && (
@@ -532,6 +535,3 @@ export default function StructuredMessage({ data = {}, onAction, rtl = true }) {
     </div>
   );
 }
-
-
-

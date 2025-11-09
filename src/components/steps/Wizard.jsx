@@ -35,7 +35,7 @@ const initialUserData = {
     date_of_birth: "",
     gender: "",
     national_id: "",
-    
+
     // Family Information
     children_ages: [],
     is_pregnant: false,
@@ -43,23 +43,23 @@ const initialUserData = {
     marital_status: "",
     spouse_name: "",
     spouse_date_of_birth: "",
-    
+
     // Health Information
     is_smoker: false,
     chronic_conditions: [],
     medications: [],
     disabilities: [],
-    
+
     // Insurance Information
     insurance_provider: "",
     policy_number: "",
     coverage_type: "",
-    
+
     // Employment
     employment_status: "",
     employer_name: "",
     income_level: "",
-    
+
     // Preferences
     preferred_language: "he",
     communication_preferences: {
@@ -110,7 +110,7 @@ export default function Wizard({ user, isLoadingUser }) {
 
     const isProfileComplete = useCallback((profile) => {
         console.log('🔍 isProfileComplete called with profile:', profile);
-        
+
         const result = REQUIRED_PROFILE_FIELDS.every(field => {
             const value = profile[field];
             // Convert to string and check if it's not empty
@@ -119,7 +119,7 @@ export default function Wizard({ user, isLoadingUser }) {
             console.log(`  Field ${field}: "${value}" -> ${isValid}`);
             return isValid;
         });
-        
+
         console.log('🔍 isProfileComplete result:', result);
         return result;
     }, []);
@@ -134,7 +134,7 @@ export default function Wizard({ user, isLoadingUser }) {
             date_of_birth: profile.date_of_birth || '',
             gender: profile.gender || '',
             national_id: profile.national_id || '',
-            
+
             // Family Information
             children_ages: Array.isArray(profile.children_ages) ? profile.children_ages : [],
             is_pregnant: profile.is_pregnant || false,
@@ -142,23 +142,23 @@ export default function Wizard({ user, isLoadingUser }) {
             marital_status: profile.marital_status || '',
             spouse_name: profile.spouse_name || '',
             spouse_date_of_birth: profile.spouse_date_of_birth || '',
-            
+
             // Health Information
             is_smoker: profile.is_smoker || false,
             chronic_conditions: Array.isArray(profile.chronic_conditions) ? profile.chronic_conditions : [],
             medications: Array.isArray(profile.medications) ? profile.medications : [],
             disabilities: Array.isArray(profile.disabilities) ? profile.disabilities : [],
-            
+
             // Insurance Information
             insurance_provider: profile.insurance_provider || '',
             policy_number: profile.policy_number || '',
             coverage_type: profile.coverage_type || '',
-            
+
             // Employment
             employment_status: profile.employment_status || '',
             employer_name: profile.employer_name || '',
             income_level: profile.income_level || '',
-            
+
             // Preferences
             preferred_language: profile.preferred_language || 'he',
             communication_preferences: profile.communication_preferences || initialCommunicationPreferences,
@@ -180,7 +180,7 @@ export default function Wizard({ user, isLoadingUser }) {
     const fetchUserProfile = useCallback(async (userId) => {
         console.log('🔍 fetchUserProfile called for userId:', userId);
         const result = await apiService.getProfile(userId);
-        
+
         // Return null if no profile exists (user needs to create one)
         return result.profile || null;
     }, []);
@@ -210,7 +210,7 @@ export default function Wizard({ user, isLoadingUser }) {
         const formData = new FormData();
         formData.append('file', file);
         formData.append('userId', userId);
-        
+
         const result = await apiService.uploadPolicy(formData);
         return result;
     }, []);
@@ -222,7 +222,7 @@ export default function Wizard({ user, isLoadingUser }) {
         const initializeUser = async () => {
             try {
                 const userId = user?.id;
-                
+
                 if (!userId) {
                     if (isMounted) {
                         console.log('No userId, staying on loading step');
@@ -236,7 +236,7 @@ export default function Wizard({ user, isLoadingUser }) {
 
                 // Fetch user profile
                 const profile = await fetchUserProfile(userId);
-                
+
                 if (!isMounted) return;
 
                 // If no profile exists, go to personal details step
@@ -264,19 +264,19 @@ export default function Wizard({ user, isLoadingUser }) {
                     },
                     requiredFields: REQUIRED_PROFILE_FIELDS
                 });
-                
+
                 if (profileComplete) {
                     if (initialLoadRef.current) {
                         setShowBypassNotice(true);
                     }
                     console.log('Profile is complete, checking for existing policy');
-                    
+
                     try {
                         // First check if profile has a linked policy ID
                         if (profile.insurance_policy_id) {
                             console.log('Found insurance_policy_id in profile, fetching policy by ID');
                             const policyResult = await fetchPolicyById(profile.insurance_policy_id);
-                            
+
                         if (policyResult.policy) {
                                 console.log('Found existing policy by ID, skipping to chat step');
                                 setUploadedPolicyName(policyResult.policy.file_name);
@@ -288,10 +288,10 @@ export default function Wizard({ user, isLoadingUser }) {
                             return;
                             }
                         }
-                        
+
                         // Fallback: check for any policies by user ID
                         const policyResult = await fetchUserPolicies();
-                        
+
                         if (policyResult.policies && policyResult.policies.length > 0) {
                             console.log('Found existing policies, using the most recent one');
                             const mostRecentPolicy = policyResult.policies[0]; // Already sorted by uploaded_at desc
@@ -330,7 +330,7 @@ export default function Wizard({ user, isLoadingUser }) {
         };
 
         initializeUser();
-        
+
         return () => { isMounted = false; };
     }, [user?.id]); // Only depend on user?.id, not the functions
 
@@ -338,12 +338,12 @@ export default function Wizard({ user, isLoadingUser }) {
     const handleSavePersonalDetails = useCallback(async () => {
         try {
             const email = userData.email || user?.email;
-            
+
             if (!email) {
                 toast.error(ERRORS.MISSING_EMAIL);
                 return;
             }
-            
+
             if (!user?.id) {
                 toast.error('User not authenticated');
                 return;
@@ -361,7 +361,7 @@ export default function Wizard({ user, isLoadingUser }) {
                 date_of_birth: userData.date_of_birth,
                 gender: userData.gender,
                 national_id: userData.national_id,
-                
+
                 // Family Information
                 children_ages: Array.isArray(userData.children_ages) ? userData.children_ages : [],
                 is_pregnant: userData.is_pregnant,
@@ -369,30 +369,30 @@ export default function Wizard({ user, isLoadingUser }) {
                 marital_status: userData.marital_status,
                 spouse_name: userData.spouse_name,
                 spouse_date_of_birth: userData.spouse_date_of_birth,
-                
+
                 // Health Information
                 is_smoker: userData.is_smoker,
                 chronic_conditions: Array.isArray(userData.chronic_conditions) ? userData.chronic_conditions : [],
                 medications: Array.isArray(userData.medications) ? userData.medications : [],
                 disabilities: Array.isArray(userData.disabilities) ? userData.disabilities : [],
-                
+
                 // Insurance Information
                 insurance_provider: userData.insurance_provider,
                 policy_number: userData.policy_number,
                 coverage_type: userData.coverage_type,
-                
+
                 // Employment
                 employment_status: userData.employment_status,
                 employer_name: userData.employer_name,
                 income_level: userData.income_level,
-                
+
                 // Preferences
                 preferred_language: userData.preferred_language,
                 communication_preferences: userData.communication_preferences || initialCommunicationPreferences
             };
 
             const result = await saveUserProfile(profileData);
-            
+
             setUserData(updateUserData(result.profile));
             toast.success(SUCCESS_PROFILE);
             setShowBypassNotice(false);
@@ -413,7 +413,7 @@ export default function Wizard({ user, isLoadingUser }) {
 
         try {
             const userId = userData.userId || user?.id;
-            
+
             if (!userId) {
                 toast.error(ERRORS.MISSING_USER_ID);
                 return;
@@ -421,7 +421,7 @@ export default function Wizard({ user, isLoadingUser }) {
 
             setUploadProgress(10);
             const result = await uploadPolicyFile(file, userId);
-            
+
             // Check for embedding failures in the response
             if (result.embedding_status && result.embedding_status.has_failures) {
                 setEmbeddingError({
@@ -432,7 +432,7 @@ export default function Wizard({ user, isLoadingUser }) {
                 });
                 setEmbeddingBypassed(false);
             }
-            
+
             setUploadProgress(100);
 
             // Show processing step
@@ -459,13 +459,13 @@ export default function Wizard({ user, isLoadingUser }) {
             setFileHash(uploadedPolicy?.file_hash || "");
             setUploadedPolicyName(uploadedPolicy?.file_name || file.name || "");
             setPolicyId(newPolicyId);
-            
+
             if (result.messages && Array.isArray(result.messages)) {
                 setInitialMessages(result.messages);
             } else {
                 setInitialMessages(null);
             }
-            
+
             // Move to options step only if no embedding error or user chose to continue
             await delay(1000);
             if (!embeddingError && !result.embedding_status?.has_failures) {
@@ -482,10 +482,10 @@ export default function Wizard({ user, isLoadingUser }) {
             }
         } catch (error) {
             console.error('Error uploading policy:', error);
-            
+
             // Check if this is an embedding-related error
             if (error.message && (
-                error.message.includes('embedding') || 
+                error.message.includes('embedding') ||
                 error.message.includes('vector') ||
                 error.message.includes('Azure OpenAI')
             )) {
@@ -496,7 +496,7 @@ export default function Wizard({ user, isLoadingUser }) {
                     canRetry: true
                 });
             }
-            
+
             // Don't show toast here - let UploadStep handle the error display
             // Re-throw the error so UploadStep can catch it
             throw error;
@@ -513,7 +513,7 @@ export default function Wizard({ user, isLoadingUser }) {
 
         try {
             const userId = userData.userId || user?.id;
-            
+
             if (!userId) {
                 toast.error(ERRORS.MISSING_USER_ID);
                 return;
@@ -555,14 +555,14 @@ export default function Wizard({ user, isLoadingUser }) {
 
     const handleRetryEmbedding = useCallback(async () => {
         if (!policyId || !embeddingError?.canRetry) return;
-        
+
         setIsRetrying(true);
         setRetryCount(prev => prev + 1);
-        
+
         try {
             // Call backend to retry embedding generation
             const result = await apiService.retryEmbeddings(policyId);
-            
+
             if (result.success) {
                 setEmbeddingError(null);
                 toast.success('העיבוד החכם הושלם בהצלחה!');
@@ -634,16 +634,16 @@ export default function Wizard({ user, isLoadingUser }) {
                         <div className="text-xs text-gray-400 mb-2">
                             Debug: Current step = {step}
                         </div>
-                        
+
                         {step === 0 && (
                             <div className="flex flex-col items-center justify-center min-h-[40vh]">
                                 <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mb-4"></div>
                                 <p className="text-gray-600 text-center">
-                                    {!user ? 'מאמת משתמש...' : 'מאתחל את האשף...'}
+                                    {!user ? 'מאמת משתמש...' : 'מאתחל נתונים...'}
                                 </p>
                             </div>
                         )}
-                        
+
                         {step === 1 && (
                             <PersonalDetailsStep
                                 userData={userData}
@@ -653,7 +653,7 @@ export default function Wizard({ user, isLoadingUser }) {
                                 onBack={() => window.history.back()}
                             />
                         )}
-                        
+
                         {step === 2 && (
                             <UploadStep
                                 isUploading={isUploading}
@@ -676,7 +676,7 @@ export default function Wizard({ user, isLoadingUser }) {
                                 showBypassNotice={showBypassNotice}
                             />
                         )}
-                        
+
                         {step === 3 && isProcessing && (
                             <div className="flex flex-col items-center justify-center min-h-[60vh] space-y-6">
                                 <div className="text-center">
@@ -684,7 +684,7 @@ export default function Wizard({ user, isLoadingUser }) {
                                     <h2 className="text-2xl font-bold mb-2">מעבדים את הפוליסה שלכם</h2>
                                     <p className="text-gray-600 mb-6">האשף החכם שלנו מנתח את הפוליסה כדי לזהות החזרים פוטנציאליים...</p>
                                 </div>
-                                
+
                                 {/* UX-ID: loading_expectations - Processing time expectations */}
                                 <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 max-w-lg w-full">
                                     <div className="flex items-center justify-center mb-2">
@@ -697,7 +697,7 @@ export default function Wizard({ user, isLoadingUser }) {
                                         אנחנו מנתחים את כל הסעיפים בפוליסה שלכם כדי לזהות החזרים רלוונטיים
                                     </p>
                                 </div>
-                                
+
                                 <div className="w-full max-w-md">
                                     <div className="flex justify-between text-sm text-gray-600 mb-2">
                                         <span>התקדמות</span>
@@ -705,7 +705,7 @@ export default function Wizard({ user, isLoadingUser }) {
                                     </div>
                                     <Progress value={uploadProgress} className="h-3" />
                                 </div>
-                                
+
                                 {/* UX-ID: loading_expectations - User-focused progress steps */}
                                 <div className="bg-gray-50 rounded-lg p-4 max-w-lg w-full">
                                     <h4 className="font-semibold text-gray-800 mb-3 text-center">אנחנו מנתחים את הפוליסה שלך...</h4>
@@ -730,11 +730,11 @@ export default function Wizard({ user, isLoadingUser }) {
                                         </div>
                                     </div>
                                 </div>
-                                
+
                                 <div className="text-center text-sm text-gray-500 max-w-md">
                                     <p>אנא המתנו בסבלנות - זה שווה את זה! 🎯</p>
                                 </div>
-                                
+
                                 {/* Embedding Failure Communication */}
                                 {embeddingError && (
                                     <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 max-w-lg w-full">
@@ -747,12 +747,12 @@ export default function Wizard({ user, isLoadingUser }) {
                                                     {embeddingError.message}
                                                 </h4>
                                                 <p className="text-sm text-yellow-700 mb-3">
-                                                    {embeddingError.type === 'embedding_failure' 
+                                                    {embeddingError.type === 'embedding_failure'
                                                         ? 'חלק מהטקסט בפוליסה לא עובד כראוי עם המערכת החכמה. זה לא מונע מהמערכת לזהות החזרים, אבל חלק מהשאלות עלולות להיות פחות מדויקות.'
                                                         : 'יש בעיה בעיבוד הטקסט החכם. זה יכול לקרות לפעמים עם קבצים מסוימים.'
                                                     }
                                                 </p>
-                                                
+
                                                 {embeddingError.canRetry && (
                                                     <div className="flex flex-col sm:flex-row gap-2">
                                                         <button
@@ -762,7 +762,7 @@ export default function Wizard({ user, isLoadingUser }) {
                                                         >
                                                             {isRetrying ? 'מנסה שוב...' : 'נסה שוב'}
                                                         </button>
-                                                        
+
                                                         <button
                                                             onClick={() => {
                                                                 setEmbeddingError(null);
@@ -776,21 +776,21 @@ export default function Wizard({ user, isLoadingUser }) {
                                                         </button>
                                                     </div>
                                                 )}
-                                                
+
                                                 {retryCount >= 3 && (
                                                     <p className="text-xs text-yellow-600 mt-2">
                                                         הגעת למספר הניסיונות המקסימלי. ניתן להמשיך בכל זאת או לנסות עם קובץ אחר.
                                                     </p>
                                                 )}
-                                                
+
                                                 {embeddingError.details && (
                                                     <details className="mt-2">
                                                         <summary className="text-xs text-yellow-600 cursor-pointer">
                                                             פרטים טכניים
                                                         </summary>
                                                         <p className="text-xs text-yellow-600 mt-1 font-mono">
-                                                            {typeof embeddingError.details === 'string' 
-                                                                ? embeddingError.details 
+                                                            {typeof embeddingError.details === 'string'
+                                                                ? embeddingError.details
                                                                 : JSON.stringify(embeddingError.details, null, 2)
                                                             }
                                                         </p>
@@ -802,7 +802,7 @@ export default function Wizard({ user, isLoadingUser }) {
                                 )}
                             </div>
                         )}
-                        
+
                         {step === 4 && (
                             <PolicyLoadedOptions
                                 results={results}
@@ -828,7 +828,7 @@ export default function Wizard({ user, isLoadingUser }) {
                                 isReturningUser={isReturningUser}
                             />
                         )}
-                        
+
                         {step === 6 && (
                             <ResultsStep
                                 results={refunds}
@@ -839,7 +839,7 @@ export default function Wizard({ user, isLoadingUser }) {
                                 chatSummary={Array.isArray(fullAnalysis) ? fullAnalysis.map(a => a?.question || a?.text).filter(Boolean) : []}
                             />
                         )}
-                        
+
                         {step === 7 && (
                             <ClaimStep
                                 results={refunds}
