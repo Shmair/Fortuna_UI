@@ -114,18 +114,16 @@ export default function StructuredMessage({ data = {}, onAction, rtl = true }) {
 
   return (
     <div className={`text-sm ${rtl ? 'text-right' : ''}`}>
-      {/* Main message text */}
-      {shouldShowAsText && message ? (
+      {/* Main message text - only show if there are no questions */}
+      {questions.length === 0 && shouldShowAsText && message ? (
         <div className="mb-4">
           <div className="text-gray-800 leading-7 text-[15px] whitespace-pre-line">{message}</div>
         </div>
-      ) : summaryLines.length > 0 && (
+      ) : questions.length === 0 && summaryLines.length > 0 && (
         <div className="mb-4">
-          <ul className="text-gray-800 list-disc pr-5 space-y-1.5">
-            {summaryLines.map((line, i) => (
-              <li key={i} className="leading-7 text-[15px]">{line}</li>
-            ))}
-          </ul>
+          <div className="text-gray-800 leading-7 text-[15px] whitespace-pre-line">
+            {summaryLines.join('\n')}
+          </div>
         </div>
       )}
 
@@ -141,7 +139,7 @@ export default function StructuredMessage({ data = {}, onAction, rtl = true }) {
       </div>
 
       {/* Reasoning details - collapsible (only show if no relevant sections) */}
-      {meta?.reasoning && (!Array.isArray(relevant_sections) || relevant_sections.length === 0) && (
+      {/* {meta?.reasoning && (!Array.isArray(relevant_sections) || relevant_sections.length === 0) && (
         <details className="mb-3 bg-gray-50 border border-gray-200 rounded-lg overflow-hidden">
           <summary className="cursor-pointer px-3 py-2 text-xs text-gray-600 hover:bg-gray-100 transition-colors">
             <span className="font-medium">פרטי נימוק</span>
@@ -150,7 +148,7 @@ export default function StructuredMessage({ data = {}, onAction, rtl = true }) {
             {meta.reasoning}
           </div>
         </details>
-      )}
+      )} */}
 
       {meta?.errorMessage && (
         <details className="mb-3">
@@ -288,10 +286,17 @@ export default function StructuredMessage({ data = {}, onAction, rtl = true }) {
 
       {questions.length > 0 && (
         <div className="mb-2">
+          {/* Show message before questions if available */}
+          {message && typeof message === 'string' && (
+            <div className="text-gray-800 leading-7 text-[15px] mb-3 whitespace-pre-line">
+              {message}
+            </div>
+          )}
+
           {questions.map((q, i) => (
             <div key={`q-${i}`} className="mb-4 last:mb-0">
               <div className="bg-blue-50 rounded-2xl px-5 py-4 border border-blue-100">
-                <div className="text-gray-900 text-[15px] leading-7 mb-3">
+                <div className="text-gray-900 text-[15px] leading-7 mb-3 whitespace-pre-line">
                   {q.text}
                 </div>
                 {(q.microcopy || q.helper_text) && (
@@ -324,14 +329,22 @@ export default function StructuredMessage({ data = {}, onAction, rtl = true }) {
                         </button>
                       ))}
                     </div>
-                    {q.type === 'multiple_choice' && Array.isArray(q.quickReplies) && q.quickReplies.length > 0 && (
+                    {(q.type === 'multiple_choice' || q.type === 'open_text') && Array.isArray(q.quickReplies) && q.quickReplies.length > 0 && (
                       <div className="text-xs text-blue-600 mt-2">ניתן לענות תשובה משלך</div>
                     )}
                   </div>
-                ) : q.type === 'open_text' ? null : null}
+                ) : null}
               </div>
             </div>
           ))}
+        </div>
+      )}
+
+      {/* Quick replies - show after questions if available, but only if not already shown in questions */}
+      {questions.length > 0 && Array.isArray(quick_replies) && quick_replies.length > 0 &&
+       !questions.some(q => Array.isArray(q.quickReplies) && q.quickReplies.length > 0) && (
+        <div className="mb-4">
+          <InlineQuickReplies replies={quick_replies} onSelect={onAction} />
         </div>
       )}
 
@@ -528,8 +541,8 @@ export default function StructuredMessage({ data = {}, onAction, rtl = true }) {
         </div>
       )}
 
-      {/* Quick replies */}
-      {Array.isArray(quick_replies) && quick_replies.length > 0 && (
+      {/* Quick replies - fallback for non-question responses */}
+      {questions.length === 0 && Array.isArray(quick_replies) && quick_replies.length > 0 && (
         <InlineQuickReplies replies={quick_replies} onSelect={onAction} />
       )}
     </div>

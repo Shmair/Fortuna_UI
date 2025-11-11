@@ -1,7 +1,10 @@
 import { useState } from 'react';
-import { Button } from '../ui/button';
 import { POLICY_CHAT } from '../../constants/policyChat';
+import { useConversationState } from '../../hooks/useConversationState';
 import { apiService } from '../../services/apiService';
+import ContextualBotResponse from '../chat/ContextualBotResponse';
+import { Button } from '../ui/button';
+import ResultsStep from './ResultsStep';
 
 // Chat guidance examples
 const CHAT_EXAMPLES = [
@@ -19,21 +22,16 @@ const CHAT_QUICK_ACTIONS = [
   { text: "אילו תרופות מכוסות?", label: "תרופות" },
   { text: "מה תקרת ההחזר השנתית?", label: "תקרת החזר" }
 ];
-import ResultsStep from './ResultsStep';
-import StructuredMessage from '../chat/StructuredMessage';
-import InlineQuickReplies from '../chat/InlineQuickReplies';
-import ContextualBotResponse from '../chat/ContextualBotResponse';
-import { useConversationState } from '../../hooks/useConversationState';
 
-export default function PolicyChatStep({ 
-  userName = '', 
-  onBack, 
-  userId, 
-  answer, 
-  policyId, 
-  onShowResults, 
-  isReturningUser, 
-  sessionId 
+export default function PolicyChatStep({
+  userName = '',
+  onBack,
+  userId,
+  answer,
+  policyId,
+  onShowResults,
+  isReturningUser,
+  sessionId
 }) {
   // State management
   const [messages, setMessages] = useState(getInitialMessages);
@@ -49,7 +47,7 @@ export default function PolicyChatStep({
   const [isLoading, setIsLoading] = useState(false);
   const [lastUserMessage, setLastUserMessage] = useState('');
   const [currentSessionId, setCurrentSessionId] = useState(sessionId); // Use local state, auto-update from response
-  
+
   const { state, addAnswer, resetState } = useConversationState(userId, policyId, currentSessionId);
 
   // Helper functions
@@ -95,7 +93,7 @@ export default function PolicyChatStep({
     const candidateMessage = (typeof message === 'string') ? message : null;
     const userMessage = candidateMessage ? candidateMessage.trim() : input.trim();
     if (!userMessage || isLoading) return;
-    
+
     setIsLoading(true);
     setLastUserMessage(userMessage);
     // If a display override is provided (e.g., for dates), show that while keeping the payload unchanged
@@ -178,6 +176,32 @@ export default function PolicyChatStep({
       return;
     }
 
+    // Handle response structure where questions are at root level - CHECK THIS BEFORE generic response
+    if (data?.type === 'questions' && Array.isArray(data.questions)) {
+      const questions = data.questions;
+
+      setMessages(msgs => [...msgs, {
+        sender: 'bot',
+        text: '', // Don't use explanation as main text
+        structured: {
+          questions: questions,
+          quick_replies: data.quick_replies || [],
+          message: data.message || data.explanation || '',
+          meta: {
+            narrowingMode: data.narrowingMode,
+            currentSections: data.currentSectionsLength,
+            iteration: data.iteration,
+            intent: data.intent,
+            section: data.section,
+            sessionId: data.sessionId,
+            narrowingState: data.narrowingState,
+            reasoning: data.reasoning || null // Pass reasoning to meta
+          }
+        }
+      }]);
+      return;
+    }
+
     // Handle root-level structured response (type: 'response')
     if (data && (data.type === 'response' || typeof data.message === 'string')) {
       const structuredAnswer = {
@@ -194,7 +218,7 @@ export default function PolicyChatStep({
         follow_up_questions: data.follow_up_questions, // Add follow-up questions
         meta: {
           confidence: data.confidence,
-          reasoning: data.reasoning,
+          reasoning: data.reasoning || data.explanation || null,
           intent: data.intent,
           section: data.section,
           sessionId: data.sessionId,
@@ -208,40 +232,16 @@ export default function PolicyChatStep({
       return;
     }
 
-    // Handle response structure where questions are at root level
-    if (data?.type === 'questions' && Array.isArray(data.questions)) {
-      const questionText = data.reasoning || 'שאלה:';
-      const questions = data.questions;
-      
-      setMessages(msgs => [...msgs, { 
-        sender: 'bot', 
-        text: questionText,
-        structured: {
-          questions: questions,
-          meta: {
-            narrowingMode: data.narrowingMode,
-            currentSections: data.currentSectionsLength,
-            iteration: data.iteration,
-            intent: data.intent,
-            section: data.section,
-            sessionId: data.sessionId,
-            narrowingState: data.narrowingState
-          }
-        }
-      }]);
-      return;
-    }
-
     // Handle legacy response structure with answer property
     if (!data?.answer) return;
 
     // Handle guided questions - render as regular chat bubble with quick replies
     if (data.answer.meta?.step === 'collecting_info') {
       const questionText = data.answer.message || data.answer.text || 'שאלה:';
-      const quickReplies = data.answer.quick_replies || data.answer.quick_actions || [];
-      
-          setMessages(msgs => [...msgs, { 
-            sender: 'bot', 
+      const quickReplies = data.answer.quick_replies || [];
+
+          setMessages(msgs => [...msgs, {
+            sender: 'bot',
         text: questionText,
         quickReplies: quickReplies
           }]);
@@ -251,7 +251,7 @@ export default function PolicyChatStep({
     // Process regular bot response
     const botText = normalizeBotText(data.answer);
     const refundsInfo = extractRefundsInfo(data.answer);
-    
+
     // Add structured content if available (this will include the message text)
     if (typeof data.answer === 'object') {
       addStructuredMessage(data.answer, refundsInfo);
@@ -259,18 +259,18 @@ export default function PolicyChatStep({
       // Only add plain text message if there's no structured content
       const cleanedText = cleanBotText(botText);
       const isFallbackTimeout = /timeout|שגיאה/i.test(cleanedText);
-      setMessages(msgs => [...msgs, { 
-        sender: 'bot', 
+      setMessages(msgs => [...msgs, {
+        sender: 'bot',
         text: cleanedText,
         quickReplies: isFallbackTimeout ? ['נסה שוב'] : undefined
       }]);
     }
-    
+
     // Handle auto-navigation
     if (data.answer.meta?.auto_navigate === true && refundsInfo.isComplete) {
       setTimeout(() => onShowResults(refundsInfo.refundsList), 1200);
     }
-    
+
 
     // Handle clarifications
     if (Array.isArray(data.answer.clarifications)) {
@@ -297,7 +297,7 @@ export default function PolicyChatStep({
     const isComplete = answer.meta.step === 'refunds_ready';
     const refundsButtonText = isComplete ? 'תראו לי את ההחזרים' : 'תראו לי החזרים עד כה';
     const shouldShowRefundsButton = answer.meta.show_refunds_button === true;
-    
+
     if (shouldShowRefundsButton) {
       setShowSummary(false);
       setAnswers({});
@@ -307,15 +307,15 @@ export default function PolicyChatStep({
   }
 
   function addStructuredMessage(answer, refundsInfo) {
-    const { 
+    const {
               content,
               coverage_info,
               required_documents,
               policy_section,
               important_notes,
               meta,
-      quick_replies, 
-      quick_actions, 
+      quick_replies,
+      quick_actions,
       contextual_actions,
       message: msgText,
       answer: answerText, // new field name for primary text
@@ -324,22 +324,30 @@ export default function PolicyChatStep({
       suggestions,
       relevant_sections,
       follow_up_questions,
-      co_payment
+      co_payment,
+      reasoning, // Extract reasoning from root level if available
+      explanation // Also check explanation for backward compatibility
     } = answer;
-    
+
     const hasStructuredContent = content || coverage_info || required_documents || policy_section || important_notes || next_actions || timeline || msgText || answerText;
     const hasActions = contextual_actions || quick_replies || quick_actions;
     const hasQuestions = Array.isArray(answer.questions) && answer.questions.length > 0;
     const hasFollowUpQuestions = Array.isArray(follow_up_questions) && follow_up_questions.length > 0;
-    
+
     if (hasStructuredContent || hasActions || hasQuestions || hasFollowUpQuestions) {
       const filteredContent = content;
       const filteredRequiredDocuments = required_documents;
       const filteredImportantNotes = filterSubmissionContent(important_notes);
-      
-      setMessages(msgs => [...msgs, { 
-        sender: 'bot', 
-        text: '', 
+
+      // Merge reasoning into meta if it exists (prefer reasoning, fallback to explanation)
+      const mergedMeta = {
+        ...meta,
+        ...((reasoning || explanation) && { reasoning: reasoning || explanation })
+      };
+
+      setMessages(msgs => [...msgs, {
+        sender: 'bot',
+        text: '',
         structured: {
           message: msgText || answerText,
           content: filteredContent,
@@ -349,7 +357,7 @@ export default function PolicyChatStep({
           important_notes: filteredImportantNotes,
           relevant_sections,
           co_payment,
-          meta,
+          meta: mergedMeta, // Use merged meta with explanation
           quick_replies: quick_replies || quick_actions,
           questions: Array.isArray(answer.questions) ? answer.questions : undefined,
           follow_up_questions: Array.isArray(follow_up_questions) ? follow_up_questions : undefined,
@@ -357,8 +365,8 @@ export default function PolicyChatStep({
           next_actions: Array.isArray(next_actions) ? next_actions : undefined,
           timeline: typeof timeline === 'string' ? timeline : undefined,
           suggestions: Array.isArray(suggestions) ? suggestions : undefined
-        }, 
-        quickAction: refundsInfo.shouldShowRefundsButton ? refundsInfo.refundsButtonText : null 
+        },
+        quickAction: refundsInfo.shouldShowRefundsButton ? refundsInfo.refundsButtonText : null
       }]);
     }
   }
@@ -376,8 +384,8 @@ export default function PolicyChatStep({
     // Add preview message
         setMessages(msgs => [
           ...msgs,
-          { 
-            sender: 'bot', 
+          {
+            sender: 'bot',
             text: 'זוהתה מועמדות להחזר. להלן תצוגה מקדימה:',
             preview: {
               amount: detectedCandidate.amount,
@@ -407,10 +415,10 @@ export default function PolicyChatStep({
       err.data?.error ||
       err.message
     )) || '';
-      
+
       // Check if this is an embedding-related error
       if (err.message && (
-        err.message.includes('embedding') || 
+        err.message.includes('embedding') ||
         err.message.includes('vector') ||
         err.message.includes('Azure OpenAI')
       )) {
@@ -421,11 +429,11 @@ export default function PolicyChatStep({
           canRetry: true
         });
       }
-      
+
     // Handle timeouts with a retry chip
     if ((err.message && /timeout|זמן/.test(err.message)) || (typeof serverMessage === 'string' && /timeout|זמן/i.test(serverMessage))) {
-      setMessages(msgs => [...msgs, { 
-        sender: 'bot', 
+      setMessages(msgs => [...msgs, {
+        sender: 'bot',
         text: 'הבקשה ארכה יותר מדי זמן, נסה שוב.',
         quickReplies: ['נסה שוב']
       }]);
@@ -457,17 +465,17 @@ export default function PolicyChatStep({
 
   async function handleRetryEmbedding() {
     if (!policyId || !embeddingError?.canRetry) return;
-    
+
     setIsRetryingEmbedding(true);
-    
+
     try {
       const result = await apiService.retryEmbeddings(policyId);
-      
+
       if (result.success) {
         setEmbeddingError(null);
-        setMessages(msgs => [...msgs, { 
-          sender: 'bot', 
-          text: 'העיבוד החכם הושלם בהצלחה! עכשיו אני יכול לעזור לך טוב יותר.' 
+        setMessages(msgs => [...msgs, {
+          sender: 'bot',
+          text: 'העיבוד החכם הושלם בהצלחה! עכשיו אני יכול לעזור לך טוב יותר.'
         }]);
       } else {
         setEmbeddingError(prev => ({
@@ -493,14 +501,14 @@ export default function PolicyChatStep({
     const relevantRefunds = Array.isArray(answer)
       ? answer.filter(q => answers[q.service_name] && answers[q.service_name].toLowerCase() === 'כן')
       : [];
-    
+
     if (relevantRefunds.length === 0) {
       return (
         <div className="flex flex-col items-center justify-center min-h-[60vh] w-full">
           <div className="bg-white rounded-xl shadow p-8 max-w-md w-full text-center">
             <h2 className="text-2xl font-bold mb-4">אין החזרים זמינים כרגע</h2>
             <p className="text-gray-600 mb-6">
-              לא זוהו החזרים רלוונטיים על סמך התשובות שסיפקת. 
+              לא זוהו החזרים רלוונטיים על סמך התשובות שסיפקת.
               נסה להמשיך בצ'אט או לחזור לשלב הקודם.
             </p>
             <div className="flex gap-4 justify-center">
@@ -511,7 +519,7 @@ export default function PolicyChatStep({
         </div>
       );
     }
-    
+
     return (
       <div className="flex flex-col items-center justify-center min-h-[60vh] w-full">
         <ResultsStep results={relevantRefunds} onRestart={() => { setShowSummary(false); }} onBack={onBack} />
@@ -563,8 +571,8 @@ return (
   function renderMessage(msg, idx) {
     // If bot message has structured content, don't wrap it in a bubble
     const hasStructuredContent = msg.structured && (
-      msg.structured.coverage_info || 
-      msg.structured.required_documents || 
+      msg.structured.coverage_info ||
+      msg.structured.required_documents ||
       msg.structured.next_actions ||
       msg.structured.questions ||
       msg.structured.content ||
@@ -573,15 +581,19 @@ return (
 
     return (
       <div key={idx} className={`mb-4 flex ${msg.sender === 'user' ? 'justify-end' : 'justify-start'}`}>
-        <div 
+        <div
           className={`rounded-2xl px-5 py-3 text-right shadow-sm ${
-            msg.sender === 'user' 
-              ? 'bg-gradient-to-l from-blue-500 to-blue-600 text-white' 
+            msg.sender === 'user'
+              ? 'bg-gradient-to-l from-blue-500 to-blue-600 text-white'
               : hasStructuredContent
               ? 'text-gray-900' // No background/border for structured content
               : 'bg-white border border-gray-200 text-gray-900'
-          }`} 
-          style={{ maxWidth: '85%', minWidth: msg.sender === 'user' ? 'auto' : '200px' }}
+          }`}
+          style={{
+            maxWidth: hasStructuredContent ? '100%' : '95%',
+            minWidth: msg.sender === 'user' ? 'auto' : '200px',
+            width: hasStructuredContent ? '100%' : 'auto'
+          }}
         >
           {msg.sender === 'user' ? (
             <div className="text-[15px] leading-6">{typeof msg.text === 'string' ? msg.text : null}</div>
@@ -596,7 +608,7 @@ return (
               rtl={true}
             />
           )}
-          
+
           {msg.sender !== 'user' && msg.quickAction && (
             <div className={`mt-3 pt-3 ${hasStructuredContent ? '' : 'border-t border-gray-200'}`}>
                 <button
@@ -613,7 +625,7 @@ return (
                 </button>
             </div>
           )}
-          
+
           {msg.preview && renderRefundPreview(msg.preview)}
         </div>
       </div>
@@ -635,7 +647,7 @@ return (
         {preview.description && (
           <p className="text-sm text-gray-700 mt-2 mb-3 leading-5">{preview.description}</p>
                                 )}
-                                <button 
+                                <button
           className="w-full mt-2 px-4 py-2 bg-gradient-to-l from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 text-white text-sm font-semibold rounded-lg transition-all duration-200 shadow-sm hover:shadow-md"
                                   onClick={() => {
             setCandidate(preview);
@@ -783,7 +795,7 @@ return (
                             <p className="text-sm text-yellow-700 mb-3">
                                 יש בעיה בעיבוד הטקסט החכם. זה יכול להשפיע על איכות התשובות שלי.
                             </p>
-                            
+
                             {embeddingError.canRetry && (
                                 <div className="flex flex-col sm:flex-row gap-2">
                                     <button
@@ -801,7 +813,7 @@ return (
                                     </button>
                                 </div>
                             )}
-                            
+
                             {embeddingError.details && (
                                 <details className="mt-2">
                                     <summary className="text-xs text-yellow-600 cursor-pointer">
@@ -832,16 +844,16 @@ return (
           </p>
                     </div>
       )}
-      
+
       <h2 className="text-2xl font-bold mb-2 text-right w-full">{POLICY_CHAT.TITLE}</h2>
       <p className="text-gray-600 mb-6 text-right w-full">{POLICY_CHAT.DESCRIPTION}</p>
-      
+
       {renderChatGuidance()}
-      
-      <div className="bg-white rounded-2xl shadow-lg border border-gray-100 p-4 w-full max-w-7xl flex flex-col mb-0" style={{ minHeight: 900 }}>
+
+      <div className="bg-white rounded-2xl shadow-lg border border-gray-100 p-4 w-full max-w-full flex flex-col mb-0" style={{ minHeight: 900 }}>
         <div className="flex-1 overflow-y-auto mb-4 px-2" style={{ maxHeight: 750 }} data-testid="message-list">
           {messages.map((msg, idx) => renderMessage(msg, idx))}
-          
+
 
           {/* Clarification prompts */}
           {clarifications.length > 0 && (
@@ -863,12 +875,12 @@ return (
 
           {renderCandidatePanel()}
             </div>
-        
+
             <div className="flex items-center gap-3 bg-gray-50 rounded-xl p-2 border border-gray-200">
-          <Button 
-            onClick={() => handleSend()} 
-            className="px-4 py-2.5 rounded-xl shadow-sm hover:shadow-md transition-all duration-200" 
-            style={{ background: isLoading ? '#94a3b8' : '#2563eb', color: '#fff' }} 
+          <Button
+            onClick={() => handleSend()}
+            className="px-4 py-2.5 rounded-xl shadow-sm hover:shadow-md transition-all duration-200"
+            style={{ background: isLoading ? '#94a3b8' : '#2563eb', color: '#fff' }}
             data-testid="send-button"
             disabled={isLoading}
           >
@@ -889,7 +901,7 @@ return (
             disabled={isLoading}
                 />
             </div>
-        
+
         {renderEmbeddingError()}
         </div>
     </div>
