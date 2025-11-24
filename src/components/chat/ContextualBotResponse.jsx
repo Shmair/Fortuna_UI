@@ -2,20 +2,22 @@ import React from 'react';
 import InlineQuickReplies from './InlineQuickReplies';
 import StructuredMessage from './StructuredMessage';
 
-export default function ContextualBotResponse({ 
-  message, 
-  contextualActions = [], 
-  quickReplies = [], 
+export default function ContextualBotResponse({
+  message,
+  contextualActions = [],
+  quickReplies = [],
   structured = null,
   onAction,
   isLoading = false,
-  rtl = true 
+  rtl = true
 }) {
   return (
     <div className={`text-sm ${rtl ? 'text-right' : ''}`}>
       {/* Message text - only if no structured content or if structured doesn't have a message */}
       {message && !structured && (
-        <div className="mb-2 text-gray-900 leading-6">{message}</div>
+        <div className="mb-2 text-gray-900 leading-6 whitespace-pre-line">
+          {message}
+        </div>
       )}
 
       {/* Structured content */}
@@ -37,8 +39,8 @@ export default function ContextualBotResponse({
                 disabled={isLoading}
                 className={`
                   px-3 py-1.5 text-sm font-medium rounded-lg border transition-all duration-200
-                  ${isLoading 
-                    ? 'border-gray-300 text-gray-400 cursor-not-allowed' 
+                  ${isLoading
+                    ? 'border-gray-300 text-gray-400 cursor-not-allowed'
                     : 'border-blue-300 text-blue-700 hover:bg-blue-50 hover:border-blue-400 focus:bg-blue-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-1'
                   }
                 `}

@@ -55,38 +55,6 @@ export default function PolicyChatStep({
     return [{ sender: 'bot', text: POLICY_CHAT.BOT_GREETING(userName) }];
   }
 
-  function normalizeBotText(answerObjOrString) {
-    if (typeof answerObjOrString === 'string') return answerObjOrString;
-    if (answerObjOrString && typeof answerObjOrString === 'object') {
-      // New backend shape: top-level string under key 'answer'
-      if (typeof answerObjOrString.answer === 'string') return answerObjOrString.answer;
-      if (typeof answerObjOrString.message === 'string') return answerObjOrString.message;
-      if (typeof answerObjOrString.content === 'string') return answerObjOrString.content;
-      if (Array.isArray(answerObjOrString.content)) return answerObjOrString.content.filter(Boolean).join('\n');
-      if (typeof answerObjOrString.text === 'string') return answerObjOrString.text;
-      try {
-        return JSON.stringify(answerObjOrString);
-      } catch {
-        return '';
-      }
-    }
-    return '';
-  }
-
-  function cleanBotText(text) {
-    return text
-      .replace(/https?:\/\/[^\s]+/g, '')
-      .replace(/\[([^\]]+)\]\([^)]+\)/g, '$1')
-      .replace(/להגיש תביעה|להגשת תביעה|הגשת תביעה|הגשה|טפסים|מסמכים נדרשים|צ'ק-ליסט|רשימת בדיקה/gi, '')
-      .trim();
-  }
-
-  function filterSubmissionContent(content) {
-    if (!content) return content;
-    if (typeof content !== 'string') return content;
-    return content.replace(/להגיש תביעה|להגשת תביעה|הגשת תביעה|הגשה|טפסים|מסמכים נדרשים|צ'ק-ליסט|רשימת בדיקה/gi, '').trim();
-  }
-
   // Event handlers
   async function handleSend(message = null, displayTextOverride = null) {
     // Guard against React synthetic events passed from onClick
@@ -117,7 +85,50 @@ export default function PolicyChatStep({
     }
   }
 
+  function normalizeBotText(answerObjOrString) {
+    if (typeof answerObjOrString === 'string') return answerObjOrString;
+    if (answerObjOrString && typeof answerObjOrString === 'object') {
+      if (typeof answerObjOrString.answer === 'string') return answerObjOrString.answer;
+      if (typeof answerObjOrString.message === 'string') return answerObjOrString.message;
+      if (typeof answerObjOrString.content === 'string') return answerObjOrString.content;
+      if (Array.isArray(answerObjOrString.content)) return answerObjOrString.content.filter(Boolean).join('\n');
+      if (typeof answerObjOrString.text === 'string') return answerObjOrString.text;
+      try {
+        return JSON.stringify(answerObjOrString);
+      } catch {
+        return '';
+      }
+    }
+    return '';
+  }
+
+  function cleanBotText(text) {
+    return text
+      .replace(/https?:\/\/[^\s]+/g, '')
+      .replace(/\[([^\]]+)\]\([^)]+\)/g, '$1')
+      .replace(/להגיש תביעה|להגשת תביעה|הגשת תביעה|הגשה|טפסים|מסמכים נדרשים|צ'ק-ליסט|רשימת בדיקה/gi, '')
+      .trim();
+  }
+
+  function filterSubmissionContent(content) {
+    if (!content) return content;
+    if (typeof content !== 'string') return content;
+    return content.replace(/להגיש תביעה|להגשת תביעה|הגשת תביעה|הגשה|טפסים|מסמכים נדרשים|צ'ק-ליסט|רשימת בדיקה/gi, '').trim();
+  }
+
   async function processBotResponse(data) {
+    // New canonical shape: render only the answer field
+    if (data && typeof data.answer === 'string') {
+      const answerText = data.answer.trim();
+      if (answerText.length > 0) {
+        setMessages(msgs => [...msgs, {
+          sender: 'bot',
+          text: answerText
+        }]);
+        return;
+      }
+    }
+
     // Handle explicit message envelope with nested data
     if (data && data.type === 'message' && data.data && typeof data.data.message === 'string') {
       setMessages(msgs => [...msgs, {
