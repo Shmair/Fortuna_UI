@@ -1,20 +1,18 @@
-import { useEffect, useState, useCallback, useRef } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { toast } from "sonner";
+import { apiService } from '../../services/apiService';
+import { subscribeToPolicyNotifications } from '../../utils/sseClient';
+import StepNavigation from '../layout/StepNavigation';
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '../ui/card';
+import { Progress } from '../ui/progress';
+import ClaimStep from './ClaimStep';
+import PersonalDetailsStep from './PersonalDetailsStep';
 import PolicyChatStep from './PolicyChatStep';
 import PolicyLoadedOptions from './PolicyLoadedOptions';
 import ResultsStep from './ResultsStep';
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '../ui/card';
-import { Progress } from '../ui/progress';
 import UploadStep from './UploadStep';
-import PersonalDetailsStep from './PersonalDetailsStep';
-import ClaimStep from './ClaimStep';
-import { supabase } from '../../utils/supabaseClient';
-import StepNavigation from '../layout/StepNavigation';
-import { apiService } from '../../services/apiService';
 
 import {
-    API_ENDPOINTS,
-    HEADERS,
     ERRORS,
     SUCCESS_PROFILE,
     WIZARD_DESCRIPTION,
@@ -104,6 +102,7 @@ export default function Wizard({ user, isLoadingUser }) {
     const [retryCount, setRetryCount] = useState(0);
     const [isRetrying, setIsRetrying] = useState(false);
     const [embeddingBypassed, setEmbeddingBypassed] = useState(false);
+    const sseCleanupRef = useRef(null); // Store SSE cleanup function
 
     // Utility functions
     const delay = (ms) => new Promise(resolve => setTimeout(resolve, ms));
@@ -206,13 +205,25 @@ export default function Wizard({ user, isLoadingUser }) {
         return result;
     }, []);
 
-    const uploadPolicyFile = useCallback(async (file, userId) => {
+    const uploadPolicyFile = useCallback(async (file, userId, providerName, versionName) => {
         const formData = new FormData();
         formData.append('file', file);
         formData.append('userId', userId);
+        formData.append('provider', providerName);
+        formData.append('version', versionName);
 
         const result = await apiService.uploadPolicy(formData);
         return result;
+    }, []);
+
+    // Cleanup SSE connection on unmount
+    useEffect(() => {
+        return () => {
+            if (sseCleanupRef.current) {
+                sseCleanupRef.current();
+                sseCleanupRef.current = null;
+            }
+        };
     }, []);
 
     // Main initialization effect
@@ -406,7 +417,7 @@ export default function Wizard({ user, isLoadingUser }) {
         }
     }, [user, userData, saveUserProfile, updateUserData]);
 
-    const handlePolicyFileUpload = useCallback(async (file) => {
+    const handlePolicyFileUpload = useCallback(async (file, providerName, versionName) => {
         setIsUploading(true);
         setUploadProgress(0);
         setEmbeddingError(null); // Clear any previous embedding errors
@@ -420,7 +431,7 @@ export default function Wizard({ user, isLoadingUser }) {
             }
 
             setUploadProgress(10);
-            const result = await uploadPolicyFile(file, userId);
+            const result = await uploadPolicyFile(file, userId, providerName, versionName);
 
             // Check for embedding failures in the response
             if (result.embedding_status && result.embedding_status.has_failures) {
@@ -466,12 +477,77 @@ export default function Wizard({ user, isLoadingUser }) {
                 setInitialMessages(null);
             }
 
+            // Subscribe to RAG processing notifications if we have a policyId
+            if (newPolicyId) {
+                // Clean up any existing subscription
+                if (sseCleanupRef.current) {
+                    sseCleanupRef.current();
+                    sseCleanupRef.current = null;
+                }
+
+                // Subscribe to notifications
+                const cleanup = await subscribeToPolicyNotifications(newPolicyId, {
+                    onMessage: (data) => {
+                        console.log('SSE message received:', data);
+
+                        if (data.type === 'rag_processing_completed') {
+                            // Stop spinner, enable chat
+                            setIsProcessing(false);
+                            setSessionId(null); // Session will be auto-created on first message
+                            setStep(5); // Go to chat step
+
+                            // Clean up subscription
+                            if (sseCleanupRef.current) {
+                                sseCleanupRef.current();
+                                sseCleanupRef.current = null;
+                            }
+                        } else if (data.type === 'rag_processing_failed') {
+                            // Handle processing failure
+                            console.error('RAG processing failed:', data.data?.error || data.data?.message);
+                            setEmbeddingError({
+                                type: 'rag_processing_failed',
+                                message: 'שגיאה בעיבוד הפוליסה',
+                                details: data.data?.error || data.data?.message || 'Unknown error',
+                                canRetry: true
+                            });
+                            setIsProcessing(false);
+                            // Stay on processing step to show error
+                        } else if (data.type === 'rag_processing_started') {
+                            // Processing started - ensure we're showing the spinner
+                            console.log('RAG processing started for policy:', newPolicyId);
+                            setIsProcessing(true);
+                            setStep(3);
+                        }
+                    },
+                    onError: (error) => {
+                        console.error('SSE error:', error);
+                        // Don't block the UI on SSE errors, but log them
+                        // The UI can still proceed if processing completes synchronously
+                    },
+                    onOpen: () => {
+                        console.log('SSE connection opened for policy:', newPolicyId);
+                    },
+                    onClose: () => {
+                        console.log('SSE connection closed for policy:', newPolicyId);
+                        sseCleanupRef.current = null;
+                    }
+                });
+
+                sseCleanupRef.current = cleanup;
+            }
+
             // Move to options step only if no embedding error or user chose to continue
+            // If RAG processing is still ongoing, we'll wait for the SSE notification
+            // Otherwise, proceed immediately
             await delay(1000);
             if (!embeddingError && !result.embedding_status?.has_failures) {
-                setIsProcessing(false);
-                setSessionId(null); // Session will be auto-created on first message
-                setStep(5);
+                // If processing is already complete (synchronous), move to chat
+                // Otherwise, wait for SSE notification
+                if (!isProcessing) {
+                    setIsProcessing(false);
+                    setSessionId(null); // Session will be auto-created on first message
+                    setStep(5);
+                }
             } else if (embeddingBypassed) {
                 setIsProcessing(false);
                 setSessionId(null); // Session will be auto-created on first message

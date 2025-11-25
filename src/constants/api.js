@@ -14,7 +14,8 @@ export const API_ENDPOINTS = {
     GET: (userId) => `${API_BASE}/api/policy?user_id=${encodeURIComponent(userId)}`,
     GET_BY_HASH: (fileHash) => `${API_BASE}/api/policy?file_hash=${encodeURIComponent(fileHash)}`,
     GET_BY_ID: (policyId) => `${API_BASE}/api/policy/${policyId}`,
-    DELETE: (policyId) => `${API_BASE}/api/policy/${policyId}`
+    DELETE: (policyId) => `${API_BASE}/api/policy/${policyId}`,
+    NOTIFICATIONS: (policyId) => `${API_BASE}/api/policy/${policyId}/notifications`
   },
   AUTH: {
     LOGIN: `${API_BASE}/api/auth/login`,
