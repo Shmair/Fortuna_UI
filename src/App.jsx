@@ -26,7 +26,7 @@ function App() {
   const [userData, setUserData] = useState({});
   const [user, setUser] = useState(null);
   const [isLoadingUser, setIsLoadingUser] = useState(true);
-  
+
 
   // On mount, check for existing Supabase user/session
   React.useEffect(() => {
@@ -71,11 +71,15 @@ function App() {
   };
 
   return (
-    <div dir="rtl" className="font-sans bg-gray-50 min-h-screen">
+    <div
+      dir="rtl"
+      className="font-sans min-h-screen"
+      style={{ background: 'var(--color-bg)', color: 'var(--color-text)' }}
+    >
   <Router future={{ v7_startTransition: true }}>
         <AnimatePresence>
           <>
-            <Header 
+            <Header
               isAuthenticated={isAuthenticated}
               userName={userName}
               setShowAuth={setShowAuth}
@@ -90,20 +94,22 @@ function App() {
                 </div>
               </div>
             )}
-            <Routes>
-              <Route path="/" element={
-                <Home 
-                  setShowAuth={setShowAuth}
-                  isAuthenticated={isAuthenticated}
-                />
-              } />
-              <Route path="/reset-password" element={<ResetPassword />} />
-              <Route path="/auth/callback" element={<AuthCallback />} />
-              <Route path="/dashboard" element={<Dashboard />} />
-              <Route path="/profile" element={<ProfilePage />} />
-              <Route path="/wizard" element={<Wizard user={user} isLoadingUser={isLoadingUser} />} />
-              <Route path="/user-profile-form" element={<ComprehensiveUserProfileForm userData={userData} setUserData={setUserData} showErrors={false} />} />
-            </Routes>
+            <main className="pt-20 md:pt-24 px-4 sm:px-0">
+              <Routes>
+                <Route path="/" element={
+                  <Home
+                    setShowAuth={setShowAuth}
+                    isAuthenticated={isAuthenticated}
+                  />
+                } />
+                <Route path="/reset-password" element={<ResetPassword />} />
+                <Route path="/auth/callback" element={<AuthCallback />} />
+                <Route path="/dashboard" element={<Dashboard />} />
+                <Route path="/profile" element={<ProfilePage />} />
+                <Route path="/wizard" element={<Wizard user={user} isLoadingUser={isLoadingUser} />} />
+                <Route path="/user-profile-form" element={<ComprehensiveUserProfileForm userData={userData} setUserData={setUserData} showErrors={false} />} />
+              </Routes>
+            </main>
           </>
         </AnimatePresence>
       </Router>

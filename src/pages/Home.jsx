@@ -1,73 +1,49 @@
-import { ArrowLeft, BarChart, CheckCircle2, FileText } from "lucide-react";
-import React from "react";
-import { Button } from "../components/ui/button";
-import { createPageUrl } from "../utils";
-
-const FeatureCard = ({ icon, title, description }) => (
-  <div className="bg-white p-6 rounded-lg shadow-sm hover:shadow-lg transition-shadow">
-    <div className="flex items-center justify-center h-12 w-12 rounded-full mb-4" style={{ background: '#e6f8f2' }}>
-      {React.cloneElement(icon, { color: '#63cf80ff' })}
-    </div>
-    <h3 className="text-lg font-semibold mb-2">{title}</h3>
-    <p className="text-gray-600 text-sm">{description}</p>
-  </div>
-);
+import { BarChart, CheckCircle2, FileText } from "lucide-react";
+import React, { useMemo } from "react";
+import FeatureSteps from "../components/home/FeatureSteps";
+import HeroCallToAction from "../components/home/HeroCallToAction";
 
 export default function Home({ isAuthenticated, setShowAuth }) {
+  const featureSteps = useMemo(() => ([
+    {
+      title: "1. ספרו לנו עליכם",
+      description: "אם אתם רוצים ייעוץ מותאם אישית, ענו על מספר שאלות קצרות לגביכם ולגבי הביטוח שלכם!",
+      icon: <FileText size={24} color="var(--color-secondary)" />
+    },
+    {
+      title: "2. קבלו רשימה מותאמת",
+      description: "המערכת החכמה שלנו תנתח את תשובותיכם ותציג רשימה של החזרים פוטנציאליים הרלוונטיים בדיוק לכם.",
+      icon: <BarChart size={24} color="var(--color-secondary)" />
+    },
+    {
+      title: "3. הגישו בקלות",
+      description: "לכל החזר שמצאנו, נסביר לכם בדיוק אילו מסמכים צריך ואיך להגיש את הבקשה לחברת הביטוח.",
+      icon: <CheckCircle2 size={24} color="var(--color-secondary)" />
+    }
+  ]), []);
+
   return (
     <React.Fragment>
       <div className="text-center px-2 sm:px-0">
-        <div className="py-10 sm:py-20 md:py-28 bg-gradient-to-b from-blue-50 to-white rounded-xl shadow-inner-lg">
-          <h1 className="text-3xl sm:text-5xl md:text-6xl font-extrabold text-gray-900 tracking-tight leading-tight">
-            <span style={{ fontFamily: 'Karantina, Varela Round, Arial, sans-serif', fontWeight: 700, letterSpacing: '0.06em' }}>
-              אל תפספסו את מה שמגיע לכם
-            </span>
-          </h1>
-          <p className="mt-4 sm:mt-6 max-w-xs sm:max-w-2xl mx-auto text-base sm:text-lg text-gray-600">
-            RefunD עוזר לכם למצוא בקלות ובמהירות החזרים כספיים מפוליסת ביטוח הבריאות שלכם.
-          </p>
-          <div className="mt-8 sm:mt-10 flex flex-col items-center gap-4">
-            <Button
-              size="lg"
-              className="main-btn min-w-[200px] sm:min-w-[260px] px-6 sm:px-10"
-              onMouseOver={e => e.currentTarget.classList.add('main-btn-hover')}
-              onMouseOut={e => e.currentTarget.classList.remove('main-btn-hover')}
-              onClick={() => {
-                if (isAuthenticated) {
-                  window.location.href = '/wizard';
-                } else {
-                  setShowAuth(true);
-                }
-              }}
-            >
-              מצאו את ההחזרים שלכם
-              <ArrowLeft className="mr-2 h-5 w-5" style={{ color: '#38605D' }} />
-            </Button>
+        <div className="hero-stripe border border-white/70">
+          <div className="hero-content py-10 sm:py-20 md:py-28 px-4 sm:px-10">
+            <h1 className="text-3xl sm:text-5xl md:text-6xl font-extrabold text-white tracking-tight leading-tight drop-shadow" style={{ fontFamily: 'Rubik, Arial, sans-serif' }}>
+              <span style={{ fontFamily:'Karantina', fontWeight: 700, letterSpacing: '0.06em' }}>
+                אל תפספסו את מה שמגיע לכם
+              </span>
+            </h1>
+            <p className="mt-4 sm:mt-6 max-w-xs sm:max-w-2xl mx-auto text-lg sm:text-2xl text-white font-semibold">
+              פורטונה עוזרת לכם למצוא בקלות ובמהירות החזרים כספיים מפוליסת ביטוח הבריאות שלכם.
+            </p>
+            <div className="mt-8 sm:mt-10 flex flex-col items-center gap-4">
+              <HeroCallToAction
+                isAuthenticated={isAuthenticated}
+                setShowAuth={setShowAuth}
+              />
+            </div>
           </div>
         </div>
-        <div className="mt-10 sm:mt-20">
-          <h2 className="text-2xl sm:text-3xl font-bold text-center mb-8 sm:mb-12">איך זה עובד?</h2>
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6 sm:gap-8 max-w-xs sm:max-w-5xl mx-auto">
-            <FeatureCard 
-              key="about"
-              icon={<FileText size={24}/>} 
-              title="1. ספרו לנו עליכם" 
-              description="ענו על מספר שאלות קצרות לגביכם ולגבי הביטוח שלכם. אנחנו לא צריכים את הפוליסה עצמה!" 
-            />
-            <FeatureCard 
-              key="list"
-              icon={<BarChart size={24}/>} 
-              title="2. קבלו רשימה מותאמת" 
-              description="המערכת החכמה שלנו תנתח את תשובותיכם ותציג רשימה של החזרים פוטנציאליים הרלוונטיים בדיוק לכם." 
-            />
-            <FeatureCard 
-              key="submit"
-              icon={<CheckCircle2 size={24}/>} 
-              title="3. הגישו בקלות" 
-              description="לכל החזר שמצאנו, נסביר לכם בדיוק אילו מסמכים צריך ואיך להגיש את הבקשה לחברת הביטוח." 
-            />
-          </div>
-        </div>
+        <FeatureSteps steps={featureSteps} />
       </div>
     </React.Fragment>
   );

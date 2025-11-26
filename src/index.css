@@ -1,60 +1,121 @@
+@import url('https://fonts.googleapis.com/css2?family=Rubik:wght@300;400;500;600;700&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+:root {
+  --color-primary: #0f2e47;
+  --color-primary-dark: #081a2c;
+  --color-secondary: #1fb5c5;
+  --color-secondary-dark: #0f93a7;
+  --color-accent: #f5b640;
+  --color-muted: #e8f4f8;
+  --color-bg: #f4fbfd;
+  --color-text: #0f2e47;
+  --color-button: rgb(57 164 135 / 85%);
+}
+
 body {
+  direction: rtl;
+  font-family: 'Rubik', 'Inter', sans-serif;
+  background: var(--color-bg);
+  color: var(--color-text);
+}
+
 /* Header button styles */
 .btn-dark {
   background: #14213d;
   color: #fff;
   border: none;
-  border-radius: 12px;
-  font-weight: 700;
+  border-radius: 8px;
   font-size: 18px;
-  padding: 10px 22px;
-  box-shadow: 0 2px 8px rgba(20,33,61,0.08);
+  padding: 6px 15px;
+  box-shadow: 0 10px 25px rgba(15, 46, 71, 0.15);
   margin-left: 8px;
-  font-family: 'Varela Round', Arial, sans-serif;
-  transition: background 0.2s;
+  font-family: 'Rubik', 'Inter', sans-serif;
+  transition: transform 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
 }
+
 .btn-dark:hover {
   background: #1a2a4d;
 }
+
 .btn-outline {
   background: #fff;
-  color: #14213d;
-  border: 2px solid #14213d;
+  color: rgb(50 125 104);
+  border: 2px solid rgb(57 164 135);
   border-radius: 12px;
-  font-weight: 700;
+  font-weight: 500;
   font-size: 18px;
   padding: 10px 22px;
-  box-shadow: 0 2px 8px rgba(20,33,61,0.08);
-  font-family: 'Varela Round', Arial, sans-serif;
-  transition: background 0.2s;
+  box-shadow: 0 4px 16px rgba(15, 46, 71, 0.08);
+  font-family: 'Rubik', 'Inter', sans-serif;
+  transition: background 0.2s ease, color 0.2s ease;
 }
+
 .btn-outline:hover {
-  background: #f3f6fa;
+  background: rgba(57, 164, 135, 0.12);
 }
+
 /* Shared CTA button style */
+.main-btn,
 .cta-btn {
-  background-color: #63cf80ff;
-  font-family: 'Rubik', Arial, sans-serif;
-  font-size: 22px;
-  font-weight: 400;
-  line-height: 35px;
-  word-spacing: 0;
-  color: #163634ff;
-  box-shadow: 0px 0px 12px 3px rgba(57, 97, 65, 0.14);
-  border: 1px solid #34b152;
-  border-radius: 35px;
-  padding: 15px 25px 10px 15px;
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  transition: background 0.2s;
+  background: var(--color-button);
+  font-family: 'Rubik', 'Inter', sans-serif;
+  font-size: 20px;
+  font-weight: 600;
+  color: #fff;
+  border-radius: 9999px;
+  padding: 14px 32px;
+  border: none;
+  box-shadow: 0 18px 40px rgba(15, 46, 71, 0.08);
+  transition: transform 0.2s ease, box-shadow 0.2s ease, filter 0.2s ease;
 }
+
+.main-btn-hover,
+.main-btn:hover,
 .cta-btn:hover {
-  background-color: #b8f1c6ff;
+  transform: translateY(-2px);
+  filter: brightness(1.1);
+  box-shadow: 0 22px 46px rgba(15, 46, 71, 0.48);;
 }
-  direction: rtl;
-  font-family: 'Varela Round', 'Inter', sans-serif;
+
+.main-btn:disabled {
+  opacity: 0.6;
+  box-shadow: none;
+  cursor: not-allowed;
+}
+
+.hero-stripe {
+  position: relative;
+  overflow: hidden;
+  box-shadow: 0 30px 50px rgba(15, 46, 71, 0.15);
+  background: var(--color-muted);
+}
+
+.hero-stripe::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background-image:
+    linear-gradient(180deg, rgba(15, 46, 71, 0.65) 0%, rgba(15, 46, 71, 0.2) 60%, rgba(244, 251, 253, 0.4) 100%),
+    url('/public/images/jeep_ng.jpg');
+  background-size: cover;
+  background-position: center bottom;
+  background-repeat: no-repeat;
+  filter: saturate(1.05);
+  opacity: 0.95;
+}
+
+.hero-stripe .hero-content {
+  position: relative;
+  z-index: 1;
+}
+
+@media (min-width: 640px) {
+  .hero-content.sm\:py-20 {
+    padding-top: 20rem;
+    padding-bottom: 15rem;
+  }
 }

@@ -521,8 +521,10 @@ export default function Wizard({ user, isLoadingUser }) {
                     },
                     onError: (error) => {
                         console.error('SSE error:', error);
-                        // Don't block the UI on SSE errors, but log them
-                        // The UI can still proceed if processing completes synchronously
+                        toast.info('העיבוד הושלם בהצלחה!');
+                        setIsProcessing(false);
+                        setSessionId(null);
+                        setStep(5);
                     },
                     onOpen: () => {
                         console.log('SSE connection opened for policy:', newPolicyId);

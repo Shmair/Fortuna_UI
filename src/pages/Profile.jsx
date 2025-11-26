@@ -1,16 +1,14 @@
 
 import { useEffect, useState } from 'react';
-import { Button } from '../components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../components/ui/card';
-import { Input } from '../components/ui/input';
-import { Label } from '../components/ui/label';
 import { toast } from "sonner";
 import ComprehensiveUserProfileForm from '../components/forms/ComprehensiveUserProfileForm';
+import { Button } from '../components/ui/button';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../components/ui/card';
 import { supabase } from '../utils/supabaseClient';
 
-import { createPageUrl } from '../utils';
-import { apiService } from '../services/apiService';
 import { PROFILE_ERRORS, SUCCESS_PROFILE } from '../constants/profile';
+import { apiService } from '../services/apiService';
+import { createPageUrl } from '../utils';
 
 
 export default function ProfilePage() {
@@ -23,7 +21,7 @@ export default function ProfilePage() {
         national_id: '',
         date_of_birth: '',
         gender: '',
-        
+
         // Family Information
         children_ages: [],
         is_pregnant: false,
@@ -31,23 +29,23 @@ export default function ProfilePage() {
         marital_status: '',
         spouse_name: '',
         spouse_date_of_birth: '',
-        
+
         // Health Information
         is_smoker: false,
         chronic_conditions: [],
         medications: [],
         disabilities: [],
-        
+
         // Insurance Information
         insurance_provider: '',
         policy_number: '',
         coverage_type: '',
-        
+
         // Employment
         employment_status: '',
         employer_name: '',
         income_level: '',
-        
+
         // Preferences
         preferred_language: 'he',
         communication_preferences: {
@@ -64,7 +62,7 @@ export default function ProfilePage() {
             try {
                 // Get current user from Supabase
                 const { data: { user: currentUser }, error: authError } = await supabase.auth.getUser();
-                
+
                 if (authError || !currentUser) {
                     setUser(null);
                     setIsLoading(false);
@@ -77,7 +75,7 @@ export default function ProfilePage() {
                 const result = await apiService.getProfile(currentUser.id);
                 console.log('API Response:', result);
                 const { profile: profileData, success, error } = result;
-                
+
                 if (!success || !profileData) {
                     // If no profile exists, create one with basic user info
                     setUser({
@@ -99,7 +97,7 @@ export default function ProfilePage() {
                         national_id: '',
                         date_of_birth: '',
                         gender: '',
-                        
+
                         // Family Information
                         children_ages: [],
                         is_pregnant: false,
@@ -107,23 +105,23 @@ export default function ProfilePage() {
                         marital_status: '',
                         spouse_name: '',
                         spouse_date_of_birth: '',
-                        
+
                         // Health Information
                         is_smoker: false,
                         chronic_conditions: [],
                         medications: [],
                         disabilities: [],
-                        
+
                         // Insurance Information
                         insurance_provider: '',
                         policy_number: '',
                         coverage_type: '',
-                        
+
                         // Employment
                         employment_status: '',
                         employer_name: '',
                         income_level: '',
-                        
+
                         // Preferences
                         preferred_language: 'he',
                         communication_preferences: {
@@ -143,7 +141,7 @@ export default function ProfilePage() {
                         national_id: profileData.national_id || '',
                         date_of_birth: profileData.date_of_birth || '',
                         gender: profileData.gender || '',
-                        
+
                         // Family Information
                         children_ages: Array.isArray(profileData.children_ages) ? profileData.children_ages : [],
                         is_pregnant: profileData.is_pregnant || false,
@@ -151,23 +149,23 @@ export default function ProfilePage() {
                         marital_status: profileData.marital_status || '',
                         spouse_name: profileData.spouse_name || '',
                         spouse_date_of_birth: profileData.spouse_date_of_birth || '',
-                        
+
                         // Health Information
                         is_smoker: profileData.is_smoker || false,
                         chronic_conditions: Array.isArray(profileData.chronic_conditions) ? profileData.chronic_conditions : [],
                         medications: Array.isArray(profileData.medications) ? profileData.medications : [],
                         disabilities: Array.isArray(profileData.disabilities) ? profileData.disabilities : [],
-                        
+
                         // Insurance Information
                         insurance_provider: profileData.insurance_provider || '',
                         policy_number: profileData.policy_number || '',
                         coverage_type: profileData.coverage_type || '',
-                        
+
                         // Employment
                         employment_status: profileData.employment_status || '',
                         employer_name: profileData.employer_name || '',
                         income_level: profileData.income_level || '',
-                        
+
                         // Preferences
                         preferred_language: profileData.preferred_language || 'he',
                         communication_preferences: profileData.communication_preferences || {
@@ -184,7 +182,7 @@ export default function ProfilePage() {
                         national_id: profileData.national_id || '',
                         date_of_birth: profileData.date_of_birth || '',
                         gender: profileData.gender || '',
-                        
+
                         // Family Information
                         children_ages: Array.isArray(profileData.children_ages) ? profileData.children_ages : [],
                         is_pregnant: profileData.is_pregnant || false,
@@ -192,23 +190,23 @@ export default function ProfilePage() {
                         marital_status: profileData.marital_status || '',
                         spouse_name: profileData.spouse_name || '',
                         spouse_date_of_birth: profileData.spouse_date_of_birth || '',
-                        
+
                         // Health Information
                         is_smoker: profileData.is_smoker || false,
                         chronic_conditions: Array.isArray(profileData.chronic_conditions) ? profileData.chronic_conditions : [],
                         medications: Array.isArray(profileData.medications) ? profileData.medications : [],
                         disabilities: Array.isArray(profileData.disabilities) ? profileData.disabilities : [],
-                        
+
                         // Insurance Information
                         insurance_provider: profileData.insurance_provider || '',
                         policy_number: profileData.policy_number || '',
                         coverage_type: profileData.coverage_type || '',
-                        
+
                         // Employment
                         employment_status: profileData.employment_status || '',
                         employer_name: profileData.employer_name || '',
                         income_level: profileData.income_level || '',
-                        
+
                         // Preferences
                         preferred_language: profileData.preferred_language || 'he',
                         communication_preferences: profileData.communication_preferences || {
@@ -243,9 +241,9 @@ export default function ProfilePage() {
                 return;
             }
 
-            const result = await apiService.saveProfile({ 
-                ...userData, 
-                userId: currentUser.id 
+            const result = await apiService.saveProfile({
+                ...userData,
+                userId: currentUser.id
             });
             if (result.success) {
                 toast.success(SUCCESS_PROFILE);
@@ -298,7 +296,6 @@ export default function ProfilePage() {
 
     return (
         <div className="flex flex-col items-center justify-center min-h-[80vh] bg-gradient-to-b from-white to-blue-50">
-            <img src="/images/refund-logo.png" alt="RefunD Logo" className="w-48 mb-6 drop-shadow-lg" style={{marginTop: '-32px'}} />
             <Card className="max-w-2xl w-full shadow-xl rounded-3xl border-0 p-8">
                 <CardHeader className="text-center pb-2">
                     <CardTitle className="text-3xl font-bold text-blue-700 mb-2">הפרופיל שלי</CardTitle>
@@ -309,8 +306,20 @@ export default function ProfilePage() {
 
                         <ComprehensiveUserProfileForm userData={userData} setUserData={setUserData} showErrors={false} />
                         <div className="flex flex-col sm:flex-row gap-4 pt-6 justify-center">
-                            <Button type="submit" className="w-full sm:w-auto bg-blue-400 hover:bg-blue-500 text-white rounded-full py-2 px-6 text-lg font-semibold shadow-md">שמור שינויים</Button>
-                            <Button variant="destructive" onClick={handleLogout} className="w-full sm:w-auto rounded-full py-2 px-6 text-lg font-semibold shadow-md">התנתקות</Button>
+                        <Button
+                            type="submit"
+                            className="w-full sm:w-auto rounded-full py-2 px-6 text-lg font-semibold shadow-md text-white"
+                            style={{ background: 'var(--color-button)' }}
+                        >
+                        שמור שינויים
+                        </Button>
+                        <Button
+                            onClick={handleLogout}
+                            className="w-full sm:w-auto rounded-full py-2 px-6 text-lg font-semibold shadow-md text-white"
+                            style={{ background: 'var(--color-button)' }}
+                        >
+                        התנתקות
+                        </Button>
                         </div>
                     </form>
                 </CardContent>

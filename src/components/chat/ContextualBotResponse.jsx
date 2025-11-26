@@ -41,7 +41,7 @@ export default function ContextualBotResponse({
                   px-3 py-1.5 text-sm font-medium rounded-lg border transition-all duration-200
                   ${isLoading
                     ? 'border-gray-300 text-gray-400 cursor-not-allowed'
-                    : 'border-blue-300 text-blue-700 hover:bg-blue-50 hover:border-blue-400 focus:bg-blue-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-1'
+                    : 'border-teal-300 text-teal-700 hover:bg-teal-50 hover:border-teal-400 focus:bg-teal-50 focus:outline-none focus:ring-2 focus:ring-teal-500 focus:ring-offset-1'
                   }
                 `}
                 aria-label={`בצע פעולה: ${action}`}
