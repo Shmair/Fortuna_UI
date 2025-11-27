@@ -4,3 +4,5 @@ declare namespace NodeJS {
     REACT_APP_SUPABASE_ANON_KEY?: string;
   }
 }
+
+
