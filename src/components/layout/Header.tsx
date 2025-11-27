@@ -4,7 +4,14 @@ import { Link } from "react-router-dom";
 import { createPageUrl } from "../../utils";
 import { ROUTES, ROUTES_TITLES, STRINGS } from "../../constants/header";
 
-export default function Header({ isAuthenticated, userName, setShowAuth, onLogout }) {
+type HeaderProps = {
+  isAuthenticated: boolean;
+  userName: string;
+  setShowAuth: (isOpen: boolean) => void;
+  onLogout: () => void | Promise<void>;
+};
+
+export default function Header({ isAuthenticated, userName, setShowAuth, onLogout }: HeaderProps) {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
 
   const navLinks = [

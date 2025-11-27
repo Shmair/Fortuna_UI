@@ -2,6 +2,15 @@ import React from 'react';
 import { Button } from '../ui/button';
 import BackButton from '../layout/BackButton';
 
+type PolicyLoadedOptionsProps = {
+    results?: any[];
+    userName?: string;
+    onBack: () => void;
+    onGuidedFlow?: () => void;
+    onFreeChat: () => void;
+    isReturningUser?: boolean;
+};
+
 export default function PolicyLoadedOptions({
     results = [],
     userName = '',
@@ -9,7 +18,7 @@ export default function PolicyLoadedOptions({
     onGuidedFlow,
     onFreeChat,
     isReturningUser = false
-}) {
+}: PolicyLoadedOptionsProps) {
     return (
         <div className="w-full flex flex-col items-center justify-center text-center space-y-6">
             {/* UX-ID: progress_context - Step descriptions */}
@@ -19,7 +28,7 @@ export default function PolicyLoadedOptions({
                     עכשיו אפשר לשאול שאלות על הפוליסה או לעבור על שאלון מודרך לזיהוי החזרים.
                 </p>
             </div>
-            
+
             {userName && (
                 <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 w-full max-w-xl">
                     <p className="text-sm text-blue-700">
@@ -44,7 +53,7 @@ export default function PolicyLoadedOptions({
                 <Button
                     className="w-full font-bold text-base px-6 py-3 rounded-lg shadow-none"
                     style={{ background: '#222', color: '#fff' }}
-                    onClick={onGuidedFlow}
+                    onClick={() => onGuidedFlow?.()}
                 >
                     המשך לשאלון מודרך
                 </Button>
@@ -63,6 +72,3 @@ export default function PolicyLoadedOptions({
         </div>
     );
 }
-
-
-

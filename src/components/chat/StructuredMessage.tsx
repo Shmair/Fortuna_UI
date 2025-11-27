@@ -4,8 +4,42 @@ import SourceInfo from './SourceInfo';
 import SourceChip from './SourceChip';
 import QuickActions from './QuickActions';
 import InlineQuickReplies from './InlineQuickReplies';
+import type { ReactNode } from 'react';
 
-export default function StructuredMessage({ data = {}, onAction, rtl = true }) {
+type StructuredMessageData = {
+  message?: ReactNode;
+  content?: Record<string, any>;
+  coverage_info?: any;
+  required_documents?: any;
+  policy_section?: string;
+  important_notes?: string;
+  meta?: Record<string, any>;
+  next_actions?: any[];
+  timeline?: string;
+  quick_replies?: string[];
+  contextual_actions?: string[];
+  suggestions?: string[];
+  follow_up_questions?: string[];
+  relevant_sections?: any[];
+  co_payment?: string;
+  questions?: Array<{
+    text?: string;
+    microcopy?: string;
+    helper_text?: string;
+    type?: string;
+    quickReplies?: string[];
+    options?: string[];
+  }>;
+};
+
+type StructuredMessageProps = {
+  data?: StructuredMessageData;
+  onAction?: (payload: any) => void;
+  rtl?: boolean;
+};
+
+export default function StructuredMessage({ data, onAction, rtl = true }: StructuredMessageProps) {
+  const safeData: StructuredMessageData = data ?? {};
   const {
     message,
     content = {},
@@ -22,9 +56,9 @@ export default function StructuredMessage({ data = {}, onAction, rtl = true }) {
     follow_up_questions = [],
     relevant_sections,
     co_payment
-  } = data;
+  } = safeData;
   // Guided questions inline rendering
-  const questions = Array.isArray(data.questions) ? data.questions : [];
+  const questions = Array.isArray(safeData.questions) ? safeData.questions : [];
 
   // Use follow_up_questions if available, otherwise fallback to suggestions
   const followUpQuestionsToShow = Array.isArray(follow_up_questions) && follow_up_questions.length > 0

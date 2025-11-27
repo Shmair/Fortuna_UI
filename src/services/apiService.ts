@@ -6,6 +6,7 @@ import { supabase } from '../utils/supabaseClient';
  * Generic API service for making HTTP requests
  */
 class ApiService {
+  private baseURL: string;
   constructor() {
     this.baseURL = process.env.REACT_APP_API_BASE || 'http://localhost:4000';
   }
@@ -36,17 +37,18 @@ class ApiService {
    * @param {boolean} requireAuth - Whether to include auth headers
    * @returns {Promise<Object>} - The response data
    */
-  async request(url, options = {}, requireAuth = true) {
+  async request(url: string, options: RequestInit & { timeout?: number } = {}, requireAuth = true) {
     const headers = requireAuth ? await this.getAuthHeaders() : HEADERS.JSON;
-    const defaultOptions = {
-      headers: { ...headers, ...options.headers },
-      timeout: REQUEST_CONFIG.TIMEOUT,
-      ...options
+    const mergedHeaders = { ...headers, ...(options.headers || {}) };
+    const { timeout = REQUEST_CONFIG.TIMEOUT, ...restOptions } = options;
+    const defaultOptions: RequestInit = {
+      ...restOptions,
+      headers: mergedHeaders
     };
 
     try {
       const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), defaultOptions.timeout);
+      const timeoutId = setTimeout(() => controller.abort(), timeout);
 
       const response = await fetch(url, {
         ...defaultOptions,
@@ -59,12 +61,12 @@ class ApiService {
         // Try to parse error response from backend
         try {
           const errorData = await response.json();
-          
+
           // Check for Hebrew error messages first
           if (errorData.hebrewError) {
             throw new Error(errorData.hebrewError);
           }
-          
+
           if (errorData.message) {
             throw new Error(errorData.message);
           } else if (errorData.error) {
@@ -74,7 +76,7 @@ class ApiService {
           // If we can't parse the error response, use generic error
           console.warn('Could not parse error response:', parseError);
         }
-        
+
         // Provide more specific error messages based on status code
         if (response.status === 400) {
           throw new Error('שגיאה בהעלאת הקובץ: הקובץ אינו תקין או בפורמט לא נתמך');
@@ -85,7 +87,7 @@ class ApiService {
         } else if (response.status === 500) {
           throw new Error('שגיאה בהעלאת הקובץ: בעיה בשרת, נסה שוב מאוחר יותר');
         }
-        
+
         throw new Error(`HTTP ${response.status}: ${response.statusText}`);
       }
 
@@ -191,9 +193,13 @@ class ApiService {
     const formData = new FormData();
     formData.append('file', file);
     formData.append('case_id', caseId);
+    const uploadHeaders: Record<string, string> = {};
+    if ('Authorization' in authHeaders && authHeaders.Authorization) {
+      uploadHeaders.Authorization = authHeaders.Authorization;
+    }
     return this.request(`${this.baseURL}/api/documents/upload`, {
       method: 'POST',
-      headers: { 'Authorization': authHeaders.Authorization },
+      headers: uploadHeaders,
       body: formData
     });
   }
@@ -252,19 +258,20 @@ class ApiService {
   async uploadPolicy(formData) {
     // Get auth headers for FormData upload
     const authHeaders = await this.getAuthHeaders();
+    const uploadHeaders: Record<string, string> = {};
+    if ('Authorization' in authHeaders && authHeaders.Authorization) {
+      uploadHeaders.Authorization = authHeaders.Authorization;
+    }
     return this.request(`${this.baseURL}/api/policy/upload`, {
       method: 'POST',
-      headers: {
-        'Authorization': authHeaders.Authorization
-        // Let browser set Content-Type for FormData
-      },
+      headers: uploadHeaders,
       body: formData,
       // Upload + server-side processing can be long; override default timeout
       timeout: Math.max(REQUEST_CONFIG.TIMEOUT, 120000)
     });
   }
 
-  async getPolicies(userId) {
+  async getPolicies(userId?: string) {
     return this.get(`${this.baseURL}/api/policy`);
   }
 

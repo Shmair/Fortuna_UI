@@ -15,7 +15,7 @@ const languages = ["עברית", "אנגלית", "ערבית"];
 // Mapping from Hebrew to English values for database constraints
 const employmentStatusMapping = {
     "עובד/ת": "employed",
-    "מובטל/ת": "unemployed", 
+    "מובטל/ת": "unemployed",
     "סטודנט/ית": "student",
     "פנסיונר/ית": "retired"
 };
@@ -54,7 +54,18 @@ const reverseIncomeLevelMapping = {
     "high": "גבוה"
 };
 
-export default function ComprehensiveUserProfileForm({ userData, setUserData, showErrors }) {
+type UserData = Record<string, any>;
+
+type ComprehensiveUserProfileFormProps = {
+    userData: UserData;
+    setUserData: (data: UserData) => void;
+    showErrors?: boolean;
+};
+
+type ValidationState = Record<string, string | null>;
+type TouchedState = Record<string, boolean>;
+
+export default function ComprehensiveUserProfileForm({ userData, setUserData, showErrors }: ComprehensiveUserProfileFormProps) {
     const [expandedSections, setExpandedSections] = useState({
         basic: true,
         family: false,
@@ -65,8 +76,8 @@ export default function ComprehensiveUserProfileForm({ userData, setUserData, sh
     });
 
     // UX-ID: form_validation - Real-time validation state
-    const [fieldErrors, setFieldErrors] = useState({});
-    const [touchedFields, setTouchedFields] = useState({});
+    const [fieldErrors, setFieldErrors] = useState<ValidationState>({});
+    const [touchedFields, setTouchedFields] = useState<TouchedState>({});
 
     const [newChildAge, setNewChildAge] = useState('');
     const [newCondition, setNewCondition] = useState('');
@@ -74,8 +85,8 @@ export default function ComprehensiveUserProfileForm({ userData, setUserData, sh
     const [newDisability, setNewDisability] = useState('');
 
     const REQUIRED_FIELDS = [
-        "email", 
-        "date_of_birth", 
+        "email",
+        "date_of_birth",
         "gender",
         "full_name",
         "phone_number",
@@ -83,61 +94,62 @@ export default function ComprehensiveUserProfileForm({ userData, setUserData, sh
     ];
 
     // UX-ID: form_validation - Enhanced validation with real-time feedback
-    function getFieldError(field, value) {
-        if (REQUIRED_FIELDS.includes(field) && (!value || String(value).trim() === '')) {
+    function getFieldError(field: string, value: unknown): string | null {
+        const normalizedValue = value === undefined || value === null ? '' : String(value);
+        if (REQUIRED_FIELDS.includes(field) && normalizedValue.trim() === '') {
             return "שדה חובה";
         }
-        
+
         // Specific field validations
         switch (field) {
             case 'email':
-                if (value && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)) {
+                if (normalizedValue && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(normalizedValue)) {
                     return "כתובת אימייל לא תקינה";
                 }
                 break;
             case 'phone_number':
-                if (value && !/^[\d\-\+\(\)\s]{10,15}$/.test(value)) {
+                if (normalizedValue && !/^[\d\-\+\(\)\s]{10,15}$/.test(normalizedValue)) {
                     return "מספר טלפון לא תקין";
                 }
                 break;
             case 'national_id':
-                if (value && !/^\d{9}$/.test(String(value))) {
+                if (normalizedValue && !/^\d{9}$/.test(normalizedValue)) {
                     return "תעודת זהות חייבת להכיל 9 ספרות";
                 }
                 break;
             case 'date_of_birth':
-                if (value && !/^\d{4}-\d{2}-\d{2}$/.test(value)) {
+                if (normalizedValue && !/^\d{4}-\d{2}-\d{2}$/.test(normalizedValue)) {
                     return "תאריך לידה בפורמט YYYY-MM-DD";
                 }
                 break;
         }
-        
+
         return null;
     }
 
     // UX-ID: form_validation - Real-time validation handler
-    const handleFieldChange = (field, value) => {
+    const handleFieldChange = (field: string, value: any) => {
         setUserData({ ...userData, [field]: value });
-        
+
         // Mark field as touched
         setTouchedFields(prev => ({ ...prev, [field]: true }));
-        
+
         // Validate field
         const error = getFieldError(field, value);
         setFieldErrors(prev => ({ ...prev, [field]: error }));
     };
 
-    const handleFieldBlur = (field) => {
+    const handleFieldBlur = (field: string) => {
         setTouchedFields(prev => ({ ...prev, [field]: true }));
         const error = getFieldError(field, userData[field]);
         setFieldErrors(prev => ({ ...prev, [field]: error }));
     };
 
-    const renderError = (field) => {
+    const renderError = (field: string) => {
         const error = fieldErrors[field];
         const isTouched = touchedFields[field];
         const shouldShowError = showErrors || isTouched;
-        
+
         return error && shouldShowError ? (
             <div className="text-red-500 text-xs mt-1" role="alert" aria-live="polite">
                 {error}
@@ -153,8 +165,8 @@ export default function ComprehensiveUserProfileForm({ userData, setUserData, sh
     };
 
     const addChild = () => {
-        if (newChildAge && !isNaN(newChildAge)) {
-            const age = parseInt(newChildAge);
+        if (newChildAge && !Number.isNaN(Number(newChildAge))) {
+            const age = parseInt(newChildAge, 10);
             if (age >= 0 && age <= 25) {
                 const currentAges = Array.isArray(userData.children_ages) ? userData.children_ages : [];
                 const updatedAges = [...currentAges, age];
@@ -212,7 +224,13 @@ export default function ComprehensiveUserProfileForm({ userData, setUserData, sh
         setUserData({ ...userData, disabilities: updatedDisabilities });
     };
 
-    const SectionHeader = ({ title, section, icon: Icon }) => (
+    type SectionHeaderProps = {
+        title: string;
+        section: keyof typeof expandedSections;
+        icon?: React.ComponentType<{ className?: string }>;
+    };
+
+    const SectionHeader = ({ title, section, icon: Icon }: SectionHeaderProps) => (
         <button
             type="button"
             onClick={() => toggleSection(section)}
@@ -301,8 +319,10 @@ export default function ComprehensiveUserProfileForm({ userData, setUserData, sh
                                 <Label htmlFor="gender">מגדר *</Label>
                                 <Select
                                     value={userData.gender || ''}
-                                    onValueChange={value => handleFieldChange('gender', value)}
-                                    onOpenChange={(open) => !open && handleFieldBlur('gender')}
+                                    onValueChange={value => {
+                                        handleFieldChange('gender', value);
+                                        handleFieldBlur('gender');
+                                    }}
                                 >
                                     <SelectTrigger aria-describedby={fieldErrors.gender ? 'gender-error' : undefined}>
                                         <SelectValue placeholder="בחרו מגדר" />

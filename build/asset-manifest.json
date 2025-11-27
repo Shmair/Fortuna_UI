@@ -1,14 +1,14 @@
 {
   "files": {
-    "main.css": "/static/css/main.eb797f0a.css",
-    "main.js": "/static/js/main.59a5a2d0.js",
+    "main.css": "/static/css/main.bf0eb58b.css",
+    "main.js": "/static/js/main.4958f133.js",
     "static/media/jeep_ng.jpg": "/static/media/jeep_ng.dc577e4327e08360e213.jpg",
     "index.html": "/index.html",
-    "main.eb797f0a.css.map": "/static/css/main.eb797f0a.css.map",
-    "main.59a5a2d0.js.map": "/static/js/main.59a5a2d0.js.map"
+    "main.bf0eb58b.css.map": "/static/css/main.bf0eb58b.css.map",
+    "main.4958f133.js.map": "/static/js/main.4958f133.js.map"
   },
   "entrypoints": [
-    "static/css/main.eb797f0a.css",
-    "static/js/main.59a5a2d0.js"
+    "static/css/main.bf0eb58b.css",
+    "static/js/main.4958f133.js"
   ]
 }

@@ -4,7 +4,29 @@ import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '../ui
 import { PartyPopper, FileCheck, AlertTriangle } from 'lucide-react';
 import BackButton from '../layout/BackButton';
 
-export default function ResultsStep({ results, onRestart, onBack, claim, chatSummary }) {
+type ResultItem = {
+    type?: string;
+    amount?: number;
+    currency?: string;
+    policy_section?: string;
+    coverage?: string;
+    max_limit?: number;
+    co_payment?: number;
+    valid_until?: string;
+    notes?: string;
+    required_documents?: string[] | string;
+    status?: string;
+};
+
+type ResultsStepProps = {
+    results: ResultItem[];
+    onRestart?: () => void;
+    onBack?: () => void;
+    claim?: () => void;
+    chatSummary?: string[];
+};
+
+export default function ResultsStep({ results, onRestart, onBack, claim, chatSummary }: ResultsStepProps) {
     const [showHistory, setShowHistory] = useState(false);
     // Calculate total refund
     const totalRefund = results.reduce((sum, r) => sum + (typeof r.amount === 'number' ? r.amount : 0), 0);

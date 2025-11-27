@@ -1,23 +1,35 @@
 // UX-ID: navigation_consistency - Consistent navigation patterns
-import React from 'react';
+import React, { ReactNode } from 'react';
 import BackButton from './BackButton';
 import { Button } from '../ui/button';
+
+type StepNavigationProps = {
+    onBack?: () => void;
+    onCancel?: () => void;
+    showBack?: boolean;
+    showCancel?: boolean;
+    backLabel?: string;
+    cancelLabel?: string;
+    stepTitle?: ReactNode;
+    stepDescription?: ReactNode;
+    className?: string;
+};
 
 /**
  * Consistent navigation component for wizard steps
  * Provides standardized back/cancel buttons and step context
  */
-export default function StepNavigation({ 
-    onBack, 
-    onCancel, 
-    showBack = true, 
+export default function StepNavigation({
+    onBack,
+    onCancel,
+    showBack = true,
     showCancel = false,
     backLabel = "חזור",
     cancelLabel = "ביטול",
     stepTitle,
     stepDescription,
     className = ""
-}) {
+}: StepNavigationProps) {
     return (
         <div className={`flex flex-col space-y-4 ${className}`}>
             {/* UX-ID: progress_context - Step descriptions */}
@@ -31,18 +43,18 @@ export default function StepNavigation({
                     )}
                 </div>
             )}
-            
+
             {/* Navigation buttons */}
             <div className="flex justify-between items-center">
                 <div className="flex-1">
                     {showBack && onBack && (
-                        <BackButton onClick={onBack} />
+                        <BackButton onClick={onBack} label={backLabel} />
                     )}
                 </div>
-                
+
                 {showCancel && onCancel && (
-                    <Button 
-                        variant="outline" 
+                    <Button
+                        variant="outline"
                         onClick={onCancel}
                         className="text-gray-600 hover:text-gray-800"
                     >
@@ -53,5 +65,3 @@ export default function StepNavigation({
         </div>
     );
 }
-
-

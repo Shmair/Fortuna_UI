@@ -697,7 +697,7 @@ return (
                           type="number"
                           className="w-full rounded px-3 py-2 border border-gray-300"
                           value={isEditingCandidate ? editedCandidate.amount : (candidate.amount ?? '')}
-                          onChange={e => setEditedCandidate(prev => ({ ...prev, amount: Number(e.target.value) }))}
+                          onChange={e => setEditedCandidate(prev => ({ ...prev, amount: e.target.value }))}
                           disabled={!isEditingCandidate}
                         />
                       </div>
@@ -769,7 +769,7 @@ return (
                             style={{ background: '#222' }}
                             onClick={() => {
                               setIsEditingCandidate(false);
-                              setCandidate(prev => ({ ...prev, amount: editedCandidate.amount, description: editedCandidate.description }));
+                              setCandidate(prev => ({ ...prev, amount: Number(editedCandidate.amount) || 0, description: editedCandidate.description }));
                             }}
               >
                 שמירת שינויים

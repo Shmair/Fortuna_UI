@@ -1,11 +1,12 @@
 
 import { AnimatePresence } from "framer-motion";
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { Route, BrowserRouter as Router, Routes } from "react-router-dom";
 import { Toaster } from "sonner";
-import './index.css';
+import { User } from "@supabase/supabase-js";
 
-import { useState } from "react";
+import "./index.css";
+
 import Header from "./components/layout/Header";
 import { Button } from "./components/ui/button";
 import ComprehensiveUserProfileForm from "./components/forms/ComprehensiveUserProfileForm";
@@ -13,28 +14,30 @@ import Dashboard from "./pages/Dashboard";
 import Home from "./pages/Home";
 import ProfilePage from "./pages/Profile";
 import Wizard from "./components/steps/Wizard";
-import { supabase } from './utils/supabaseClient';
+import { supabase } from "./utils/supabaseClient";
 import Auth from "./components/auth/Auth";
 import AuthCallback from "./components/auth/AuthCallback";
 import ResetPassword from "./components/auth/ResetPassword";
 
-function App() {
+type UserData = Record<string, unknown>;
+
+const App: React.FC = () => {
   // Auth state
   const [showAuth, setShowAuth] = useState(false);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [userName, setUserName] = useState("");
-  const [userData, setUserData] = useState({});
-  const [user, setUser] = useState(null);
+  const [userData, setUserData] = useState<UserData>({});
+  const [user, setUser] = useState<User | null>(null);
   const [isLoadingUser, setIsLoadingUser] = useState(true);
 
 
   // On mount, check for existing Supabase user/session
-  React.useEffect(() => {
-    supabase.auth.getUser().then(({ data: { user } }) => {
-      if (user) {
+  useEffect(() => {
+    supabase.auth.getUser().then(({ data: { user: supabaseUser } }) => {
+      if (supabaseUser) {
         setIsAuthenticated(true);
-        setUser(user);
-        setUserName(user.user_metadata?.full_name || user.email || "");
+        setUser(supabaseUser);
+        setUserName(supabaseUser.user_metadata?.full_name || supabaseUser.email || "");
       }
       setIsLoadingUser(false);
     });
@@ -60,7 +63,7 @@ function App() {
 
   // Example state for ComprehensiveUserProfileForm usage
 
-  const handleLogout = async () => {
+  const handleLogout = async (): Promise<void> => {
     await supabase.auth.signOut();
     setIsAuthenticated(false);
     setUserName("");
@@ -83,7 +86,6 @@ function App() {
               isAuthenticated={isAuthenticated}
               userName={userName}
               setShowAuth={setShowAuth}
-              showAuth={showAuth}
               onLogout={handleLogout}
             />
             {showAuth && (
@@ -116,6 +118,6 @@ function App() {
       <Toaster position="top-left" />
     </div>
   );
-}
+};
 
 export default App;

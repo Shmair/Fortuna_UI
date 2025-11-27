@@ -78,7 +78,20 @@ export default function Wizard({ user, isLoadingUser }) {
     const [step, setStep] = useState(0);
     const [isReturningUser, setIsReturningUser] = useState(false);
     const [userData, setUserData] = useState(initialUserData);
-    const [fullAnalysis, setFullAnalysis] = useState([]);
+    const [fullAnalysis, setFullAnalysis] = useState<any[]>([]);
+
+    const normalizeAnalysis = (analysis: unknown): any[] => {
+        if (Array.isArray(analysis)) {
+            return analysis;
+        }
+        if (typeof analysis === 'string' && analysis.trim().length > 0) {
+            return [{ text: analysis }];
+        }
+        if (analysis && typeof analysis === 'object') {
+            return [analysis];
+        }
+        return [];
+    };
     const [results, setResults] = useState([]);
     const [isLoading, setIsLoading] = useState(true);
     const [isInitializing, setIsInitializing] = useState(true);
@@ -93,7 +106,7 @@ export default function Wizard({ user, isLoadingUser }) {
         }
         return "";
     });
-    const [refunds, setRefunds] = useState({});
+    const [refunds, setRefunds] = useState<any[]>([]);
     const [sessionId, setSessionId] = useState(null);
     const [initialMessages, setInitialMessages] = useState(null);
     const initialLoadRef = useRef(true);
@@ -486,9 +499,15 @@ export default function Wizard({ user, isLoadingUser }) {
                 }
 
                 // Subscribe to notifications
+                const isSSEPayload = (payload: unknown): payload is { type?: string; data?: any } =>
+                    typeof payload === 'object' && payload !== null;
+
                 const cleanup = await subscribeToPolicyNotifications(newPolicyId, {
                     onMessage: (data) => {
                         console.log('SSE message received:', data);
+                        if (!isSSEPayload(data)) {
+                            return;
+                        }
 
                         if (data.type === 'rag_processing_completed') {
                             // Stop spinner, enable chat
@@ -602,7 +621,7 @@ export default function Wizard({ user, isLoadingUser }) {
                 try {
                     const result = await fetchPolicyById(policyId);
                     if (result.policy) {
-                        setFullAnalysis(result.policy.analysis || "No analysis found");
+                        setFullAnalysis(normalizeAnalysis(result.policy.analysis));
                         setStep(2);
                         return;
                     }
@@ -615,10 +634,10 @@ export default function Wizard({ user, isLoadingUser }) {
             const result = await fetchUserPolicies();
             if (result.policies && result.policies.length > 0) {
                 const mostRecentPolicy = result.policies[0];
-                setFullAnalysis(mostRecentPolicy.analysis || "No analysis found");
+                setFullAnalysis(normalizeAnalysis(mostRecentPolicy.analysis));
                 setPolicyId(mostRecentPolicy.id);
             } else {
-                setFullAnalysis("No analysis found");
+                setFullAnalysis([]);
             }
             setStep(3);
         } catch (error) {
@@ -736,7 +755,6 @@ export default function Wizard({ user, isLoadingUser }) {
                             <UploadStep
                                 isUploading={isUploading}
                                 onUpload={handlePolicyFileUpload}
-                                email={userData.email || user?.email}
                                 uploadProgress={uploadProgress}
                                 onBack={() => {
                                     // If user has a complete profile, go back to loading step instead of personal details
@@ -910,7 +928,6 @@ export default function Wizard({ user, isLoadingUser }) {
                         {step === 6 && (
                             <ResultsStep
                                 results={refunds}
-                                userData={userData}
                                 onBack={() => setStep(5)}
                                 onRestart={() => setStep(1)}
                                 claim={handleProfessionalHelp}
@@ -921,10 +938,8 @@ export default function Wizard({ user, isLoadingUser }) {
                         {step === 7 && (
                             <ClaimStep
                                 results={refunds}
-                                userData={userData}
                                 onBack={() => setStep(3)}
-                                onRestart={() => setStep(1)}
-                                claim={handleProfessionalHelp}
+                                onSubmit={handleProfessionalHelp}
                             />
                         )}
                     </CardContent>

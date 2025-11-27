@@ -6,6 +6,13 @@
 import { supabase } from './supabaseClient';
 import { API_ENDPOINTS } from '../constants/api';
 
+type SSECallbacks = {
+  onMessage?: (data: unknown) => void;
+  onError?: (error: unknown) => void;
+  onOpen?: () => void;
+  onClose?: () => void;
+};
+
 /**
  * Subscribe to SSE events for policy notifications
  * @param {string} policyId - The policy ID to subscribe to
@@ -16,7 +23,7 @@ import { API_ENDPOINTS } from '../constants/api';
  * @param {Function} callbacks.onClose - Called when connection closes
  * @returns {Function} Cleanup function to close the connection
  */
-export async function subscribeToPolicyNotifications(policyId, callbacks = {}) {
+export async function subscribeToPolicyNotifications(policyId: string, callbacks: SSECallbacks = {}) {
   const { onMessage, onError, onOpen, onClose } = callbacks;
 
   try {

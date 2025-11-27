@@ -1,8 +1,16 @@
-import React from 'react';
+import React, { ReactNode } from 'react';
 
 /**
  * Primary CTA button that matches the Fortuna palette.
  */
+type ButtonPrimaryProps = {
+  children: ReactNode;
+  className?: string;
+  icon?: React.ComponentType<{ className?: string; color?: string }>;
+  iconPosition?: 'left' | 'right';
+  fullWidth?: boolean;
+} & React.ButtonHTMLAttributes<HTMLButtonElement>;
+
 export default function ButtonPrimary({
   children,
   className = '',
@@ -10,7 +18,7 @@ export default function ButtonPrimary({
   iconPosition = 'right',
   fullWidth = false,
   ...props
-}) {
+}: ButtonPrimaryProps) {
   const iconElement = Icon ? (
     <Icon className="w-5 h-5" color="var(--color-primary-dark)" />
   ) : null;

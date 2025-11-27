@@ -1,13 +1,16 @@
 
-import { useEffect, useState, useRef } from 'react';
+import { useEffect, useState, useRef, FormEvent } from 'react';
+import type { Provider, User } from '@supabase/supabase-js';
 import { supabase } from '../../utils/supabaseClient';
 
-export default function Auth({ }) {
+type SupabaseError = Error & { status?: number };
 
-  const [user, setUser] = useState(null);
+const Auth = () => {
+
+  const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const justSignedIn = useRef(false);
-  
+
   // Email/password form states
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -36,14 +39,16 @@ export default function Auth({ }) {
   // Only show greeting if just signed in during this session
   if (user && user.id && justSignedIn.current) return <div>שלום, {user.user_metadata?.full_name || user.email}!</div>;
 
-  const handleOAuthSignIn = (provider) => {
+  const handleOAuthSignIn = (provider: Provider) => {
     supabase.auth.signInWithOAuth({
       provider,
-      options: { prompt: 'select_account' }
+      options: {
+        queryParams: { prompt: 'select_account' }
+      }
     });
   };
 
-  const handleEmailAuth = async (e) => {
+  const handleEmailAuth = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setAuthLoading(true);
     setError('');
@@ -55,15 +60,14 @@ export default function Auth({ }) {
         const { data, error } = await supabase.auth.signUp({
           email,
           password,
-        }, {
-          emailRedirectTo: authRedirect
+          options: {
+            emailRedirectTo: authRedirect
+          }
         });
         if (error) throw error;
         // Supabase behavior: if email already exists, `user.identities` is an empty array
         if (data?.user && Array.isArray(data.user.identities) && data.user.identities.length === 0) {
-          const existsError = new Error('USER_EXISTS');
-          // @ts-ignore annotate a status-like code for downstream handling
-          existsError.status = 409;
+          const existsError: SupabaseError = Object.assign(new Error('USER_EXISTS'), { status: 409 });
           throw existsError;
         }
         setSuccess('נשלח אימייל לאימות החשבון');
@@ -75,15 +79,16 @@ export default function Auth({ }) {
         if (error) throw error;
       }
     } catch (error) {
-      const message = String(error?.message || '').toLowerCase();
-      if (isSignUp && (message.includes('already') || message.includes('exists') || error?.status === 422)) {
+      const supabaseError = error as SupabaseError;
+      const message = String(supabaseError?.message || '').toLowerCase();
+      if (isSignUp && (message.includes('already') || message.includes('exists') || supabaseError?.status === 422)) {
         setSuccess('');
         setError('המשתמש כבר קיים. נסה להתחבר.');
-      } else if (isSignUp && error?.message === 'USER_EXISTS') {
+      } else if (isSignUp && supabaseError?.message === 'USER_EXISTS') {
         setSuccess('');
         setError('המשתמש כבר קיים. נסה להתחבר.');
       } else {
-        setError(error.message);
+        setError(supabaseError.message);
       }
     } finally {
       setAuthLoading(false);
@@ -102,7 +107,8 @@ export default function Auth({ }) {
       if (error) throw error;
       setSuccess('שלחנו לינק לאיפוס סיסמה לכתובת האימייל.');
     } catch (err) {
-      setError(err.message || 'שגיאה בשליחת מייל לאיפוס סיסמה');
+      const resetError = err as SupabaseError;
+      setError(resetError.message || 'שגיאה בשליחת מייל לאיפוס סיסמה');
     } finally {
       setForgotLoading(false);
     }
@@ -117,7 +123,7 @@ export default function Auth({ }) {
   return (
     <div className="flex flex-col items-center justify-center min-h-[40vh] gap-4">
       <h2 className="text-xl font-bold mb-2">התחברות למערכת</h2>
-      
+
       {/* Email/Password Form */}
       <form onSubmit={handleEmailAuth} className="w-full max-w-md space-y-4">
         <div>
@@ -140,15 +146,15 @@ export default function Auth({ }) {
             required
           />
         </div>
-        
+
         {error && (
           <div className="text-red-600 text-sm text-center">{error}</div>
         )}
-        
+
         {success && (
           <div className="text-green-600 text-sm text-center">{success}</div>
         )}
-        
+
         <button
           type="submit"
           disabled={authLoading}
@@ -156,7 +162,7 @@ export default function Auth({ }) {
         >
           {authLoading ? 'טוען...' : (isSignUp ? 'הרשמה' : 'התחברות')}
         </button>
-        
+
         <button
           type="button"
           onClick={() => setIsSignUp(!isSignUp)}
@@ -182,9 +188,9 @@ export default function Auth({ }) {
           </button>
         )}
       </form>
-      
+
       <div className="text-gray-500 text-sm">או</div>
-      
+
       {/* OAuth Buttons */}
       <div className="flex flex-col gap-2 w-full max-w-md">
         <button
@@ -200,7 +206,7 @@ export default function Auth({ }) {
           התחברות עם GitHub
         </button>
       </div>
-      
+
       {/* Sign Out Button */}
       {user && (
         <button
@@ -212,4 +218,6 @@ export default function Auth({ }) {
       )}
     </div>
   );
-}
+};
+
+export default Auth;

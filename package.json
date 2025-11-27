@@ -84,6 +84,9 @@
     "@testing-library/jest-dom": "^6.9.0",
     "@testing-library/react": "^14.1.2",
     "@testing-library/user-event": "^14.5.1",
+    "@types/node": "^24.10.1",
+    "@types/react": "^19.2.7",
+    "@types/react-dom": "^19.2.3",
     "autoprefixer": "^10.4.22",
     "babel-jest": "^29.7.0",
     "cross-env": "^10.1.0",
@@ -95,6 +98,7 @@
     "postcss": "^8.5.6",
     "supertest": "^6.3.3",
     "tailwindcss": "^3.4.13",
+    "typescript": "4.9.5",
     "zod-to-json-schema": "^3.24.6"
   },
   "jest": {
