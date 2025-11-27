@@ -112,7 +112,7 @@ export default function Header({ isAuthenticated, userName, setShowAuth, onLogou
   return (
     <header className="fixed top-0 left-0 w-full bg-white shadow-sm border-b border-gray-100 z-50">
       <div className="mx-auto max-w-[1400px] px-4 sm:px-6">
-        <div className="flex items-center justify-between h-20 md:h-28 gap-4 mb-4">
+        <div className="flex items-center justify-between h-30 md:h-28 gap-4">
           <button
             className="md:hidden p-2 rounded-md border border-gray-200"
             onClick={() => setIsMenuOpen(prev => !prev)}
@@ -136,17 +136,17 @@ export default function Header({ isAuthenticated, userName, setShowAuth, onLogou
             ))}
           </nav>
 
-          <div className="flex items-center gap-3 mt-2">
+          <div className="flex items-center gap-3">
             <Link
               to={createPageUrl(ROUTES.HOME)}
               onClick={handleNavClick}
-              className="flex items-center justify-center overflow-hidden rounded-2xl"
-              style={{ width: '11rem', height: '6.5rem' }}
+              className="flex items-center justify-center rounded-2xl bg-white shadow-sm px-3 py-1"
+              style={{ width: '9.25rem', height: '5.5rem' }}
             >
               <img
-                src="/images/Fortuna_logo.png"
+                src="/images/Fortuna_logo_1.png"
                 alt="Fortuna Health Logo"
-                className="w-full h-full object-cover object-center"
+                className="h-full w-auto object-contain object-center"
               />
             </Link>
           </div>

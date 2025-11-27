@@ -71,9 +71,7 @@ export default function ProfilePage() {
                 }
 
                 // Fetch user profile from backend API using the user ID
-                console.log('🔍 Profile.jsx getProfile called for userId:', currentUser.id);
                 const result = await apiService.getProfile(currentUser.id);
-                console.log('API Response:', result);
                 const { profile: profileData, success, error } = result;
 
                 if (!success || !profileData) {

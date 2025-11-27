@@ -1,26 +1,28 @@
 import { BarChart, CheckCircle2, FileText } from "lucide-react";
-import React, { useMemo } from "react";
+import React from "react";
 import FeatureSteps from "../components/home/FeatureSteps";
 import HeroCallToAction from "../components/home/HeroCallToAction";
 
+const FEATURE_STEPS = [
+  {
+    title: "1. ספרו לנו עליכם",
+    description: "אם אתם רוצים ייעוץ מותאם אישית, ענו על מספר שאלות קצרות לגביכם ולגבי הביטוח שלכם!",
+    icon: <FileText size={24} color="var(--color-secondary)" />
+  },
+  {
+    title: "2. קבלו רשימה מותאמת",
+    description: "המערכת החכמה שלנו תנתח את תשובותיכם ותציג רשימה של החזרים פוטנציאליים הרלוונטיים בדיוק לכם.",
+    icon: <BarChart size={24} color="var(--color-secondary)" />
+  },
+  {
+    title: "3. הגישו בקלות",
+    description: "לכל החזר שמצאנו, נסביר לכם בדיוק אילו מסמכים צריך ואיך להגיש את הבקשה לחברת הביטוח.",
+    icon: <CheckCircle2 size={24} color="var(--color-secondary)" />
+  }
+];
+
 export default function Home({ isAuthenticated, setShowAuth }) {
-  const featureSteps = useMemo(() => ([
-    {
-      title: "1. ספרו לנו עליכם",
-      description: "אם אתם רוצים ייעוץ מותאם אישית, ענו על מספר שאלות קצרות לגביכם ולגבי הביטוח שלכם!",
-      icon: <FileText size={24} color="var(--color-secondary)" />
-    },
-    {
-      title: "2. קבלו רשימה מותאמת",
-      description: "המערכת החכמה שלנו תנתח את תשובותיכם ותציג רשימה של החזרים פוטנציאליים הרלוונטיים בדיוק לכם.",
-      icon: <BarChart size={24} color="var(--color-secondary)" />
-    },
-    {
-      title: "3. הגישו בקלות",
-      description: "לכל החזר שמצאנו, נסביר לכם בדיוק אילו מסמכים צריך ואיך להגיש את הבקשה לחברת הביטוח.",
-      icon: <CheckCircle2 size={24} color="var(--color-secondary)" />
-    }
-  ]), []);
+  const featureSteps = FEATURE_STEPS;
 
   return (
     <React.Fragment>

@@ -116,6 +116,6 @@ body {
 @media (min-width: 640px) {
   .hero-content.sm\:py-20 {
     padding-top: 20rem;
-    padding-bottom: 15rem;
+    padding-bottom: 20rem;
   }
 }
